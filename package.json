@@ -1,0 +1,19 @@
+{
+  "name": "jet",
+  "version": "2.0.0",
+  "description": "The JET NGN UI framework",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jet-ngn/framework.git"
+  },
+  "author": "Graham Butler",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/jet-ngn/framework/issues"
+  },
+  "homepage": "https://github.com/jet-ngn/framework#readme"
+}
