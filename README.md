@@ -1,2 +1,2 @@
-# framework
-The JET NGN browser framework 
+# Jet UI Framework
+Another one?
