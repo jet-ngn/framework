@@ -14,7 +14,7 @@ export default class HTMLParser {
       case 1: return new ElementNode(node, context, interpolationManager)
 
       case 3:
-        const { processed, valid } = this.#processTextNode(node, retainFormatting)
+        const { processed, valid } = HTMLParser.#processTextNode(node, retainFormatting)
         return valid ? new TextNode(processed, context, interpolationManager) : null
 
       case 8: return new CommentNode(node, context, interpolationManager)
@@ -73,24 +73,24 @@ export default class HTMLParser {
       interpolation = interpolationManager.addInterpolation(interpolation, i)
 
       if (interpolation.type === 'text' && ['string', 'number'].includes(typeof interpolation.value)) {
-        html += this.#processString('' + interpolation.value, retainFormatting)
+        html += HTMLParser.#processString('' + interpolation.value, retainFormatting)
         continue
       }
 
       html += `<!--${interpolation.id}-->`
     }
 
-    this.#template.innerHTML = html
+    HTMLParser.#template.innerHTML = html
 
     const result = {
       html,
-      nodes: HTMLParser.createNodes([...this.#template.content.childNodes], context, {
+      nodes: HTMLParser.createNodes([...HTMLParser.#template.content.childNodes], context, {
         interpolationManager,
         retainFormatting
       })
     }
 
-    this.#template.innerHTML = ''
+    HTMLParser.#template.innerHTML = ''
     return result
   }
 
@@ -99,7 +99,7 @@ export default class HTMLParser {
   }
 
   static #processTextNode = (node, retainFormatting) => {
-    node.data = this.#processString(node.data, retainFormatting)
+    node.data = HTMLParser.#processString(node.data, retainFormatting)
 
     return {
       processed: node,
