@@ -13,11 +13,7 @@ class StyleRegistry {
 
   createRule (id, decls) {
     const selector = this.#generateSelector(id)
-
-    let index = this.#style.sheet.insertRule(`${selector} {
-      ${decls}
-    }`)
-
+    let index = this.#style.sheet.insertRule(`${selector} {${decls}}`)
     this.#rules.splice(index, 0, id)
   }
 

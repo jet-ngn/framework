@@ -2,10 +2,10 @@ import ElementNode from './ElementNode.js'
 import TextNode from './TextNode.js'
 import CommentNode from './CommentNode.js'
 
-export default class HTMLParser {
-  static #template = document.createElement('template')
+class HTMLParser {
+  #template = document.createElement('template')
 
-  static createNode (node, context, { interpolationManager, retainFormatting }) {
+  createNode (node, context, { interpolationManager, retainFormatting }) {
     if (node.nodeName === 'SCRIPT') {
       return null
     }
@@ -14,7 +14,7 @@ export default class HTMLParser {
       case 1: return new ElementNode(node, context, interpolationManager)
 
       case 3:
-        const { processed, valid } = HTMLParser.#processTextNode(node, retainFormatting)
+        const { processed, valid } = this.#processTextNode(node, retainFormatting)
         return valid ? new TextNode(processed, context, interpolationManager) : null
 
       case 8: return new CommentNode(node, context, interpolationManager)
@@ -23,17 +23,19 @@ export default class HTMLParser {
     }
   }
 
-  static createNodes (nodes, context, { interpolationManager, retainFormatting = false }) {
+  createNodes (nodes, context, { interpolationManager, retainFormatting = false }) {
     return nodes.reduce((nodes, node) => {
       switch (node.nodeType) {
         case 1:
         case 3: // Element || Text
-          node = HTMLParser.createNode(node, context, arguments[2])
+          node = this.createNode(node, context, arguments[2])
           node && nodes.push(node)
           break
 
         case 8: // Comment
-          interpolationManager.hasInterpolation(node.data) ? nodes.push(interpolationManager.getInterpolation(node.data)) : nodes.push(HTMLParser.createNode(node, context, interpolationManager))
+          interpolationManager.hasInterpolation(node.data)
+            ? nodes.push(interpolationManager.getInterpolation(node.data))
+            : nodes.push(this.createNode(node, context, interpolationManager))
           break
       }
 
@@ -41,17 +43,17 @@ export default class HTMLParser {
     }, [])
   }
 
-  static escapeString (string) {
+  escapeString (string) {
     const textarea = document.createElement('textarea')
     textarea.textContent = string
     return textarea.innerHTML
   }
 
-  static normalizeString (string) {
+  normalizeString (string) {
     return string.replace(/\r?\n|\r/g, '')//.replace(/\s+/g, ' ')
   }
 
-  static parse ({ context, tag, id, interpolationManager, retainFormatting }) {
+  parse ({ context, tag, id, interpolationManager, retainFormatting }) {
     const { strings, interpolations } = tag
     let html = ''
 
@@ -73,33 +75,33 @@ export default class HTMLParser {
       interpolation = interpolationManager.addInterpolation(interpolation, i)
 
       if (interpolation.type === 'text' && ['string', 'number'].includes(typeof interpolation.value)) {
-        html += HTMLParser.#processString('' + interpolation.value, retainFormatting)
+        html += this.#processString('' + interpolation.value, retainFormatting)
         continue
       }
 
       html += `<!--${interpolation.id}-->`
     }
 
-    HTMLParser.#template.innerHTML = html
+    this.#template.innerHTML = html
 
     const result = {
       html,
-      nodes: HTMLParser.createNodes([...HTMLParser.#template.content.childNodes], context, {
+      nodes: this.createNodes([...this.#template.content.childNodes], context, {
         interpolationManager,
         retainFormatting
       })
     }
 
-    HTMLParser.#template.innerHTML = ''
+    this.#template.innerHTML = ''
     return result
   }
 
-  static #processString = (string, retainFormatting) => {
-    return HTMLParser.escapeString(retainFormatting ? string : HTMLParser.normalizeString(string))
+  #processString = (string, retainFormatting) => {
+    return this.escapeString(retainFormatting ? string : this.normalizeString(string))
   }
 
-  static #processTextNode = (node, retainFormatting) => {
-    node.data = HTMLParser.#processString(node.data, retainFormatting)
+  #processTextNode = (node, retainFormatting) => {
+    node.data = this.#processString(node.data, retainFormatting)
 
     return {
       processed: node,
@@ -107,3 +109,7 @@ export default class HTMLParser {
     }
   }
 }
+
+const HTMLParserInstance = new HTMLParser
+
+export { HTMLParserInstance as default }
