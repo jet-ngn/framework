@@ -4,7 +4,7 @@ import Entity from './API/Entity.js'
 import Component from './API/Component.js'
 import Partial from './API/Partial.js'
 import PerformanceMonitor from './diagnostics/PerformanceMonitor.js'
-import { css, html, markdown } from './tag/tags.js'
+import { css, html, markdown, svg } from './tag/tags.js'
 import { domContentLoadedHandler, createId, elementIsVisible } from './Utilities.js'
 
 globalThis.addEventListener('error', evt => {
@@ -44,5 +44,6 @@ export {
   css,
   html,
   markdown,
+  svg,
   domContentLoadedHandler as ready
 }

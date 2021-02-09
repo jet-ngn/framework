@@ -59,8 +59,6 @@ export default class RouteManager {
     const { state } = window.history
     const path = route.resolve(cfg)
 
-    console.log(path);
-
     window.history[initial ? 'replaceState' : 'pushState']({
       name,
       path,

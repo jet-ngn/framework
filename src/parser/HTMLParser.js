@@ -3,8 +3,6 @@ import TextNode from './TextNode.js'
 import CommentNode from './CommentNode.js'
 
 class HTMLParser {
-  #template = document.createElement('template')
-
   createNode (node, context, { interpolationManager, retainFormatting }) {
     if (node.nodeName === 'SCRIPT') {
       return null
@@ -54,6 +52,10 @@ class HTMLParser {
   }
 
   parse ({ context, tag, id, interpolationManager, retainFormatting }) {
+    const template = tag.type === 'svg'
+      ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      : document.createElement('template')
+
     const { strings, interpolations } = tag
     let html = ''
 
@@ -82,17 +84,17 @@ class HTMLParser {
       html += `<!--${interpolation.id}-->`
     }
 
-    this.#template.innerHTML = html
+    template.innerHTML = html
 
     const result = {
       html,
-      nodes: this.createNodes([...this.#template.content.childNodes], context, {
+      nodes: this.createNodes([...template.content?.childNodes ?? template.childNodes], context, {
         interpolationManager,
         retainFormatting
       })
     }
 
-    this.#template.innerHTML = ''
+    template.innerHTML = ''
     return result
   }
 

@@ -4,8 +4,14 @@ const Demo = new Entity({
   selector: 'body',
   name: '__NAME__',
 
-  init () {
+  on: {
+    initialize () {
 
+    },
+
+    initialized () {
+
+    }
   }
 })
 

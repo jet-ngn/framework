@@ -16,10 +16,6 @@ export function markdown () {
   return tag('markdown', ...arguments)
 }
 
-// export function svg (strings, ...interpolations) {
-//   return new Tag({
-//     type: 'svg',
-//     strings,
-//     interpolations
-//   })
-// }
+export function svg (strings, ...interpolations) {
+  return tag('svg', ...arguments)
+}

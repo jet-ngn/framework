@@ -40,19 +40,21 @@ export default class TemplateManager {
     return this.#template.refs
   }
 
+  #generateTemplate = tag => new Template(this.#context, tag, this.#retainFormatting)
+
   initialize (tag) {
-    this.#template = new Template(this.#context, tag, this.#retainFormatting)
+    this.#template = this.#generateTemplate(tag)
     this.#initialized = true
     return this.#template
   }
 
   append (tag) {
-    const template = new Template(this.#context, tag, this.#retainFormatting)
+    const template = this.#generateTemplate(tag)
     return this.#template.append(template)
   }
 
   reconcile (tag) {
-    const template = new Template(this.#context, tag, this.#retainFormatting)
+    const template = this.#generateTemplate(tag)
     // this.#history.push(this.#template)
     this.#template = this.#template.reconcile(template, this.#context.target)
 

@@ -17,7 +17,7 @@ export default class Template {
     this.#tag = tag
     this.#interpolationManager = new InterpolationManager(this)
     this.#retainFormatting = retainFormatting ?? context.retainFormatting
-
+    
     const { html, nodes } = HTMLParser.parse(this)
 
     this.#html = html
