@@ -19,7 +19,6 @@ export default class TagInterpolation extends MultipleChildInterpolation {
 
   render () {
     const fragment = document.createDocumentFragment()
-    console.log(this.value);
     this.rendered = [...Renderer.appendNodes(fragment, this.value).childNodes]
     return fragment
   }
