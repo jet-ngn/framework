@@ -41,7 +41,6 @@ export default class Renderer {
   }
 
   static appendNodes (target, { nodes, interpolationManager }) {
-    console.log(target, nodes);
     const queue = new NGN.Tasks
     const fragment = document.createDocumentFragment()
 
