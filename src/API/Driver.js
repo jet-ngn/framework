@@ -244,6 +244,6 @@ export default class Driver {
       this.#dataManager.initialize()
     }
 
-    Object.keys(data).forEach(key => this.#dataManager.attach(key, data[key]))
+    this.#dataManager.attach(data)
   }
 }

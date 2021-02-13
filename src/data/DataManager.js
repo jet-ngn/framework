@@ -29,7 +29,7 @@ export default class DataManager {
       value: this.#createBinding
     })
 
-    return data
+    return { ...data, ...(this.#attached ?? {}) }
   }
 
   applyDeferredBindings () {
@@ -48,9 +48,9 @@ export default class DataManager {
     })
   }
 
-  // attach (key, value) {
-  //   this.#data.attach(...arguments)
-  // }
+  attach (data) {
+    this.#attached = data
+  }
 
   initialize () {
     if (this.#initialized) {
