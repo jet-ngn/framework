@@ -1,4 +1,4 @@
-import { Entity, html, ready } from '../../src/index.js'
+import { Entity, DataModel, html, ready, DataStore } from '../../src/index.js'
 
 const Demo = new Entity({
   selector: 'body',
@@ -8,12 +8,41 @@ const Demo = new Entity({
     hey: {
       type: String,
       default: 'hey'
-    }
+    },
+
+    mod: new DataModel({
+      fields: {
+        hi: {
+          type: String,
+          default: 'hi'
+        }
+      }
+    }),
+
+    sto: new DataStore({
+      fields: {
+        hello: {
+          type: String,
+          default: 'hello'
+        },
+
+        wut: {
+          type: Boolean,
+          default: false
+        }
+      }
+    })
   },
 
   on: {
-    initialize () {
-      console.log(this.data);
+    initialized () {
+      this.data.sto.load([{
+        hello: 'hello'
+      }, {
+        hello: 'hi'
+      }, { wut: true }])
+
+      console.log(this.data.toJSON());
     }
   }
 })
