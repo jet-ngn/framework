@@ -13,7 +13,7 @@ export default class ReferenceManager {
   #nodes = {}
   #references = {}
   #reservedNames = ['add', 'remove', 'root']
-  #applyContext = selector => `${this.#context.selector ? `${this.#context.selector} ` : ''}${selector}`
+  // #applyContext = selector => `${this.#context.selector ? `${this.#context.selector} ` : ''}${selector}`
 
   constructor (context, selectors, root) {
     this.#context = context
@@ -60,11 +60,11 @@ export default class ReferenceManager {
     this.#references = {}
   }
 
-  createReference (name, node, manager = null) {
+  createReference (name, node) {
     let elements = []
 
     if (typeof node === 'string') {
-      elements = this.#getElements(manager ? manager.element : document, node)
+      elements = this.#getElements(node)
     }
 
     if (node instanceof ParsedNode) {
@@ -130,8 +130,8 @@ export default class ReferenceManager {
     delete collection[name]
   }
 
-  #getElements = (manager, selector) => {
-    return selector.startsWith('#') ? document.getElementById(selector) : document.querySelectorAll(selector)
+  #getElements = selector => {
+    return selector.startsWith('#') ? document.getElementById(selector) : (this.#root ?? document).querySelectorAll(selector)
   }
 
   #validateReference = (name, node) => {

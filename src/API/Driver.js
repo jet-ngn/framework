@@ -4,6 +4,7 @@ import MethodManager from '../methods/MethodManager.js'
 import NodeManager from './NodeManager.js'
 import PluginManager from '../plugins/PluginManager.js'
 import ReferenceManager from '../reference/ReferenceManager.js'
+import ReferenceElement from '../reference/ReferenceElement.js'
 import StateManager from '../states/StateManager.js'
 import { createId } from '../Utilities.js'
 
@@ -121,7 +122,11 @@ export default class Driver {
     return NodeManager.batch(...arguments)
   }
 
-  bind () {
+  bind (cfg, target) {
+    if (target instanceof ReferenceElement) {
+      return NodeManager.bindRef(cfg, target)
+    }
+
     return NodeManager.bind(this, ...arguments, this.root.retainFormatting)
   }
 
@@ -188,21 +193,32 @@ export default class Driver {
       // })
     }
 
-    this.#initialized = true
-    this.emit('initialized')
+    setTimeout(() => {
+      this.#initialized = true
+      this.emit('initialized')
+    }, 0)
   }
 
   reinitialize ({ selector, manager, element, data }) {
+    this.#initialized = false
+
     if (!!data) {
       this.#bindData(data)
     }
 
     this.#referenceManager.clear()
-    this.#eventManager.resetExecutions()
+    this.#eventManager.reset()
+
+    if (element && element !== this.root.element) {
+      console.log('TODO: REPLACE');
+    }
+
     this.emit('initialize')
-    this.emit('reinitialize')
-    this.emit('initialized')
-    this.emit('reinitialized')
+
+    setTimeout(() => {
+      this.#initialized = true
+      this.emit('initialized')
+    }, 0)
   }
 
   append (tag) {
@@ -239,7 +255,7 @@ export default class Driver {
   }
 
   #bindData = data => {
-    if (!this.dataManager) {
+    if (!this.#dataManager) {
       this.#dataManager = new DataManager(this, {})
       this.#dataManager.initialize()
     }

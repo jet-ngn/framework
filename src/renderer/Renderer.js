@@ -8,6 +8,11 @@ export default class Renderer {
   #templateManager
   #retainFormatting
 
+  #observer = new MutationObserver(mutations => {
+    this.#context.emit('rendered')
+    this.#observer.disconnect()
+  })
+
   constructor (context, target) {
     this.#context = context
     this.#target = target
@@ -32,11 +37,9 @@ export default class Renderer {
     return this.#target
   }
 
-  clear (target) {
-    this.#templateManager.clear()
-
-    while (target.lastChild) {
-      target.removeChild(this.root.lastChild)
+  clear () {
+    while (this.#target.lastChild) {
+      this.#target.removeChild(this.#target.lastChild)
     }
   }
 
@@ -61,13 +64,16 @@ export default class Renderer {
   }
 
   replace (tag) {
-    return this.#renderInitial(tag)
+    this.clear()
+    return this.#render('replace', tag)
   }
 
   #render = (type, tag) => {
     if (!(tag instanceof Tag)) {
       throw new TypeError(`${this.#context.type} ${this.#context.name}: : ${type}() expected tagged template literal, received "${NGN.typeof(tag)}"`)
     }
+
+    this.#observer.observe(this.#target, { childList: true })
 
     if (!this.#templateManager.initialized) {
       return this.#renderInitial(tag)
@@ -76,6 +82,7 @@ export default class Renderer {
     switch (type) {
       case 'append': return this.#templateManager.append(tag)
       case 'render': return this.#templateManager.reconcile(tag)
+      case 'replace': return this.#renderInitial(tag)
     }
   }
 

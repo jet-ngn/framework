@@ -251,13 +251,17 @@ export default function Component (tag, cfg) {
     throw new TypeError(`Component Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
   }
 
-  class Component extends CustomElement(cfg.extends ?? HTMLElement) {
+  class Component extends CustomElement(cfg.base ?? HTMLElement) {
     #template
     #retainFormatting
     #eventRegistry
 
     constructor () {
-      super(tag, cfg).attachShadow({ mode: cfg.mode ?? 'open' })
+      super(tag, cfg)
+      
+      if (!this.shadowRoot) {
+        this.attachShadow({ mode: cfg.mode ?? 'open' })
+      }
 
       this.#eventRegistry = new DOMEventRegistry(this.shadowRoot)
       this.#retainFormatting = cfg.retainFormatting ?? false

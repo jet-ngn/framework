@@ -2,6 +2,7 @@ import HTMLParser from './HTMLParser.js'
 import ParsedNode from './ParsedNode.js'
 import ElementReconciler from '../reconciler/ElementReconciler.js'
 import DOMEventRegistry from '../registries/DOMEventRegistry.js'
+import ComponentRegistry from '../registries/ComponentRegistry.js'
 
 export default class ElementNode extends ParsedNode {
   #id = NGN.DATA.util.GUID()
@@ -28,7 +29,7 @@ export default class ElementNode extends ParsedNode {
       context.addReference(ref, this)
     }
 
-    if (this.isCustomElement) {
+    if (this.isComponent) {
       const handler = evt => {
         this.source.initialize(this.context)
         this.source.removeEventListener('connected', handler)
@@ -63,6 +64,10 @@ export default class ElementNode extends ParsedNode {
 
   get id () {
     return this.#id
+  }
+
+  get isComponent() {
+    return ComponentRegistry.has(this.tag.toLowerCase())
   }
 
   get isCustomElement () {

@@ -1,0 +1,1 @@
+- All element nodes should be references. ReferenceElement should be the core accessor for any DOM elements, text and comment nodes included.

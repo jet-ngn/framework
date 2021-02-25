@@ -7,7 +7,8 @@
   "scripts": {
     "build": "dev build",
     "manually": "dev test -rt manual tests/*.js",
-    "test": "dev test -rt browser tests/*.js"
+    "test": "dev test -rt browser tests/*.js",
+    "ws": "dev ws"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,7 @@
   },
   "homepage": "https://github.com/jet-ngn/framework#readme",
   "devDependencies": {
-    "@author.io/dev": "^1.1.5"
+    "@author.io/dev": "^1.1.6"
   },
   "dev": {
     "verbose": true,
@@ -29,6 +30,8 @@
       "jet": "/app/.dist/jet/index.js",
       "jet-debug": "/app/.dist/jet-debug/index.js"
     },
-    "autoimport": ["import NGN from 'ngn'"]
+    "autoimport": [
+      "import NGN from 'ngn'"
+    ]
   }
 }

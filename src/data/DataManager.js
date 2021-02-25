@@ -23,13 +23,7 @@ export default class DataManager {
   }
 
   get data () {
-    const { data } = this.#collection
-
-    Object.defineProperty(data, 'bind', {
-      value: this.#createBinding
-    })
-
-    return { ...data, ...(this.#attached ?? {}) }
+    return this.#collection.data
   }
 
   applyDeferredBindings () {
@@ -49,7 +43,11 @@ export default class DataManager {
   }
 
   attach (data) {
-    this.#attached = data
+    this.#collection.attach(data)
+  }
+
+  clearAttachments () {
+    this.#collection.clearAttachments()
   }
 
   initialize () {
@@ -57,7 +55,7 @@ export default class DataManager {
       throw Error(`${this.#context.type} "${this.#context.name}": Data Manager already initialized`)
     }
 
-    this.#collection = new DataCollection(this.#context, this.#cfg)
+    this.#collection = new DataCollection(this.#context, this.#cfg, this.#createBinding)
     this.#initialized = true
   }
 
