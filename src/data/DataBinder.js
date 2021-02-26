@@ -1,7 +1,5 @@
-import DataBinder from './DataBinder.js'
-
-export default class DataModel extends NGN.EventEmitter {
-  #model
+export default class DataBinder extends NGN.EventEmitter {
+  #context
 
   #bindings = {
     attributes: {},
@@ -13,44 +11,30 @@ export default class DataModel extends NGN.EventEmitter {
     interpolations: {}
   }
 
-  constructor (cfg) {
+  constructor (context) {
     super()
+    this.#context = context
+  }
 
-    const Model = new NGN.DATA.Model({ autoid: true, ...cfg })
-    this.#model = new Model()
+  applyDeferredBindings() {
+    const { attributes, interpolations } = this.#deferredBindings
 
-    if (cfg.hasOwnProperty('fields')) {
-      Object.keys(cfg.fields).forEach(field => {
-        Object.defineProperty(this, field, {
-          get: () => this.#model[field],
-          set: value => this.#model[field] = value
-        })
+    Object.keys(attributes).forEach(field => {
+      attributes[field].forEach(({ name, element, process }) => {
+        this.#bindAttribute(field, element, name, process)
       })
-    }
-
-    const self = this
-
-    this.#model.on('*', function () {
-      self.emit(this.event, ...arguments)
-      // console.log(this.event)
     })
-  }
 
-  get data () {
-    return this.#model.data
-  }
-
-  get representation () {
-    return this.#model.representation
-  }
-
-  addField (name, cfg) {
-    this.#model.addField(...arguments)
+    Object.keys(interpolations).forEach(field => {
+      interpolations[field].forEach(({ interpolation, process }) => {
+        this.#bindInterpolation(field, interpolation, process)
+      })
+    })
   }
 
   bind (field, process) {
     if (!this.hasField(field)) {
-      throw new ReferenceError(`Data field "${field}" not found`)
+      throw new ReferenceError(`${this.#context.constructor.name} "${this.#context.name}": Data field "${field}" not found`)
     }
 
     const value = this.getField(field)
@@ -70,25 +54,9 @@ export default class DataModel extends NGN.EventEmitter {
     }
   }
 
-  getField (field) {
-    return this.#model[field]
-  }
-
-  hasField(field) {
-    return this.#model.hasDataField(field)
-  }
-
-  load (data) {
-    this.#model.load(data)
-  }
-
-  setField (field, value) {
-    this.#model[field] = value
-  }
-
   // TODO: Collapse this into a single event listener rather than one per binding
   #addBindingListener = (collection, field, callback) => {
-    this.#model.on(`field.update.${field}`, change => {
+    this.#context.on(`data.${field}.changed`, (evt, change) => {
       const bindings = this.#bindings[collection][field]
 
       for (let i = 0, length = bindings.length; i < length; i++) {
@@ -114,11 +82,11 @@ export default class DataModel extends NGN.EventEmitter {
       attribute,
       process: process ?? null
     }, () => {
-      this.#addBindingListener('attributes', field, (binding, change) => {
+      this.#addBindingListener('attributes', field, (binding, { previous, current }) => {
         const { element, attribute, process } = binding
 
-        if (change.new !== change.old) {
-          element.setAttribute(attribute, process ? process(change.new) : change.new)
+        if (current !== previous) {
+          element.setAttribute(attribute, process ? process(current) : current)
         }
       })
     })
@@ -129,11 +97,11 @@ export default class DataModel extends NGN.EventEmitter {
       interpolation,
       process: process ?? null
     }, () => {
-      this.#addBindingListener('interpolations', field, (binding, change) => {
+      this.#addBindingListener('interpolations', field, (binding, { previous, current }) => {
         const { interpolation, process } = binding
 
-        if (change.new !== change.old) {
-          interpolation.update(process ? process(change.new) : change.new)
+        if (current !== previous) {
+          interpolation.update(process ? process(current) : current)
         }
       })
     })
