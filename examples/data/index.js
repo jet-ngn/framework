@@ -5,61 +5,28 @@ const Demo = new Entity({
   name: 'data',
 
   data: {
-    hey: {
-      type: String,
-      default: 'hey'
-    },
-
-    mod: new DataModel({
-      fields: {
-        hi: {
-          type: String,
-          default: 'hi'
-        }
-      }
-    }),
-
-    // sto: new DataStore({
-    //   fields: {
-    //     hello: {
-    //       type: String,
-    //       default: 'hello'
-    //     },
-
-    //     wut: {
-    //       type: Boolean,
-    //       default: false
-    //     }
-    //   }
-    // })
+    string: {
+      type: Boolean,
+      default: true
+    }
   },
 
   on: {
     initialize () {
-      // this.data.sto.load([{
-      //   hello: 'hello'
-      // }, {
-      //   hello: 'hi'
-      // }, { wut: true }])
-      // console.log(this.data.mod.bind('hi'));
-      // <div>${this.data.mod.bind('hi')}</div>
       this.render(html`
         ${this.bind({
           attributes: {
-            class: this.data.bind('hey'),
-            id: this.data.mod.bind('hi')
+            class: [{
+              test: this.data.bind('string')
+            }]
           }
-        }, html`<div>${this.data.bind('hey')}</div>`)}
+        }, html`<div>TEST</div>`)}
       `)
 
-      // console.log(this.data.hey)
-
       setTimeout(() => {
-        this.data.hey = 'wuuuuut'
+        this.data.string = false
 
-        setTimeout(() => {
-          this.data.mod.hi = 'helloooooo'
-        }, 1500)
+        setTimeout(() => this.data.string = true, 1500)
       }, 1500)
     }
   }

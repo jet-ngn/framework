@@ -3,6 +3,7 @@ import Tag from '../tag/Tag.js'
 import Renderer from '../renderer/Renderer.js'
 import ParsedNode from '../parser/ParsedNode.js'
 import DOMEventRegistry from '../registries/DOMEventRegistry.js'
+import { createId } from '../Utilities.js'
 
 export default class ReferenceElement extends ReferenceElementProxy {
   #context
@@ -49,7 +50,7 @@ export default class ReferenceElement extends ReferenceElementProxy {
   }
 
   find (selector) {
-    return this.element.querySelector(selector)
+    return new ReferenceElement(this.#context, createId(), this.element.querySelector(selector))
   }
 
   forEach (cb) {

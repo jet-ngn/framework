@@ -3,6 +3,7 @@ export default class DataBinder extends NGN.EventEmitter {
 
   #bindings = {
     attributes: {},
+    classNames: {},
     interpolations: {}
   }
 
@@ -46,6 +47,10 @@ export default class DataBinder extends NGN.EventEmitter {
 
       bindAttribute: (element, name, defer = false) => {
         this.#registerAttributeBinding(field, element, name, process, defer)
+      },
+
+      bindClassName: (classList) => {
+        this.#registerClassNameBinding(field, classList, process, defer)
       },
 
       bindInterpolation: (interpolation, defer = false) => {
@@ -92,6 +97,17 @@ export default class DataBinder extends NGN.EventEmitter {
     })
   }
 
+  #bindClassName = (field, classList, process) => {
+    this.#bind('classNames', field, {
+      classList,
+      process: process ?? null
+    }, () => {
+      this.#addBindingListener('classNames', field, (binding, { previous, current }) => {
+        console.log(binding)
+      })
+    })
+  }
+
   #bindInterpolation = (field, interpolation, process) => {
     this.#bind('interpolations', field, {
       interpolation,
@@ -120,6 +136,14 @@ export default class DataBinder extends NGN.EventEmitter {
     } else {
       this.#deferredBindings.attributes[field] = [binding]
     }
+  }
+
+  #registerClassNameBinding = (field, classList, process, defer = false) => {
+    if (!defer) {
+      return this.#bindClassName(field, classList, process)
+    }
+
+    console.log('TODO: HANDLE DEFERRED CLASSNAME BINDING')
   }
 
   #registerInterpolationBinding = (field, interpolation, process, defer = false) => {

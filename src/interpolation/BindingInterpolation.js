@@ -136,7 +136,7 @@ export default class BindingInterpolation extends Interpolation {
     const type = NGN.typeof(value)
 
     switch (type) {
-      case 'array': return this.#resolveList(value)
+      case 'array': return this.#resolveList(value, element)
 
       case 'object':
         if (value.type && value.type === 'data') {
@@ -183,10 +183,19 @@ export default class BindingInterpolation extends Interpolation {
     }, {})
   }
 
-  #resolveList = arr => {
+  #resolveList = (arr, element) => {
     return arr.reduce((list, item) => {
       if (NGN.typeof(item) === 'object') {
-        list.push(...Object.keys(item).filter(key => item[key] === true))
+        list.push(...Object.keys(item).filter(key => {
+          const data = item[key]
+
+          if (NGN.typeof(data) === 'object') {
+            data.bindClassName(element, key)
+            return data.initialValue
+          }
+
+          return item[key] === true
+        }))
       } else {
         list.push(HTMLParser.escapeString(`${item}`))
       }
