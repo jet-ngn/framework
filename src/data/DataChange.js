@@ -1,4 +1,4 @@
-export default class PropertyChange {
+export default class DataChange {
   #property
   #change
   #aborted = false
@@ -16,8 +16,8 @@ export default class PropertyChange {
     return this.#change.current
   }
 
-  get next () {
-    return this.#change.next
+  get update () {
+    return this.#change.update
   }
 
   abort () {

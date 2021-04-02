@@ -1,34 +1,18 @@
-import Template from '../renderer/Template.js'
-import Renderer from '../renderer/Renderer.js'
-
 export default class Interpolation {
   #context
   #value
-  #index
   #retainFormatting
   rendered = null
+  id = null
 
-  constructor (context, interpolation, index, retainFormatting) {
+  constructor (context, value, retainFormatting) {
     this.#context = context
-    this.#value = interpolation
-    this.#index = index
+    this.#value = value
     this.#retainFormatting = retainFormatting ?? false
   }
 
   get context () {
     return this.#context
-  }
-
-  get id () {
-    return `i${this.#index}`
-  }
-
-  get index () {
-    return this.#index
-  }
-
-  set index (index) {
-    this.#index = index
   }
 
   get retainFormatting () {

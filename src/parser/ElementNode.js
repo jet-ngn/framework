@@ -2,7 +2,6 @@ import HTMLParser from './HTMLParser.js'
 import ParsedNode from './ParsedNode.js'
 import ElementReconciler from '../reconciler/ElementReconciler.js'
 import DOMEventRegistry from '../registries/DOMEventRegistry.js'
-import ComponentRegistry from '../registries/ComponentRegistry.js'
 
 export default class ElementNode extends ParsedNode {
   #id = NGN.DATA.util.GUID()
@@ -66,8 +65,8 @@ export default class ElementNode extends ParsedNode {
     return this.#id
   }
 
-  get isComponent() {
-    return ComponentRegistry.has(this.tag.toLowerCase())
+  get isComponent () {
+    return !!customElements.get(this.tag.toLowerCase())
   }
 
   get isCustomElement () {
@@ -199,7 +198,29 @@ export default class ElementNode extends ParsedNode {
     this.source.setAttribute(name, HTMLParser.escapeString(value))
   }
 
-  setAttributes (attrs) {
-    Object.keys(attrs).forEach(attr => this.setAttribute(attr, attrs[attr]))
+  setAttributes (attributes) {
+    Object.keys(attributes).forEach(name => {
+      this.#setAttribute(name, attributes[name])
+    })
+  }
+
+  #setAttribute = (name, value) => {
+    switch (NGN.typeof(value)) {
+      case 'object': return this.#setAttributeObject(name, value)
+      default: return this.setAttribute(name, this.#processAttributeValue(value))
+    }
+  }
+
+  #setAttributeObject = (name, obj) => {
+    Object.keys(obj).forEach(slug => {
+      this.#setAttribute(`${name}-${slug}`, obj[slug])
+    })
+  }
+
+  #processAttributeValue = value => {
+    switch (NGN.typeof(value)) {
+      case 'array': return value.join(' ')
+      default: return value
+    }
   }
 }

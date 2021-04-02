@@ -88,7 +88,14 @@ export default class ReferenceManager {
     }
 
     if (this.#references.hasOwnProperty(name)) {
-      return this.#references[name]
+      const ref = this.#references[name]
+
+      if (!this.#selectors.hasOwnProperty(name)) {
+        return ref  
+      }
+
+      const newRef = this.createReference(name, this.#selectors[name], manager)
+      return ref.element === newRef.element ? ref : newRef
     }
 
     if (this.#selectors.hasOwnProperty(name)) {

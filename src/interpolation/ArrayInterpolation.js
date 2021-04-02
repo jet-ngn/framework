@@ -1,3 +1,4 @@
+import Constants from '../Constants.js'
 import MultipleChildInterpolation from './MultipleChildInterpolation.js'
 import Renderer from '../renderer/Renderer.js'
 import Template from '../renderer/Template.js'
@@ -8,13 +9,18 @@ export default class ArrayInterpolation extends MultipleChildInterpolation {
   placeholder
   #lastNode = null
 
-  constructor (context, interpolation, index, retainFormatting) {
-    super(context, interpolation.map(item => new Template(context, item, retainFormatting)), index, retainFormatting)
+  constructor (context, interpolation, retainFormatting) {
+    super(
+      context,
+      interpolation.map(item => new Template(context, item, retainFormatting)),
+      retainFormatting
+    )
+
     this.placeholder = document.createComment(this.id)
   }
 
   get type () {
-    return 'array'
+    return Constants.INTERPOLATION_ARRAY
   }
 
   reconcile (update) {

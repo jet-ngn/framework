@@ -39,11 +39,21 @@ const Demo = new Entity({
     initialize () {
       this.render(html`
         <div class="ref">REF</div>
+        <div class="other">NOT REF</div>
       `)
 
       this.emit('render')
 
-      setTimeout(() => this.emit('render'), 1500)
+      setTimeout(() => {
+        // this.emit('render')
+
+        this.refs.refDiv.classList.remove('ref')
+
+        const newEl = this.root.find('.other')
+        newEl.classList.add('ref')
+
+        console.log(this.refs.refDiv);
+      }, 1500)
     },
 
     render (evt) {

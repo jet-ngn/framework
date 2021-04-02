@@ -1,3 +1,4 @@
+import Constants from '../Constants.js'
 import MultipleChildInterpolation from './MultipleChildInterpolation.js'
 import Renderer from '../renderer/Renderer.js'
 import Template from '../renderer/Template.js'
@@ -52,7 +53,7 @@ export default class BatchInterpolation extends MultipleChildInterpolation {
   #size
   #tasks = []
 
-  constructor (context, interpolation, index, retainFormatting) {
+  constructor (context, interpolation, retainFormatting) {
     super(...arguments)
 
     this.#type = interpolation.type
@@ -67,6 +68,10 @@ export default class BatchInterpolation extends MultipleChildInterpolation {
 
   get tasks () {
     return this.#tasks
+  }
+
+  get type () {
+    return Constants.INTERPOLATION_BATCH
   }
 
   reconcile (update) {

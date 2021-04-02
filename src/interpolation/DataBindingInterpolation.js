@@ -1,19 +1,30 @@
+import Constants from '../Constants.js'
 import Interpolation from './Interpolation.js'
-import HTMLParser from '../parser/HTMLParser.js'
 import Renderer from '../renderer/Renderer.js'
 import Template from '../renderer/Template.js'
+import DataBindingRegistry from '../registries/DataBindingRegistry.js'
 
-export default class DataInterpolation extends Interpolation {
-  #field
-  #value
+export default class DataBindingInterpolation extends Interpolation {
   #template = null
+  #value
 
-  constructor (context, { field, initialValue, bindInterpolation }, index, retainFormatting) {
+  constructor (context, { model, field, process }, retainFormatting) {
     super(...arguments)
-    this.#field = field
-    this.#value = initialValue
 
-    bindInterpolation(this, context instanceof HTMLElement)
+    const value = model[field]
+    this.#value = process ? process(value) : value
+
+    DataBindingRegistry.registerInterpolationBinding({
+      model,
+      field,
+      process,
+      interpolation: this,
+      defer: context instanceof HTMLElement
+    })
+  }
+
+  get type () {
+    return Constants.INTERPOLATION_DATABINDING
   }
 
   reconcile (update) {

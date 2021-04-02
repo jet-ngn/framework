@@ -1,8 +1,11 @@
+import Constants from '../Constants.js'
+
 import StyleRegistry from '../registries/StyleRegistry.js'
-import DOMEventRegistry from '../registries/DOMEventRegistry.js'
-import HTMLParser from '../parser/HTMLParser.js'
+// import DOMEventRegistry from '../registries/DOMEventRegistry.js'
+// import HTMLParser from '../parser/HTMLParser.js'
 import Interpolation from './Interpolation.js'
-import Renderer from '../renderer/Renderer.js'
+// import Renderer from '../renderer/Renderer.js'
+import AttributeBinding from '../data/AttributeBinding.js'
 
 export default class BindingInterpolation extends Interpolation {
   #config
@@ -10,7 +13,7 @@ export default class BindingInterpolation extends Interpolation {
   #className
   #shadowRoot
 
-  constructor (context, interpolation, index, retainFormatting) {
+  constructor (context, interpolation, retainFormatting) {
     super(...arguments)
 
     this.#config = interpolation.config
@@ -19,7 +22,7 @@ export default class BindingInterpolation extends Interpolation {
   }
 
   get type () {
-    return 'bind'
+    return Constants.INTERPOLATION_BINDING
   }
 
   get config () {
@@ -65,16 +68,9 @@ export default class BindingInterpolation extends Interpolation {
     }
 
     const element = nodes[0]
-    let attributes = this.#processAttributes(element, this.#config.attributes)
-
-    if (this.#config.hasOwnProperty('css')) {
-      this.#applyCss(attributes, this.#config.css, element)
-    }
-
-    if (Object.keys(attributes).length > 0) {
-      this.#applyAttributes(attributes, element)
-    }
-
+    
+    this.#applyAttributes(element, this.#config.attributes)
+    
     if (addEventListeners && Object.keys(this.#config.on ?? {}).length > 0) {
       element.addEventListeners(this.#config.on)
     }
@@ -82,48 +78,47 @@ export default class BindingInterpolation extends Interpolation {
     this.rendered = element.render()
 
     if (this.#config.hasOwnProperty('entity')) {
-      const { entity } = this.#config
-      const cfg = {
-        manager: this.#template.context,
-        element
-      }
-
-      if (this.#config.hasOwnProperty('data')) {
-        cfg.data = this.#config.data
-      }
-
-      entity[entity.initialized ? 'reinitialize' : 'initialize'](cfg)
+      this.#bindEntity(element)
     }
 
     return this.rendered
   }
 
-  #applyAttributes = (attributes, element) => {
-    const classList = attributes['class']
+  #applyAttributes = element => {
+    let attributeBindings = new AttributeBinding(element, this.#config.attributes)
 
-    if (classList) {
-      if (Array.isArray(classList)) {
-        element.addClass(...classList)
-      } else {
-        element.addClass(classList)
-      }
-
-      delete attributes['class']
+    if (this.#config.hasOwnProperty('css')) {
+      this.#applyCss(attributeBindings, this.#config.css, element)
     }
 
-    element.setAttributes(attributes)
+    if (attributeBindings.hasAttributes) {
+      this.#applyAttributeBindings(element, attributeBindings)
+    }
   }
 
-  #applyCss = (attributes, css, element) => {
+  #applyAttributeBindings = (element, { processed }) => {
+    const classes = processed['class']
+
+    if (classes) {
+      if (Array.isArray(classes)) {
+        element.addClass(...classes)
+      } else {
+        console.log(element);
+        element.addClass(classes)
+      }
+
+      delete processed['class']
+    }
+
+    element.setAttributes(processed)
+  }
+
+  #applyCss = (attributeBindings, css, element) => {
     if (!this.#className) {
       this.#className = `${this.id}_${NGN.DATA.util.GUID()}`
     }
 
-    if (attributes.hasOwnProperty('class')) {
-      attributes['class'].push(this.#className)
-    } else {
-      attributes['class'] = [this.#className]
-    }
+    attributeBindings.addClass(this.#className)
 
     if (StyleRegistry.hasRule(this.#className)) {
       StyleRegistry.updateRule(this.#className, css)
@@ -132,75 +127,18 @@ export default class BindingInterpolation extends Interpolation {
     }
   }
 
-  #processAttribute = (element, name, value) => {
-    const type = NGN.typeof(value)
-
-    switch (type) {
-      case 'array': return this.#resolveList(value, element)
-
-      case 'object':
-        if (value.type && value.type === 'data') {
-          value.bindAttribute(element, name, element.context instanceof HTMLElement)
-          return value.initialValue
-        }
-
-        return value
-
-      case 'boolean': return value
-
-      case 'string':
-      case 'number': return HTMLParser.escapeString(`${value}`)
-
-      default: throw new TypeError(`Invalid attribute "${name}"`)
-    }
-  }
-
-  #processAttributes = (element, attributes) => {
-    if (!attributes) {
-      return {}
+  #bindEntity = element => {
+    const { entity } = this.#config
+    
+    const cfg = {
+      manager: this.#template.context,
+      element
     }
 
-    const type = NGN.typeof(attributes)
-
-    if (type !== 'object') {
-      throw new TypeError(`bind() attributes configuration: Expected object, received ${type}`)
+    if (this.#config.hasOwnProperty('data')) {
+      cfg.data = this.#config.data
     }
 
-    return Object.keys(attributes).reduce((result, name) => {
-      const value = attributes[name]
-      const processed = this.#processAttribute(element, name, value)
-
-      if (NGN.typeof(processed) === 'object') {
-        Object.keys(processed).forEach(attribute => {
-          const val = processed[attribute]
-          result[`${name}-${attribute}`] = this.#processAttribute(element, attribute, typeof val === 'boolean' ? `${val}` : val)
-        })
-      } else {
-        result[name] = processed
-      }
-
-      return result
-    }, {})
-  }
-
-  #resolveList = (arr, element) => {
-    return arr.reduce((list, item) => {
-      if (NGN.typeof(item) === 'object') {
-        list.push(...Object.keys(item).filter(key => {
-          const data = item[key]
-
-          if (NGN.typeof(data) === 'object') {
-            data.bindClassName(element, key)
-            return data.initialValue
-          }
-
-          return item[key] === true
-        }))
-      } else {
-        list.push(HTMLParser.escapeString(`${item}`))
-      }
-
-      return list
-    }, [])
+    entity[entity.initialized ? 'reinitialize' : 'initialize'](cfg)
   }
 }

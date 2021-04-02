@@ -1,3 +1,4 @@
+import Constants from '../Constants.js'
 import Template from '../renderer/Template.js'
 import Tag from '../tag/Tag.js'
 
@@ -13,14 +14,14 @@ export default class NodeManager {
     }
   }
 
-  static bind (context, cfg, tag, retainFormatting = false) {
-    if (cfg instanceof Tag) {
-      [cfg, tag] = [tag, cfg]
+  static bind (context, config, tag, retainFormatting = false) {
+    if (config instanceof Tag) {
+      [config, tag] = [tag, config]
     }
 
     return {
-      type: 'bind',
-      config: cfg,
+      type: Constants.INTERPOLATION_BINDING,
+      config,
       template: new Template(context, tag, retainFormatting)
     }
   }

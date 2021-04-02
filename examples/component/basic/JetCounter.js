@@ -24,7 +24,7 @@ const JetCounter = new Component('jet-counter', {
 
   get template () {
     const { data } = this
-
+    
     return html`
       <div class="count">${data.bind('count')}</div>
 
@@ -54,6 +54,7 @@ const JetCounter = new Component('jet-counter', {
   states: {
     incremented: {
       on () {
+        console.log('hello');
         this.classList.add('incremented')
       },
 
@@ -77,7 +78,13 @@ const JetCounter = new Component('jet-counter', {
           this.state = change.current > 0 ? 'incremented' : 'idle'
         }
       }
-    }
+    },
+
+    // initialize () {
+    //   setTimeout(() => {
+    //     this.data.count++
+    //   }, 1500)
+    // }
   }
 })
 

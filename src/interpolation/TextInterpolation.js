@@ -1,24 +1,19 @@
+import Constants from '../Constants.js'
 import Interpolation from './Interpolation.js'
 
 export default class TextInterpolation extends Interpolation {
-  // #rendered
+  #value
 
-  get type () {
-    return 'text'
+  constructor (context, text, retainFormatting) {
+    super(...arguments)
+    this.#value = `${text}`
   }
 
-  // reconcile (update) {
-  //   if (this.value === update.value) {
-  //     return
-  //   }
-  //
-  //   update = update.render()
-  //   this.#rendered.replaceWith(update)
-  //   this.#rendered = update
-  // }
+  get type () {
+    return Constants.INTERPOLATION_TEXT
+  }
 
-  // render () {
-  //   this.#rendered = document.createTextNode(this.value)
-  //   return this.#rendered
-  // }
+  get value () {
+    return this.#value
+  }
 }

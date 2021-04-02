@@ -73,9 +73,9 @@ class HTMLParser {
       } else if (interpolation === null) {
         continue
       }
-
+      
       interpolation = interpolationManager.addInterpolation(interpolation, i)
-
+      
       if (interpolation.type === 'text' && ['string', 'number'].includes(typeof interpolation.value)) {
         html += this.#processString('' + interpolation.value, retainFormatting)
         continue

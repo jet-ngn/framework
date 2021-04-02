@@ -1,8 +1,9 @@
+import Constants from '../Constants.js'
 import Interpolation from './Interpolation.js'
 
 export default class PlaceholderInterpolation extends Interpolation {
   get type () {
-    return 'placeholder'
+    return Constants.INTERPOLATION_PLACEHOLDER
   }
 
   reconcile (update) {

@@ -3,7 +3,6 @@ import CSSParser from '../parser/CSSParser.js'
 import Renderer from '../renderer/Renderer.js'
 import { DOMEventRegistry } from '../registries/DOMEventRegistry.js'
 import { createId } from '../Utilities.js'
-import DataInterpolation from '../interpolation/DataInterpolation.js'
 
 import AttributeManager from '../attributes/AttributeManager.js'
 import EventManager from '../events/EventManager.js'
@@ -19,6 +18,7 @@ const CustomElement = superClass => class extends superClass {
   #name
   #cfg
   #initialized = false
+  #connected = false
 
   #manager
   #attributeManager
@@ -39,7 +39,7 @@ const CustomElement = superClass => class extends superClass {
 
     if (Object.keys(cfg.data ?? {}).length > 0) {
       this.#dataManager = new DataManager(this, cfg.data)
-      this.#dataManager.initialize()
+      // this.#dataManager.initialize()
     }
 
     if (Object.keys(cfg.methods ?? {}).length > 0) {
@@ -51,6 +51,10 @@ const CustomElement = superClass => class extends superClass {
     if (cfg.plugins?.length > 0) {
       this.#pluginManager = new PluginManager(this, cfg.plugins)
     }
+  }
+
+  get connected () {
+    return this.#connected
   }
 
   get config () {
@@ -145,6 +149,7 @@ const CustomElement = superClass => class extends superClass {
       this.#attributeManager.initial.forEach(({ name, value }) => this.setAttribute(name, value))
     }
 
+    this.#connected = true
     this.dispatchEvent(new CustomEvent('connected'))
     this.emit('connected')
   }
@@ -178,7 +183,6 @@ const CustomElement = superClass => class extends superClass {
     this.#manager = manager
     this.#referenceManager = new ReferenceManager(this, this.#cfg.references ?? {}, { element: this })
     this.#eventManager.initialize()
-    this.#dataManager.applyDeferredBindings()
 
     this.emit('initialize')
     this.#stateManager.initialize()
@@ -235,7 +239,7 @@ const CustomElement = superClass => class extends superClass {
   #bindData = data => {
     if (!this.dataManager) {
       this.#dataManager = new DataManager(this, {})
-      this.#dataManager.initialize()
+      // this.#dataManager.initialize()
     }
 
     Object.keys(data).forEach(key => this.#dataManager.attach(key, data[key]))

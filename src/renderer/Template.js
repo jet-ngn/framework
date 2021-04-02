@@ -1,3 +1,4 @@
+import Tag from '../tag/Tag.js'
 import Renderer from './Renderer.js'
 import HTMLParser from '../parser/HTMLParser.js'
 import InterpolationManager from '../interpolation/InterpolationManager.js'
@@ -14,6 +15,11 @@ export default class Template {
 
   constructor (context, tag, retainFormatting) {
     this.#context = context
+
+    if (!(tag instanceof Tag)) {
+      throw new TypeError(`Invalid template: expected "Tag", received "${NGN.typeof(tag)}"`)
+    }
+
     this.#tag = tag
     this.#interpolationManager = new InterpolationManager(this)
     this.#retainFormatting = retainFormatting ?? context.retainFormatting

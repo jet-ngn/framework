@@ -1,3 +1,4 @@
+import Constants from '../Constants.js'
 import NodeManager from './NodeManager.js'
 import { createId } from '../Utilities.js'
 
@@ -19,6 +20,10 @@ class PartialInstance {
     return this.#name
   }
 
+  get namespace () {
+    return this.#context.namespace
+  }
+
   get type () {
     return 'partial'
   }
@@ -32,7 +37,7 @@ class PartialInstance {
   }
 
   emit (evt, ...rest) {
-    evt = `${this.#context.namespace}.${this.name}.${arguments[0]}`
+    evt = `${this.namespace}.${this.name}.${arguments[0]}`
     NGN.BUS.emit(evt, this, ...rest)
   }
 
@@ -48,7 +53,7 @@ export default function Partial (cfg) {
 
   return {
     render: (...args) => ({
-      type: 'partial',
+      type: Constants.INTERPOLATION_PARTIAL,
       config: cfg,
       constructor: PartialInstance,
       renderFn () {

@@ -1,5 +1,9 @@
 import { Entity, Bus, Partial, DataStore, html, ready } from '../../../src/index.js'
 
+Bus.on('*', function () {
+  console.log(this.event)
+})
+
 const Test = Partial({
   name: 'partial',
 
@@ -14,9 +18,30 @@ const Test = Partial({
             this.emit('button.clicked', number)
           }
         }
-      }, html`<button>CLICK ME</button>`)}
+      }, html`
+        <div class="partial">
+          PARTIAL 1
+          ${Test2.render()}
+        </div>
+      `)}
 
       <hr />
+    `
+  }
+})
+
+const Test2 = Partial({
+  name: 'partial2',
+
+  render () {
+    return html`
+      ${this.bind({
+        on: {
+          click: console.log
+        }
+      }, html`
+        <button>CLICK ME</button>
+      `)}
     `
   }
 })

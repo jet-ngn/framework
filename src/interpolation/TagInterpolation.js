@@ -1,9 +1,10 @@
 import MultipleChildInterpolation from './MultipleChildInterpolation.js'
+import Constants from '../Constants.js'
 import Renderer from '../renderer/Renderer.js'
 
 export default class TagInterpolation extends MultipleChildInterpolation {
   get type () {
-    return 'tag'
+    return Constants.INTERPOLATION_TAG
   }
 
   reconcile (update) {

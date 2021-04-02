@@ -1,19 +1,35 @@
+import DataModel from './DataModel.js'
+
+function constructModel (cfg) {
+  const ModelLoader = function (data, fast = false) {
+    let model = new DataModel(cfg)
+
+    if (data) {
+      model.load(data)
+    }
+
+    return model
+  }
+
+  return ModelLoader
+}
+
 export default class DataStore extends NGN.EventEmitter {
   #store
   #suppressEvents = false
 
-  constructor (model) {
+  constructor (cfg) {
     super()
 
     this.#store = new NGN.DATA.Store({
-      model: NGN.DATA.Model(model)
+      model: constructModel(cfg)
     })
 
-    // const self = this
-    //
-    // this.#store.on('*', function () {
-    //   self.emit(this.event, ...arguments)
-    // })
+    const self = this
+    
+    this.#store.on('*', function () {
+      self.emit(this.event, ...arguments)
+    })
   }
 
   get data () {
@@ -37,10 +53,10 @@ export default class DataStore extends NGN.EventEmitter {
   }
 
   get records () {
-    return this.#store.records.map(record => record.data)
+    return this.#store.records
   }
 
-  add (record) {
+  add (record, suppressEvent = false) {
     this.#store.add(record)
   }
 
@@ -104,17 +120,10 @@ export default class DataStore extends NGN.EventEmitter {
     }
 
     for (let i = 0, length = data.length; i < length; i++) {
-      this.#store.add(data[i], true)
+      this.add(data[i], true)
     }
 
     this.emit('load', this.#store.records)
-
-    // if (this.#store.recordCount > 0) {
-    //   this.#suppressEvents = true
-    //   return this.#store.reload(data)
-    // }
-    //
-    // this.#store.load(data)
   }
 
   map (cb) {
@@ -129,5 +138,9 @@ export default class DataStore extends NGN.EventEmitter {
   sort (cb) {
     this.#store.sort(cb)
     return this.#store.records
+  }
+
+  toJSON () {
+    return this.#store.representation
   }
 }

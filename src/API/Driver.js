@@ -171,10 +171,6 @@ export default class Driver {
     this.#referenceManager = new ReferenceManager(this, this.#cfg.references ?? {}, { selector, element })
     this.#eventManager.initialize()
 
-    if (this.#dataManager) {
-      this.#dataManager.initialize()
-    }
-
     if (!!data) {
       this.#bindData(data)
     }
@@ -257,7 +253,6 @@ export default class Driver {
   #bindData = data => {
     if (!this.#dataManager) {
       this.#dataManager = new DataManager(this, {})
-      this.#dataManager.initialize()
     }
 
     this.#dataManager.attach(data)

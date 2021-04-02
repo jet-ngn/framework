@@ -1,3 +1,4 @@
+import Constants from '../Constants.js'
 import Interpolation from './Interpolation.js'
 import Renderer from '../renderer/Renderer.js'
 import Template from '../renderer/Template.js'
@@ -7,7 +8,7 @@ export default class PartialInterpolation extends Interpolation {
   #template
   #placeholder
 
-  constructor (context, { config, constructor, renderFn }, index, retainFormatting) {
+  constructor (context, { config, constructor, renderFn }, retainFormatting) {
     super(...arguments)
 
     this.#partial = new constructor(context, config)
@@ -24,7 +25,7 @@ export default class PartialInterpolation extends Interpolation {
   }
 
   get type () {
-    return 'partial'
+    return Constants.INTERPOLATION_PARTIAL
   }
 
   insertAfter (fragment) {

@@ -7,3 +7,7 @@ For example, calling insertAdjacentHTML should generate new References for each 
 Each Reference has a template attached to it which can be altered, triggering re-renders.
 
 This will emulate the behavior of a native dom reconciler.
+
+
+
+- Add "update()" method to Partials. This will re-render the partial in place.

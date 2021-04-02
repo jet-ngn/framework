@@ -1,10 +1,12 @@
+import Constants from '../Constants.js'
+
 import Tag from '../tag/Tag.js'
 import Template from '../renderer/Template.js'
 
 import ArrayInterpolation from './ArrayInterpolation.js'
 import BatchInterpolation from './BatchInterpolation.js'
 import BindingInterpolation from './BindingInterpolation.js'
-import DataInterpolation from './DataInterpolation.js'
+import DataBindingInterpolation from './DataBindingInterpolation.js'
 import PartialInterpolation from './PartialInterpolation.js'
 import PlaceholderInterpolation from './PlaceholderInterpolation.js'
 import TagInterpolation from './TagInterpolation.js'
@@ -25,7 +27,8 @@ export default class InterpolationManager {
   addInterpolation (interpolation, index) {
     interpolation = this.createInterpolation(interpolation, index)
 
-    const { id } = interpolation
+    const id = `i${index}`
+    interpolation.id = id
     this.#interpolations[id] = interpolation
 
     return this.#interpolations[id]
@@ -35,40 +38,42 @@ export default class InterpolationManager {
     const count = Object.keys(this.#interpolations).length
     interpolation.index = count
     this.interpolations[`i${count}`] = interpolation
-
   }
 
   createInterpolation (interpolation, index) {
     const { context, retainFormatting } = this.#template
-    const defaultArgs = [context, interpolation, index, retainFormatting]
+    const defaultArgs = [context, interpolation, retainFormatting]
 
-    if (['string', 'number'].includes(typeof interpolation)) {
+    if (interpolation === false) {
+      return new PlaceholderInterpolation(...defaultArgs)
+    }
+
+    if (interpolation === true || ['string', 'number'].includes(typeof interpolation)) {
       return new TextInterpolation(...defaultArgs)
     }
 
     if (interpolation instanceof Tag) {
-      return new TagInterpolation(context, new Template(context, interpolation, retainFormatting), index, retainFormatting)
-    }
-
-    if (interpolation === false) {
-      return new PlaceholderInterpolation(...defaultArgs)
+      return new TagInterpolation(
+        context,
+        new Template(context, interpolation, retainFormatting),
+        retainFormatting
+      )
     }
 
     if (Array.isArray(interpolation)) {
       return new ArrayInterpolation(...defaultArgs)
     }
 
-    if (typeof interpolation !== 'object') {
-      throw new TypeError(`Invalid interpolation ${interpolation}`)
+    if (NGN.typeof(interpolation) !== 'object') {
+      throw new TypeError(`Invalid interpolation`, interpolation)
     }
 
     switch (interpolation.type) {
-      case 'batch': return new BatchInterpolation(...defaultArgs)
-      case 'bind': return new BindingInterpolation(...defaultArgs)
-      case 'data': return new DataInterpolation(...defaultArgs)
-      case 'partial': return new PartialInterpolation(...defaultArgs)
-      case 'component': return new ComponentInterpolation(...defaultArgs)
-      default: throw new TypeError(`Invalid interpolation type "${interpolation.type}"`)
+      case Constants.INTERPOLATION_BATCH: return new BatchInterpolation(...defaultArgs)
+      case Constants.INTERPOLATION_BINDING: return new BindingInterpolation(...defaultArgs)
+      case Constants.INTERPOLATION_DATABINDING: return new DataBindingInterpolation(...defaultArgs)
+      case Constants.INTERPOLATION_PARTIAL: return new PartialInterpolation(...defaultArgs)
+      default: throw new TypeError(`Invalid interpolation`, interpolation)
     }
   }
 
