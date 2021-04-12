@@ -103,7 +103,7 @@ export default class Driver {
   }
 
   get state () {
-    return this.#stateManager.currentState
+    return this.#stateManager.currentState.name
   }
 
   set state (name) {

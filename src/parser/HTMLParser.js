@@ -1,6 +1,7 @@
 import ElementNode from './ElementNode.js'
 import TextNode from './TextNode.js'
 import CommentNode from './CommentNode.js'
+import Constants from '../Constants.js'
 
 class HTMLParser {
   createNode (node, context, { interpolationManager, retainFormatting }) {
@@ -75,8 +76,8 @@ class HTMLParser {
       }
       
       interpolation = interpolationManager.addInterpolation(interpolation, i)
-      
-      if (interpolation.type === 'text' && ['string', 'number'].includes(typeof interpolation.value)) {
+
+      if (interpolation.type === Constants.INTERPOLATION_TEXT && ['string', 'number'].includes(typeof interpolation.value)) {
         html += this.#processString('' + interpolation.value, retainFormatting)
         continue
       }

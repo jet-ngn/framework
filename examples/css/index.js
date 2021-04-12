@@ -1,4 +1,4 @@
-import { Entity, html, ready } from '../../src/index.js'
+import { Entity, Partial, html, ready } from '../../src/index.js'
 
 const Demo = new Entity({
   selector: 'body',
@@ -6,13 +6,15 @@ const Demo = new Entity({
 
   on: {
     initialize () {
+      const text = 'test'
+
       this.render(html`
         ${this.bind({
           css: `
             background: green;
             color: white;
           `
-        }, html`<div>EXAMPLE DIV</div>`)}
+        }, html`<div>THIS DIV IS GREEN</div>`)}
       `)
 
       setTimeout(() => {

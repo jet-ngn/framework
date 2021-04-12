@@ -12,6 +12,7 @@ import PluginManager from '../plugins/PluginManager.js'
 import DataManager from '../data/DataManager.js'
 import ReferenceManager from '../reference/ReferenceManager.js'
 import StateManager from '../states/StateManager.js'
+import ComponentRegistry from '../registries/ComponentRegistry.js'
 
 const CustomElement = superClass => class extends superClass {
   #id = createId()
@@ -311,6 +312,7 @@ export default function Component (tag, cfg) {
     }
   }
 
+  ComponentRegistry.add(tag, Component)
   customElements.define(tag, Component)
   return Component
 }

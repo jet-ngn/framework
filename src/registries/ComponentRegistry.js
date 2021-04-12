@@ -6,8 +6,6 @@ class ComponentRegistry {
   }
 
   add (tag, definition) {
-    console.log('add');
-    console.log(tag);
     if (this.has(tag)) {
       throw new Error(`Component "${tag}" has already been defined`)
     }

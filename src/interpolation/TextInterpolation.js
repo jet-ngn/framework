@@ -16,4 +16,12 @@ export default class TextInterpolation extends Interpolation {
   get value () {
     return this.#value
   }
+
+  reconcile (update) {
+    console.log('REC TEXT NODE')
+  }
+
+  render () {
+    return document.createTextNode(this.#value)
+  }
 }

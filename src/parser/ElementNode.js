@@ -1,6 +1,7 @@
 import HTMLParser from './HTMLParser.js'
 import ParsedNode from './ParsedNode.js'
 import ElementReconciler from '../reconciler/ElementReconciler.js'
+import ComponentRegistry from '../registries/ComponentRegistry.js'
 import DOMEventRegistry from '../registries/DOMEventRegistry.js'
 
 export default class ElementNode extends ParsedNode {
@@ -66,7 +67,7 @@ export default class ElementNode extends ParsedNode {
   }
 
   get isComponent () {
-    return !!customElements.get(this.tag.toLowerCase())
+    return ComponentRegistry.has(this.tag.toLowerCase())
   }
 
   get isCustomElement () {
