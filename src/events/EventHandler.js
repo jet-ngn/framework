@@ -98,7 +98,9 @@ export default class EventHandler {
     }
 
     this.#executions++
-    this.#callback.call(this.#context, { ...evt, executions: this.#executions }, ...rest)
+    this.#context.event = { ...evt, executions: this.#executions }
+    this.#callback.call(this.#context, ...rest)
+    this.#context.event = null
 
     return { action: 'execute' }
   }

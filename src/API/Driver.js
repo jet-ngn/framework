@@ -25,6 +25,8 @@ export default class Driver {
   #referenceManager = null
   #stateManager = null
 
+  event = null
+
   constructor (cfg) {
     this.#cfg = cfg
     this.#name = cfg.name ?? this.#id

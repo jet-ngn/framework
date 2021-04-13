@@ -67,7 +67,7 @@ export default class InterpolationManager {
     if (NGN.typeof(interpolation) !== 'object') {
       throw new TypeError(`Invalid interpolation`, interpolation)
     }
-
+    
     switch (interpolation.type) {
       case Constants.INTERPOLATION_BATCH: return new BatchInterpolation(...defaultArgs)
       case Constants.INTERPOLATION_BINDING: return new BindingInterpolation(...defaultArgs)

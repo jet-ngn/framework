@@ -25,7 +25,5 @@ export default class MultipleChildInterpolation extends Interpolation {
     }
 
     this.rendered[0].replaceWith(update)
-
-    // this.rendered = Array.isArray(update) ? update : [update]
   }
 }

@@ -157,10 +157,17 @@ export default class ElementReconciler extends Reconciler {
           },
 
           callback: next => {
-            let node = update.nodes[i]
+            const node = {
+              current: this.context.nodes[i],
+              update: update.nodes[i]
+            }
 
-            if (node) {
-              this.context.nodes[i].reconcile(node)
+            if (node.update) {
+              if (node.update.type === node.current.type) {
+                node.current.reconcile(node.update)
+              } else {
+                node.current.replaceWith(node.update.render())
+              }
             }
 
             next()
