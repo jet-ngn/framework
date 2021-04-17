@@ -170,6 +170,9 @@ export default class ElementReconciler extends Reconciler {
               }
             }
 
+            // TODO: Find out if any logic is needed here to reconcile
+            // event handlers
+
             next()
           }
         })

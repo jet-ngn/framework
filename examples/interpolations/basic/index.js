@@ -8,15 +8,23 @@ const Filter = new Entity({
       this.emit('render')
     },
 
-    render (bool = true) {
+    render (bool = false) {
       this.render(html`
-        <div>
-          <aside>ASIDE</aside>
+        ${this.bind({
+          on: {
+            click: console.log
+          }
+        }, html`
+          <div>
+            <h1>NESTED BINDING</h1>
 
-          ${bool && html`
-            <div>BOOL IS TRUE</div>
-          `}
-        </div>
+            ${this.bind({
+              on: {
+                click: console.log
+              }
+            }, html`<button>CLICK</button>`)}
+          </div>
+        `)}
       `)
     }
   }
@@ -34,7 +42,11 @@ const Demo = new Entity({
         }, html`<div class="filter"></div>`)}
       `)
 
-      setTimeout(() => this.emit('filter.render', false), 1500)
+      setTimeout(() => {
+        this.emit('filter.render', true)
+
+        // setTimeout(() => this.emit('filter.render', true), 1500)
+      }, 1500)
     }
   }
 })

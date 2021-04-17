@@ -49,13 +49,13 @@ export default class Attribute {
     if (this.#type === Boolean && ['true', 'false'].includes(value)) {
       value = value === 'true'
     }
-    
-    if (value.constructor !== this.#type) {
-      throw new Error(`Component "${this.#context.name}" attribute "${this.#name}" expected a value of type ${this.#type.name.toLowerCase()}, received ${NGN.typeof(value)}`)
-    }
 
-    if (!!value && this.#validValues && !this.#validValues.includes(value)) {
-      throw new Error(`Component "${this.#context.name}" attribute "${this.#name}" expected one of the following values: "${this.#validValues.join('", "')}". Received "${value}"`)
+    if (!!value) {
+      if (value.constructor !== this.#type) {
+        throw new Error(`Component "${this.#context.name}" attribute "${this.#name}" expected a value of type ${this.#type.name.toLowerCase()}, received ${NGN.typeof(value)}`)
+      } else if (this.#validValues && !this.#validValues.includes(value)) {
+        throw new Error(`Component "${this.#context.name}" attribute "${this.#name}" expected one of the following values: "${this.#validValues.join('", "')}". Received "${value}"`)
+      }
     }
 
     return [null, undefined].includes(value) ? null : value

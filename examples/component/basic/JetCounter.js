@@ -1,6 +1,14 @@
 import { Component, html, css } from '../../../src/index.js'
 
 const JetCounter = new Component('jet-counter', {
+  attributes: {
+    test: {
+      type: String,
+      default: 'hey',
+      initial: 'wut'
+    }
+  },
+
   get style () {
     return css`
       :host {
@@ -74,17 +82,18 @@ const JetCounter = new Component('jet-counter', {
   on: {
     data: {
       count: {
-        changed (evt, change) {
+        changed (change) {
           this.state = change.current > 0 ? 'incremented' : 'idle'
         }
       }
     },
 
-    // initialize () {
-    //   setTimeout(() => {
-    //     this.data.count++
-    //   }, 1500)
-    // }
+    initialize () {
+      console.log(this.attributes);
+      // setTimeout(() => {
+      //   this.data.count++
+      // }, 1500)
+    }
   }
 })
 
