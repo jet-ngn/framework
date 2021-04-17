@@ -20,12 +20,4 @@ export default class Tag {
   get interpolations () {
     return [...this.#interpolations]
   }
-
-  // append (tag) {
-  //   return new Tag({
-  //     type: this.type,
-  //     strings: [...this.strings, ...tag.strings],
-  //     interpolations: [...this.interpolations, ...tag.interpolations]
-  //   })
-  // }
 }

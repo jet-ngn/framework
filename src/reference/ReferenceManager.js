@@ -1,10 +1,8 @@
-// import NGN2 from '../../lib/ngn.min.js'
-import Renderer from '../renderer/Renderer.js'
 import ParsedNode from '../parser/ParsedNode.js'
-import ReferenceElementProxy from './ReferenceElementProxy.js'
 import ReferenceElement from './ReferenceElement.js'
 import ReferenceCollection from './ReferenceCollection.js'
 import ReferenceList from './ReferenceList.js'
+import Constants from '../Constants.js'
 
 export default class ReferenceManager {
   #context
@@ -12,8 +10,6 @@ export default class ReferenceManager {
   #selectors = {}
   #nodes = {}
   #references = {}
-  #reservedNames = ['add', 'remove', 'root']
-  // #applyContext = selector => `${this.#context.selector ? `${this.#context.selector} ` : ''}${selector}`
 
   constructor (context, selectors, root) {
     this.#context = context
@@ -137,12 +133,10 @@ export default class ReferenceManager {
     delete collection[name]
   }
 
-  #getElements = selector => {
-    return selector.startsWith('#') ? document.getElementById(selector) : (this.#root ?? document).querySelectorAll(selector)
-  }
+  #getElements = selector => (this.#root ?? document).querySelectorAll(selector)
 
   #validateReference = (name, node) => {
-    if (this.#reservedNames.includes(name)) {
+    if (Constants.REF_RESERVEDNAMES.includes(name)) {
       throw new Error(`Invalid reference: "${name}" is a reserved word`)
     }
 
@@ -151,45 +145,3 @@ export default class ReferenceManager {
     }
   }
 }
-
-// registerHandler (element, type, evt, callback, threshold = 0) {
-//   let obj = {
-//     event: evt,
-//     type,
-//     callback
-//   }
-//
-//   if (!this.handlers.has(element)) {
-//     return this.handlers.set(element, [obj])
-//   }
-//
-//   let handlers = this.handlers.get(element)
-//
-//   if (handlers.some(handler => handler.callback === callback)) {
-//     return
-//   }
-//
-//   handlers.push(obj)
-// }
-
-// resetHandlers () {
-//   this.handlers.clear()
-// }
-
-// unregisterHandler (element, evt, callback) {
-//   if (!this.handlers.has(element)) {
-//     return console.error(`Reference element not found`)
-//   }
-//
-//   let handlers = this.handlers.get(element).filter(handler => handler.callback !== callback)
-//
-//   if (handlers.length === 0) {
-//     return this.handlers.delete(element)
-//   }
-//
-//   this.handlers.set(element, handlers)
-// }
-
-// unregisterAllHandlers (element) {
-//   this.handlers.delete(element)
-// }

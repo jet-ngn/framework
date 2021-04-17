@@ -8,5 +8,6 @@ export default {
   INTERPOLATION_TAG: Symbol('tag'),
   INTERPOLATION_TEXT: Symbol('text'),
 
-  DATA_RESERVEDNAMES: ['bind', 'tojson', 'add', 'attach']
+  DATA_RESERVEDNAMES: ['bind', 'tojson', 'add', 'attach'],
+  REF_RESERVEDNAMES: ['add', 'remove', 'root']
 }

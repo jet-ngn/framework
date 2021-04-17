@@ -7,13 +7,14 @@ const Demo = new Entity({
 
   references: {
     primaryCounter: 'jet-counter[key="1"]',
-    secondaryCounter: 'jet-counter[key="2"]'
+    secondaryCounter: 'jet-counter[key="2"]',
+    title: '#title'
   },
 
   on: {
     initialize () {
       this.render(html`
-        <h1>Jet Components Example</h1>
+        <h1 id="title">Jet Components Example</h1>
         <p>
           Jet Components are just Web Components, enhanced with Jet's rendering/reconciliation, data handling, state management and other features. Anything you can do with an Entity, you can do with a Component. If you open the inspector and watch the components as you increment or decrement the counter, you will see that the reconciliation takes place inside the component's shadow DOM.
         </p>
@@ -26,6 +27,8 @@ const Demo = new Entity({
           <jet-counter key="2"></jet-counter>
         </section>
       `)
+
+      console.log(this.refs);
     }
   }
 })

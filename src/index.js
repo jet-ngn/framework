@@ -3,7 +3,7 @@ import DataStore from './data/DataStore.js'
 import Entity from './API/Entity.js'
 import Component from './API/Component.js'
 import Partial from './API/Partial.js'
-import PerformanceMonitor from './diagnostics/PerformanceMonitor.js'
+// import PerformanceMonitor from './diagnostics/PerformanceMonitor.js'
 import { css, html, markdown, svg } from './tag/tags.js'
 import { domContentLoadedHandler, createId, elementIsVisible } from './Utilities.js'
 
@@ -17,9 +17,9 @@ if (!window.hasOwnProperty('NGN')) {
 
 const { BUS, EventEmitter, Tasks } = NGN
 
-const Diagnostics = {
-  PerformanceMonitor
-}
+// const Diagnostics = {
+//   PerformanceMonitor
+// }
 
 const Utilities = {
   createId
@@ -32,7 +32,7 @@ const DOMUtilities = {
 export {
   BUS as Bus,
   Component,
-  Diagnostics,
+  // Diagnostics,
   DOMUtilities,
   Entity,
   EventEmitter,
