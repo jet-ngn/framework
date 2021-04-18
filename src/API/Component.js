@@ -41,9 +41,25 @@ const CustomElement = superClass => class extends Driver(superClass) {
   }
 
   connectedCallback () {
-    if (this.#attributeManager) {
-      this.#attributeManager.initial.forEach(({ name, value }) => this.setAttribute(name, value))
-    }
+    this.#attributeManager.initial.forEach(({ name, value }) => {
+      if (!this.hasAttribute(name)) {
+        return this.setAttribute(name, value)
+      }
+    })
+
+    this.#attributeManager.attributes.forEach(({ name, type, value }) => {
+      if (type !== Boolean || !this.hasAttribute(name)) {
+        return
+      }
+
+      const initialValue = this.getAttribute(name)
+
+      if (['true', ''].includes(initialValue.trim())) {
+        return this.setAttribute(name, true)
+      }
+
+      this.removeAttribute(name)
+    })
 
     this.#connected = true
     this.dispatchEvent(new CustomEvent('connected'))

@@ -3,9 +3,7 @@ import { Component, html, css } from '../../../src/index.js'
 const JetCounter = new Component('jet-counter', {
   attributes: {
     test: {
-      type: String,
-      default: 'hey',
-      initial: 'wut'
+      type: Boolean
     }
   },
 
@@ -54,7 +52,6 @@ const JetCounter = new Component('jet-counter', {
     `
   },
 
-  // TODO: Add a way to reference elements in the shadow dom too
   references: {
     incrementButton: 'button.increment'
   },
@@ -62,7 +59,6 @@ const JetCounter = new Component('jet-counter', {
   states: {
     incremented: {
       on () {
-        console.log('hello');
         this.classList.add('incremented')
       },
 
@@ -89,7 +85,7 @@ const JetCounter = new Component('jet-counter', {
     },
 
     initialize () {
-      console.log(this.attributes);
+      // console.log(this.refs);
       // setTimeout(() => {
       //   this.data.count++
       // }, 1500)

@@ -15,6 +15,10 @@ export default class AttributeManager {
     })
   }
 
+  get attributes () {
+    return Object.keys(this.#attributes).map(name => this.#attributes[name])
+  }
+
   get initial () {
     return this.#initial
   }
