@@ -188,7 +188,10 @@ export default function Driver (superclass = Object) {
 
     reinitialize ({ selector, manager, element, data }) {
       this.#initialized = false
-  
+      
+      this.root.reset()
+      this.#dataManager.clearAttachments()
+
       if (!!data) {
         this.#bindData(data)
       }
@@ -197,7 +200,7 @@ export default function Driver (superclass = Object) {
       this.#eventManager.reset()
   
       if (element && element !== this.root.element) {
-        console.log('TODO: REPLACE');
+        console.log('TODO: REPLACE ENTITY ROOT ELEMENT');
       }
   
       this.emit('initialize')

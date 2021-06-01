@@ -47,7 +47,7 @@ export default class Entity extends Driver() {
 
   bind (cfg, target) {
     if (target instanceof ReferenceElement) {
-      return NodeManager.bindRef(cfg, target)
+      return NodeManager.bindRef(this, ...arguments)
     }
 
     return NodeManager.bind(this, ...arguments, this.root.retainFormatting)

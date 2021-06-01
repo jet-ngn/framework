@@ -94,6 +94,10 @@ export default class ReferenceElement extends ReferenceElementProxy {
     this.#render('replace', tag)
   }
 
+  reset () {
+    this.#renderer = new Renderer(this.#context, this.element)
+  }
+
   #render = (type, tag) => {
     if (!this.#renderer) {
       this.#renderer = new Renderer(this.#context, this.element)

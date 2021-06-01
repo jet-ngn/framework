@@ -3,7 +3,7 @@ import Template from '../renderer/Template.js'
 import Tag from '../tag/Tag.js'
 
 export default class NodeManager {
-  static boundElements = new Map
+  static boundRefs = new Map
 
   static batch (collection, size, renderFn) {
     return {
@@ -26,24 +26,46 @@ export default class NodeManager {
     }
   }
 
-  static bindRef (cfg, ref) {
-    const bound = NodeManager.boundElements.get(ref)
+  static bindRef (context, cfg, ref) {
+    const bound = NodeManager.boundRefs.get(ref)
+    const { entity, attributes, data, on } = cfg
 
-    if (bound) {
+    if (!bound) {
+      const template = document.createElement('template')
+      template.innerHTML = ref.innerHTML
+
+      NodeManager.boundRefs.set(ref, {
+        attributes: [...ref.attributes].map(({ nodeName, nodeValue }) => ({ name: nodeName, value: nodeValue })),
+        cfg,
+        initialChildren: template.content.cloneNode(true)
+      })
+    }
+
+    if (!!entity) {
+      const update = {
+        current: bound?.cfg?.entity,
+        next: entity
+      }
+
+      if (!!bound && !!update.current && !!update.next) {
+        ref.innerHTML = ''
+        ref.append(bound.initialChildren.cloneNode(true))
+      }
+
+      entity[entity.initialized ? 'reinitialize' : 'initialize']({
+        element: ref.element,
+        data: data ?? {},
+        manager: context
+      })
+    }
+
+    if (!!bound) {
       for (let { name, value } of ref.attributes) {
         ref.removeAttribute(name)
       }
 
       bound.attributes.forEach(({ name, value }) => ref.setAttribute(name, value))
       bound.cfg = cfg
-    } else {
-      NodeManager.boundElements.set(ref, {
-        attributes: [...ref.attributes].map(({ nodeName, nodeValue }) => ({ name: nodeName, value: nodeValue })),
-        cfg
-      })
     }
-
-    const { entity, attributes, data, on } = cfg
-    entity[entity.initialized ? 'reinitialize' : 'initialize']({ element: ref.element, data: data ?? {} })
   }
 }
