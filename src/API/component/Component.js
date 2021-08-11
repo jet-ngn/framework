@@ -7,6 +7,7 @@ import Template from '../../renderer/Template.js'
 import CSSParser from '../../parser/CSSParser.js'
 import Renderer from '../../renderer/Renderer.js'
 import { DOMEventRegistry } from '../../registries/DOMEventRegistry.js'
+import { html } from '../../tag/tags.js'
 
 const CustomElement = superClass => class extends Driver(superClass) {
   #connected = false
@@ -84,7 +85,7 @@ const CustomElement = superClass => class extends Driver(superClass) {
 
     const tags = {
       style: Reflect.get(this.config, 'style', this) ?? null,
-      template: Reflect.get(this.config, 'template', this) ?? null
+      template: Reflect.get(this.config, 'template', this) ?? html`<slot></slot>`
     }
 
     const template = document.createElement('template')
