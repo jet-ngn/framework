@@ -8,7 +8,7 @@ export function createId (type = 'nano') {
   }
 }
 
-export function domContentLoadedHandler (cb) {
+export function handleDOMContentLoaded (cb) {
   let handler = function () {
     cb()
     document.removeEventListener('DOMContentLoaded', handler)

@@ -1,11 +1,11 @@
 import DataModel from './data/DataModel.js'
 import DataStore from './data/DataStore.js'
 import Entity from './API/Entity.js'
-import Component from './API/Component.js'
+import Component from './API/component/Component.js'
 import Partial from './API/Partial.js'
 // import PerformanceMonitor from './diagnostics/PerformanceMonitor.js'
 import { css, html, markdown, svg } from './tag/tags.js'
-import { domContentLoadedHandler, createId, elementIsVisible } from './Utilities.js'
+import { handleDOMContentLoaded, createId, elementIsVisible } from './Utilities.js'
 
 globalThis.addEventListener('error', evt => {
   return false
@@ -22,28 +22,25 @@ const { BUS, EventEmitter, Tasks } = NGN
 // }
 
 const Utilities = {
-  createId
-}
-
-const DOMUtilities = {
+  createId,
   elementIsVisible
 }
+
+handleDOMContentLoaded(() => BUS.emit('ready'))
 
 export {
   BUS as Bus,
   Component,
   // Diagnostics,
-  DOMUtilities,
   Entity,
   EventEmitter,
   DataModel,
-  Partial,
   DataStore,
+  Partial,
   Tasks as Queue,
   Utilities,
   css,
   html,
   markdown,
-  svg,
-  domContentLoadedHandler as ready
+  svg
 }

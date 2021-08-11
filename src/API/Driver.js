@@ -6,6 +6,7 @@ import PluginManager from '../plugins/PluginManager.js'
 import ReferenceManager from '../reference/ReferenceManager.js'
 import StateManager from '../states/StateManager.js'
 import { createId } from '../Utilities.js'
+import Constants from '../Constants.js'
 
 export default function Driver (superclass = Object) {
   return class Driver extends superclass {
@@ -16,6 +17,7 @@ export default function Driver (superclass = Object) {
     #initialized = false
     #manager = null
     #plugins = {}
+    #postJobs = []
 
     #dataManager = null
     #eventManager
@@ -137,6 +139,10 @@ export default function Driver (superclass = Object) {
       this.#eventManager.emit(evt, this, ...rest)
     }
 
+    fetch (path, throws = false) {
+      return { type: Constants.INTERPOLATION_FETCH, path, throws, addJob: job => this.#postJobs.push(job) }
+    }
+
     getReference (name) {
       return this.#referenceManager.getReference(name, this.root)
     }
@@ -157,25 +163,25 @@ export default function Driver (superclass = Object) {
       this.#manager = manager ?? null
       this.#referenceManager = new ReferenceManager(this, this.#cfg.references ?? {}, { selector, element })
       this.#eventManager.initialize()
-  
+
       if (!!data) {
         this.#bindData(data)
       }
   
       this.emit('initialize')
       this.#stateManager.initialize()
-  
+      
       if (this.#pluginManager) {
         this.#pluginManager.initialize()
         // this.plugins.map(plugin => {
         //   this.#plugins[plugin.name] = plugin.initialize(this, this.#cfg)
         // })
       }
-  
-      setTimeout(() => {
+
+      this.#runPostJobs(() => setTimeout(() => {
         this.#initialized = true
         this.emit('initialized')
-      }, 0)
+      }, 0))
     }
 
     off () {
@@ -188,27 +194,29 @@ export default function Driver (superclass = Object) {
 
     reinitialize ({ selector, manager, element, data }) {
       this.#initialized = false
-      
       this.root.reset()
-      this.#dataManager.clearAttachments()
+
+      if (!!this.#dataManager) {
+        this.#dataManager.clearAttachments()
+      }
 
       if (!!data) {
         this.#bindData(data)
       }
-  
-      this.#referenceManager.clear()
-      this.#eventManager.reset()
-  
+
       if (element && element !== this.root.element) {
-        console.log('TODO: REPLACE ENTITY ROOT ELEMENT');
+        this.#referenceManager = new ReferenceManager(this, this.#cfg.references ?? {}, { selector, element })
+      } else {
+        this.#referenceManager.clear()
       }
   
+      this.#eventManager.reset()
       this.emit('initialize')
-  
-      setTimeout(() => {
+
+      this.#runPostJobs(() => setTimeout(() => {
         this.#initialized = true
         this.emit('initialized')
-      }, 0)
+      }, 0))
     }
 
     removeReference (name) {
@@ -233,6 +241,21 @@ export default function Driver (superclass = Object) {
       }
   
       this.#dataManager.attach(data)
+    }
+
+    #runPostJobs = cb => {
+      const queue = new NGN.Tasks()
+
+      this.#postJobs.forEach(({ name, callback }) => {
+        queue.add(name, callback)
+      })
+
+      queue.on('complete', () => {
+        // console.log('DONE')
+        cb()
+      })
+
+      queue.run()
     }
   }
 }

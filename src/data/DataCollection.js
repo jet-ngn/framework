@@ -38,12 +38,20 @@ export default class DataCollection {
         throw new Error(`Invalid data configuration: "${key}" is a reserved word`)
       }
 
-      if (this.hasOwnProperty(key)) {
-        console.warn(`Data item "${key}" already exists and will be overwritten`)
+      this.#attached[key] = data[key]
+
+      if (!this.hasOwnProperty(key)) {
+        this[key] = data[key]
+        return
       }
 
-      this.#attached[key] = data[key]
-      this[key] = data[key]
+      const field = this[key]
+
+      if (field instanceof DataModel || field instanceof DataStore) {
+        field.load(data[key])
+      } else {
+        this[key] = data[key]
+      }
     })
   }
 

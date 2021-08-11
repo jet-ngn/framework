@@ -1,4 +1,4 @@
-export default class Attribute {
+export default class Property {
   #context
   #name
   #cfg
@@ -7,8 +7,9 @@ export default class Attribute {
   #value
   #validValues
   #defaultValue
+  #isAttribute
 
-  constructor (context, name, cfg) {
+  constructor (context, name, cfg, isAttribute = false) {
     this.#context = context
     this.#name = name
     this.#cfg = cfg
@@ -17,6 +18,7 @@ export default class Attribute {
     this.#type = cfg.type ?? String
     this.#value = this.#parseValue(this.#initialValue)
     this.#validValues = cfg.valid ?? null
+    this.#isAttribute = isAttribute
   }
 
   get defaultValue () {
@@ -25,6 +27,10 @@ export default class Attribute {
 
   get initialValue () {
     return this.#initialValue
+  }
+
+  get isAttribute () {
+    return false
   }
 
   get name () {
@@ -52,9 +58,9 @@ export default class Attribute {
 
     if (!!value) {
       if (value.constructor !== this.#type) {
-        throw new Error(`Component "${this.#context.name}" attribute "${this.#name}" expected a value of type ${this.#type.name.toLowerCase()}, received ${NGN.typeof(value)}`)
+        throw new Error(`Component <${this.#context.nodeName.toLowerCase()}> "${this.#context.name}:" ${this.#isAttribute ? 'Attribute' : 'Property'} "${this.#name}" expected a value of type "${this.#type.name.toLowerCase()}", received "${NGN.typeof(value)}"`)
       } else if (this.#validValues && !this.#validValues.includes(value)) {
-        throw new Error(`Component "${this.#context.name}" attribute "${this.#name}" expected one of the following values: "${this.#validValues.join('", "')}". Received "${value}"`)
+        throw new Error(`Component <${this.#context.nodeName.toLowerCase()}> "${this.#context.name}:" ${this.#isAttribute ? 'Attribute' : 'Property'} "${this.#name}" expected one of the following values: "${this.#validValues.join('", "')}". Received "${value}"`)
       }
     }
 

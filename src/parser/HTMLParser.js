@@ -52,7 +52,7 @@ class HTMLParser {
     return string.replace(/\r?\n|\r/g, '')//.replace(/\s+/g, ' ')
   }
 
-  parse ({ context, tag, id, interpolationManager, retainFormatting }) {
+  parse ({ context, tag, interpolationManager, retainFormatting }) {
     const template = tag.type === 'svg'
       ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       : document.createElement('template')

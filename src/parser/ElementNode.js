@@ -5,6 +5,7 @@ import ComponentRegistry from '../registries/ComponentRegistry.js'
 import DOMEventRegistry from '../registries/DOMEventRegistry.js'
 
 export default class ElementNode extends ParsedNode {
+  #boundData = null
   #id = NGN.DATA.util.GUID()
   #nodes = []
   #reconciler
@@ -31,7 +32,7 @@ export default class ElementNode extends ParsedNode {
 
     if (this.isComponent) {
       const handler = evt => {
-        this.source.initialize(this.context)
+        this.source.initialize({ data: this.#boundData ?? null, manager: this.context })
         this.source.removeEventListener('connected', handler)
       }
 
@@ -105,6 +106,10 @@ export default class ElementNode extends ParsedNode {
     })
   }
 
+  bindData (data) {
+    this.#boundData = data
+  }
+
   contains (element) {
     return this.source.contains(element)
   }
@@ -156,16 +161,16 @@ export default class ElementNode extends ParsedNode {
   }
 
   reconcile (update) {
-    if (this.isCustomElement) {
-      update.source = this.source
-      return
-    }
+    // if (this.isCustomElement) {
+    //   update.source = this.source
+    //   return
+    // }
 
     if (!this.#reconciler) {
       this.#reconciler = new ElementReconciler(this)
     }
 
-    this.#reconciler.reconcile(update)
+    this.#reconciler.reconcile(update, this.isCustomElement)
   }
 
   removeAttribute (attr) {

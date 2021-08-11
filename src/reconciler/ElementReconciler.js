@@ -111,8 +111,10 @@ export default class ElementReconciler extends Reconciler {
     })
   }
 
-  reconcile (update) {
+  reconcile (update, isCustomElement) {
     this.clear()
+
+    // let exempt = isCustomElement ? this.context.source.reconcilerConfig?.exempt : []
 
     if (update.hasAttributes) {
       this.#reconcileAttributes(update)
@@ -147,18 +149,24 @@ export default class ElementReconciler extends Reconciler {
 
     if (length > 0) {
       for (let i = length - 1; i >= 0; i--) {
+        const current = this.context.nodes[i]
+
+        // if (exempt.includes(current.source)) {
+        //   continue
+        // }
+
         this.addJob({
           name: 'Reconcile Child Node',
           triggersLayout: true,
 
           data: {
-            current: this.context.nodes[i],
+            current,
             update: update.nodes[i]
           },
 
           callback: next => {
             const node = {
-              current: this.context.nodes[i],
+              current,
               update: update.nodes[i]
             }
 

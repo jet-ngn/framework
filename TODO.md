@@ -1,6 +1,13 @@
+- When binding to a reference, maybe check if it has child elements, and if so, generate vdom from them. This will allow hooking pre-rendered html into the renderer.
+
+
+
+
+
+
 - All element nodes should be references.   ReferenceElement should be the core accessor for any DOM elements, text and comment nodes included.
 
-- In addition, rendering should support all dom methods on Elements, like `insertAdjacentHTML`. The Reference class should be a total replacement for working with DOM directly, and while the API is the same, the behavior is altered by Jet.
+- In addition, rendering should support all dom methods on Elements, like `insertAdjacentHTML`. The Reference class should be a total replacement for working with DOM directly, and while the API is the same (with additions), the behavior is altered by Jet.
 
 For example, calling insertAdjacentHTML should generate new References for each element inserted and insert them into the template as well.
 

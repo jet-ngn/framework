@@ -21,6 +21,7 @@ export default class MultipleChildInterpolation extends Interpolation {
 
     if (Array.isArray(update)) {
       const rendered = document.createDocumentFragment(...update)
+      console.log(rendered);
       return this.rendered[0].replaceWith(rendered)
     }
 

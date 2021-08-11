@@ -1,4 +1,4 @@
-import { Entity, Partial, html, ready } from '../../src/index.js'
+import { Bus, Entity, Partial, html } from '../../src/index.js'
 
 const Dot = Partial({
   name: 'dot',
@@ -156,7 +156,7 @@ const BigTriangle = Partial({
 })
 
 const App = new Entity({
-  selector: 'body',
+  selector: '.sierpinksi',
   name: 'sierpinski',
 
   data: {
@@ -229,4 +229,4 @@ const App = new Entity({
   }
 })
 
-ready(() => App.initialize())
+Bus.on('ready', () => App.initialize())

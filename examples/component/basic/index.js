@@ -1,4 +1,4 @@
-import { Entity, html, ready } from '../../../src/index.js'
+import { Bus, Entity, html } from '../../../src/index.js'
 import JetCounter from './JetCounter.js'
 
 const Demo = new Entity({
@@ -33,4 +33,4 @@ const Demo = new Entity({
   }
 })
 
-ready(() => Demo.initialize())
+Bus.on('ready', () => Demo.initialize())

@@ -1,4 +1,4 @@
-import { Component, Entity, css, html, ready } from '../../../src/index.js'
+import { Bus, Component, Entity, css, html } from '../../../src/index.js'
 
 const JetCounter = new Component('jet-counter', {
   attributes: {
@@ -165,4 +165,4 @@ const Demo = new Entity({
   }
 })
 
-ready(() => Demo.initialize())
+Bus.on('ready', () => Demo.initialize())

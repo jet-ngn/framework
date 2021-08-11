@@ -25,9 +25,9 @@ const Counter = new Entity({
         <div>${data.bind('count', count => count === 0 ? 'No' : count)} Item${data.bind('count', count => count === 1 ? '' : 's')}</div>
 
         ${this.bind({
-          on: { click: evt => {
-            data.count++
-          } }
+          on: { 
+            click: evt => data.count++
+          }
         }, html`<button>+</button>`)}
 
         ${this.bind({

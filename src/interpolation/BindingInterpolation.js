@@ -79,6 +79,8 @@ export default class BindingInterpolation extends Interpolation {
 
     if (this.#config.hasOwnProperty('entity')) {
       this.#bindEntity(element)
+    } else if (element.isComponent) {
+      this.#bindComponent(element)
     }
 
     return this.rendered
@@ -124,6 +126,12 @@ export default class BindingInterpolation extends Interpolation {
       StyleRegistry.updateRule(this.#className, css)
     } else {
       StyleRegistry.createRule(this.#className, css)
+    }
+  }
+
+  #bindComponent = element => {
+    if (this.#config.hasOwnProperty('data')) {
+      element.bindData(this.#config.data)
     }
   }
 
