@@ -1,6 +1,4 @@
 import DataCollection from './DataCollection.js'
-import DataBindingRegistry from '../registries/DataBindingRegistry.js'
-import DataBindingInterpolation from '../interpolation/DataBindingInterpolation.js'
 
 export default class DataManager {
   #context
