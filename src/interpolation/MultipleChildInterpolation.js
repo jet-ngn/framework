@@ -22,9 +22,9 @@ export default class MultipleChildInterpolation extends Interpolation {
     if (Array.isArray(update)) {
       const fragment = document.createDocumentFragment()
       fragment.append(...update)
-      return this.rendered[0].replaceWith(fragment)
+      this.rendered[0].replaceWith(fragment)
+    } else {
+      this.rendered[0].replaceWith(update)
     }
-
-    this.rendered[0].replaceWith(update)
   }
 }

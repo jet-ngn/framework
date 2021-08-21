@@ -64,7 +64,7 @@ export default class InterpolationManager {
     if (Array.isArray(interpolation)) {
       return new ArrayInterpolation(...defaultArgs)
     }
-
+    
     if (NGN.typeof(interpolation) !== 'object') {
       throw new TypeError(`Invalid interpolation`, interpolation)
     }

@@ -1,8 +1,8 @@
 import TemplateManager from './TemplateManager.js'
 import Tag from '../tag/Tag.js'
+import JobRegistry from '../registries/JobRegistry.js'
 
 export default class Renderer {
-  #queues = {}
   #context
   #target = null
   #templateManager
@@ -55,39 +55,47 @@ export default class Renderer {
     return target
   }
 
-  append (tag) {
-    return this.#render('append', tag)
+  async append (tag) {
+    return await this.#render('append', tag)
   }
 
-  render (tag) {
-    return this.#render('render', tag)
+  async render (tag) {
+    return await this.#render('render', tag)
   }
 
-  replace (tag) {
+  async replace (tag) {
     this.clear()
-    return this.#render('replace', tag)
+    return await this.#render('replace', tag)
   }
 
-  #render = (type, tag) => {
+  #render = async (type, tag) => {
     if (!(tag instanceof Tag)) {
       throw new TypeError(`${this.#context.type} ${this.#context.name}: : ${type}() expected tagged template literal, received "${NGN.typeof(tag)}"`)
     }
 
     this.#observer.observe(this.#target, { childList: true })
-
+    
     if (!this.#templateManager.initialized) {
-      return this.#renderInitial(tag)
+      return await this.#renderInitial(tag)
     }
 
-    switch (type) {
-      case 'append': return this.#templateManager.append(tag)
-      case 'render': return this.#templateManager.reconcile(tag)
-      case 'replace': return this.#renderInitial(tag)
-    }
+    const output = (async () => {
+      switch (type) {
+        case 'append': return this.#templateManager.append(tag)
+        case 'render': return this.#templateManager.reconcile(tag)
+        case 'replace': return await this.#renderInitial(tag)
+      }
+    })()
+
+    await JobRegistry.runJobs()
+    return output
   }
 
-  #renderInitial = tag => {
+  #renderInitial = async (tag) => {
     const template = this.#templateManager.initialize(tag)
-    return Renderer.appendNodes(this.#target, template)
+    const output = Renderer.appendNodes(this.#target, template)
+
+    await JobRegistry.runJobs()
+    return output
   }
 }

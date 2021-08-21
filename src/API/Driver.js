@@ -7,6 +7,7 @@ import ReferenceManager from '../reference/ReferenceManager.js'
 import StateManager from '../states/StateManager.js'
 import { createId } from '../Utilities.js'
 import Constants from '../Constants.js'
+import JobRegistry from '../registries/JobRegistry.js'
 
 export default function Driver (superclass = Object) {
   return class Driver extends superclass {
@@ -17,7 +18,6 @@ export default function Driver (superclass = Object) {
     #initialized = false
     #manager = null
     #plugins = {}
-    #postJobs = []
 
     #dataManager = null
     #eventManager
@@ -139,8 +139,8 @@ export default function Driver (superclass = Object) {
       this.#eventManager.emit(evt, this, ...rest)
     }
 
-    fetch (path, throws = false) {
-      return { type: Constants.INTERPOLATION_FETCH, path, throws, addJob: job => this.#postJobs.push(job) }
+    fetch (path, fallback) {
+      return { type: Constants.INTERPOLATION_FETCH, path, fallback }
     }
 
     getReference (name) {
@@ -178,10 +178,10 @@ export default function Driver (superclass = Object) {
         // })
       }
 
-      this.#runPostJobs(() => setTimeout(() => {
+      setTimeout(() => {
         this.#initialized = true
         this.emit('initialized')
-      }, 0))
+      }, 0)
     }
 
     off () {
@@ -213,10 +213,10 @@ export default function Driver (superclass = Object) {
       this.#eventManager.reset()
       this.emit('initialize')
 
-      this.#runPostJobs(() => setTimeout(() => {
+      setTimeout(() => {
         this.#initialized = true
         this.emit('initialized')
-      }, 0))
+      }, 0)
     }
 
     removeReference (name) {
@@ -241,21 +241,6 @@ export default function Driver (superclass = Object) {
       }
   
       this.#dataManager.attach(data)
-    }
-
-    #runPostJobs = cb => {
-      const queue = new NGN.Tasks()
-
-      this.#postJobs.forEach(({ name, callback }) => {
-        queue.add(name, callback)
-      })
-
-      queue.on('complete', () => {
-        // console.log('DONE')
-        cb()
-      })
-
-      queue.run()
     }
   }
 }

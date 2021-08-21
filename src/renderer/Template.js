@@ -82,7 +82,7 @@ export default class Template {
         this.nodes[i].replaceWith(node.render())
         continue
       }
-
+      
       this.nodes[i].reconcile(node)
     }
 
