@@ -1,7 +1,8 @@
+import Assets from './API/Assets.js'
+import Component from './API/component/Component.js'
 import DataModel from './data/DataModel.js'
 import DataStore from './data/DataStore.js'
 import Entity from './API/Entity.js'
-import Component from './API/component/Component.js'
 import Partial from './API/Partial.js'
 // import PerformanceMonitor from './diagnostics/PerformanceMonitor.js'
 import { css, html, markdown, svg } from './tag/tags.js'
@@ -29,6 +30,7 @@ const Utilities = {
 handleDOMContentLoaded(() => BUS.emit('ready'))
 
 export {
+  Assets,
   BUS as Bus,
   Component,
   // Diagnostics,

@@ -19,7 +19,21 @@ const Demo = new Entity({
       setTimeout(() => {
         this.emit('render', 'HEY', './test2.html')
 
-        setTimeout(() => this.emit('render', 'WUT', './test.html'), 2000)
+        setTimeout(() => {
+          this.emit('render', 'WUT', './test.html')
+          
+          setTimeout(() => {
+            this.emit('render', 'REC', './test.html')
+
+            setTimeout(() => {
+              this.emit('render', 'REC', './test.html')
+
+              setTimeout(() => {
+                this.emit('render', 'REC', './non-existent.html')
+              }, 2000)
+            }, 2000)
+          }, 2000)
+        }, 2000)
       }, 2000)
     },
 

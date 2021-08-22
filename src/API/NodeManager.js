@@ -60,11 +60,11 @@ export default class NodeManager {
     }
 
     if (!!bound) {
-      for (let { name, value } of ref.attributes) {
-        ref.removeAttribute(name)
-      }
+      // for (let { name, value } of ref.attributes) {
+      //   ref.removeAttribute(name)
+      // }
 
-      bound.attributes.forEach(({ name, value }) => ref.setAttribute(name, value))
+      // bound.attributes.forEach(({ name, value }) => ref.setAttribute(name, value))
       bound.cfg = cfg
     }
   }

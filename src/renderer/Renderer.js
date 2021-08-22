@@ -55,20 +55,20 @@ export default class Renderer {
     return target
   }
 
-  async append (tag) {
-    return await this.#render('append', tag)
+  append (tag) {
+    return this.#render('append', tag)
   }
 
-  async render (tag) {
-    return await this.#render('render', tag)
+  render (tag) {
+    return this.#render('render', tag)
   }
 
-  async replace (tag) {
+  replace (tag) {
     this.clear()
-    return await this.#render('replace', tag)
+    return this.#render('replace', tag)
   }
 
-  #render = async (type, tag) => {
+  #render = (type, tag) => {
     if (!(tag instanceof Tag)) {
       throw new TypeError(`${this.#context.type} ${this.#context.name}: : ${type}() expected tagged template literal, received "${NGN.typeof(tag)}"`)
     }
@@ -76,26 +76,18 @@ export default class Renderer {
     this.#observer.observe(this.#target, { childList: true })
     
     if (!this.#templateManager.initialized) {
-      return await this.#renderInitial(tag)
+      return this.#renderInitial(tag)
     }
 
-    const output = (async () => {
-      switch (type) {
-        case 'append': return this.#templateManager.append(tag)
-        case 'render': return this.#templateManager.reconcile(tag)
-        case 'replace': return await this.#renderInitial(tag)
-      }
-    })()
-
-    await JobRegistry.runJobs()
-    return output
+    switch (type) {
+      case 'append': return this.#templateManager.append(tag)
+      case 'render': return this.#templateManager.reconcile(tag)
+      case 'replace': return this.#renderInitial(tag)
+    }
   }
 
-  #renderInitial = async (tag) => {
+  #renderInitial = tag => {
     const template = this.#templateManager.initialize(tag)
-    const output = Renderer.appendNodes(this.#target, template)
-
-    await JobRegistry.runJobs()
-    return output
+    return Renderer.appendNodes(this.#target, template)
   }
 }

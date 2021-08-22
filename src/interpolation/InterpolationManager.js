@@ -7,7 +7,7 @@ import ArrayInterpolation from './ArrayInterpolation.js'
 import BatchInterpolation from './BatchInterpolation.js'
 import BindingInterpolation from './BindingInterpolation.js'
 import DataBindingInterpolation from './DataBindingInterpolation.js'
-import FetchInterpolation from './FetchInterpolation.js'
+// import FetchInterpolation from './FetchInterpolation.js'
 import PartialInterpolation from './PartialInterpolation.js'
 import PlaceholderInterpolation from './PlaceholderInterpolation.js'
 import TagInterpolation from './TagInterpolation.js'
@@ -73,7 +73,7 @@ export default class InterpolationManager {
       case Constants.INTERPOLATION_BATCH: return new BatchInterpolation(...defaultArgs)
       case Constants.INTERPOLATION_BINDING: return new BindingInterpolation(...defaultArgs)
       case Constants.INTERPOLATION_DATABINDING: return new DataBindingInterpolation(...defaultArgs)
-      case Constants.INTERPOLATION_FETCH: return new FetchInterpolation(...defaultArgs)
+      // case Constants.INTERPOLATION_FETCH: return new FetchInterpolation(...defaultArgs)
       case Constants.INTERPOLATION_PARTIAL: return new PartialInterpolation(...defaultArgs)
       default: throw new TypeError(`Invalid interpolation`, interpolation)
     }

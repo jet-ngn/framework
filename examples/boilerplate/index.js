@@ -1,4 +1,4 @@
-import { Entity, html, ready } from '../../src/index.js'
+import { Bus, Entity, html } from '../../src/index.js'
 
 const Demo = new Entity({
   selector: 'body',
@@ -15,4 +15,4 @@ const Demo = new Entity({
   }
 })
 
-ready(() => Demo.initialize())
+Bus.on('ready', () => Demo.initialize())

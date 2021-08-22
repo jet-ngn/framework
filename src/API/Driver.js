@@ -139,9 +139,9 @@ export default function Driver (superclass = Object) {
       this.#eventManager.emit(evt, this, ...rest)
     }
 
-    fetch (path, fallback) {
-      return { type: Constants.INTERPOLATION_FETCH, path, fallback }
-    }
+    // fetch (path, fallback) {
+    //   return { type: Constants.INTERPOLATION_FETCH, path, fallback }
+    // }
 
     getReference (name) {
       return this.#referenceManager.getReference(name, this.root)

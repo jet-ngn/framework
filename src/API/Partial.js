@@ -41,9 +41,9 @@ class PartialInstance {
     NGN.BUS.emit(evt, this, ...rest)
   }
 
-  fetch (path, fallback = '') {
-    return { type: Constants.INTERPOLATION_FETCH, path, fallback }
-  }
+  // fetch (path, fallback = '') {
+  //   return { type: Constants.INTERPOLATION_FETCH, path, fallback }
+  // }
 
   mapToHTML (arr, render) {
     return InterpolationManager.mapToHTML(...arguments, this.context.retainFormatting)
@@ -62,8 +62,7 @@ export default function Partial (cfg) {
       constructor: PartialInstance,
       renderFn () {
         this.emit(`render`)
-        const rendered = cfg.render.call(this, ...args)
-        return rendered
+        return cfg.render.call(this, ...args)
       }
     })
   }
