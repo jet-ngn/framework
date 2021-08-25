@@ -5,28 +5,29 @@ import { Bus } from '../index.js'
 class Assets {
   static async load (assets) {
     Bus.emit('assets.load')
+
     assets = Array.isArray(assets) ? assets : [assets]
 
-    for await (let { name, path } of assets) {
+    await Promise.all(assets.map(({ name, path }) => {
       const extension = path.split('.').pop()
 
       if (!['html', 'svg'/*, 'md'*/].includes(extension)) {
         console.error(`${path} Invalid Asset: "${extension}" files are not supported`)
-        continue
+        return null
       }
 
-      const stream = await fetch(path).catch(console.error)
-      
-      if (!stream.ok) {
-        continue
-      }
+      return fetch(path).then(async (response) => {
+        if (!response.ok) {
+          return
+        }
 
-      AssetRegistry.registerAsset(name, path, new Tag({
-        type: extension,
-        strings: [await stream.text()],
-        interpolations: []
-      }))
-    }
+        AssetRegistry.registerAsset(name, path, new Tag({
+          type: extension,
+          strings: [await response.text()],
+          interpolations: []
+        }))
+      }).catch(console.error)
+    }).filter(Boolean))
 
     Bus.emit('assets.loaded')
   }

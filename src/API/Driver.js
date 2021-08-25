@@ -155,6 +155,7 @@ export default function Driver (superclass = Object) {
       return this.#stateManager.hasState(...arguments)
     }
 
+    // TODO: Try making this async
     initialize ({ selector, manager, element, data }) {
       if (this.#initialized) {
         throw new Error(`${this.constructor.name} "${this.namespace}" already initialized`)

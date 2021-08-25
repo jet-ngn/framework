@@ -8,7 +8,7 @@ const Demo = new Entity({
     initialize () {
       this.render(html`
         ${Assets.get('Test')}
-        ${Assets.get('Test')}
+        ${Assets.get('Test 2')}
       `)
     }
   }

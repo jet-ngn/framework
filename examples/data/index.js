@@ -1,4 +1,4 @@
-import { Entity, Component, DataModel, html, ready, DataStore } from '../../src/index.js'
+import { Entity, Component, DataModel, html, DataStore, Bus } from '../../src/index.js'
 
 const compy = new Component('jet-test', {
   get template () {
@@ -143,4 +143,4 @@ const Demo = new Entity({
   }
 })
 
-ready(() => Demo.initialize({ data: { test: 'test' } }))
+Bus.on('ready', () => Demo.initialize({ data: { test: 'test' } }))

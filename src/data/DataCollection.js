@@ -61,7 +61,13 @@ export default class DataCollection {
 
   clearAttachments () {
     Object.keys(this.#attached).forEach(attachment => {
-      delete this[attachment]
+      const field = this[attachment]
+
+      if (field instanceof DataModel || field instanceof DataStore) {
+        // field.reset()
+      } else {
+        delete this[attachment]
+      }
     })
 
     this.#attached = {}
