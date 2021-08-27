@@ -1,6 +1,5 @@
 import TemplateManager from './TemplateManager.js'
 import Tag from '../tag/Tag.js'
-import JobRegistry from '../registries/JobRegistry.js'
 
 export default class Renderer {
   #context

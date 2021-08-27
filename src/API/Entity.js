@@ -1,6 +1,7 @@
 import Driver from './Driver.js'
 import NodeManager from './NodeManager.js'
 import ReferenceElement from '../reference/ReferenceElement.js'
+import { CompositionUtils } from '../Utilities.js'
 
 export default class Entity extends Driver() {
   #manages
@@ -8,12 +9,16 @@ export default class Entity extends Driver() {
 
   // #routeManager
 
-  constructor (cfg = {}) {
-    if (NGN.typeof(cfg) !== 'object') {
-      throw new TypeError(`Entity Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
-    }
+  constructor (defaultConfig, ...additionalConfigs) {
+    [defaultConfig, ...additionalConfigs].forEach(cfg => {
+      if (NGN.typeof(cfg) !== 'object') {
+        throw new TypeError(`Entity Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
+      }
+    })
 
-    super(cfg.name, ...arguments)
+    const cfg = CompositionUtils.composeConfigs(defaultConfig, ...additionalConfigs)
+
+    super(cfg.name, cfg)
 
     this.#manages = cfg.manages ?? []
     this.#selector = this.config.selector ?? null

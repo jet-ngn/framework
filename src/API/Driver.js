@@ -6,8 +6,6 @@ import PluginManager from '../plugins/PluginManager.js'
 import ReferenceManager from '../reference/ReferenceManager.js'
 import StateManager from '../states/StateManager.js'
 import { createId } from '../Utilities.js'
-import Constants from '../Constants.js'
-import JobRegistry from '../registries/JobRegistry.js'
 
 export default function Driver (superclass = Object) {
   return class Driver extends superclass {
@@ -32,22 +30,22 @@ export default function Driver (superclass = Object) {
       super()
 
       this.#cfg = cfg
-      this.#name = cfg.name ?? this.#id
+      this.#name = this.#cfg.name ?? this.#id
 
-      this.#eventManager = new EventManager(this, cfg.on ?? {})
+      this.#eventManager = new EventManager(this, this.#cfg.on ?? {})
 
-      if (Object.keys(cfg.methods ?? {}).length > 0) {
-        this.#methodManager = new MethodManager(this, cfg.methods)
+      if (Object.keys(this.#cfg.methods ?? {}).length > 0) {
+        this.#methodManager = new MethodManager(this, this.#cfg.methods)
       }
 
-      if (Object.keys(cfg.data ?? {}).length > 0) {
-        this.#dataManager = new DataManager(this, cfg.data)
+      if (Object.keys(this.#cfg.data ?? {}).length > 0) {
+        this.#dataManager = new DataManager(this, this.#cfg.data)
       }
 
-      this.#stateManager = new StateManager(this, cfg.states, cfg.initialState ?? 'idle')
+      this.#stateManager = new StateManager(this, this.#cfg.states, this.#cfg.initialState ?? 'idle')
 
-      if (cfg.plugins?.length > 0) {
-        this.#pluginManager = new PluginManager(this, cfg.plugins)
+      if (this.#cfg.plugins?.length > 0) {
+        this.#pluginManager = new PluginManager(this, this.#cfg.plugins)
       }
     }
 
@@ -138,10 +136,6 @@ export default function Driver (superclass = Object) {
     emit (evt, ...rest) {
       this.#eventManager.emit(evt, this, ...rest)
     }
-
-    // fetch (path, fallback) {
-    //   return { type: Constants.INTERPOLATION_FETCH, path, fallback }
-    // }
 
     getReference (name) {
       return this.#referenceManager.getReference(name, this.root)
