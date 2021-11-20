@@ -133,7 +133,7 @@ export default class ReferenceManager {
     delete collection[name]
   }
 
-  #getElements = selector => ((this.#context.type === 'component' ? this.#context.shadowRoot : this.#root) ?? document).querySelectorAll(selector)
+  #getElements = selector => ((this.#context.type === 'custom-element' ? this.#context.shadowRoot : this.#root) ?? document).querySelectorAll(selector)
 
   #validateReference = (name, node) => {
     if (Constants.REF_RESERVEDNAMES.includes(name)) {

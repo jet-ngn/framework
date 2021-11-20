@@ -5,11 +5,11 @@ import NodeManager from './NodeManager.js'
 import PluginManager from '../plugins/PluginManager.js'
 import ReferenceManager from '../reference/ReferenceManager.js'
 import StateManager from '../states/StateManager.js'
-import { createId } from '../Utilities.js'
+import { createID } from '../Utilities.js'
 
 export default function Driver (superclass = Object) {
   return class Driver extends superclass {
-    #id = createId()
+    #id = createID()
     #name
     #cfg
 

@@ -1,10 +1,10 @@
 import Constants from '../Constants.js'
 import NodeManager from './NodeManager.js'
-import { createId } from '../Utilities.js'
+import { createID } from '../Utilities.js'
 
 class PartialInstance {
   #context
-  #id = createId()
+  #id = createID()
   #name
 
   constructor (context, cfg) {
@@ -30,7 +30,7 @@ class PartialInstance {
 
   bind (cfg, render) {
     if (cfg.hasOwnProperty('entity')) {
-      throw new Error(`Partial "${this.name}": Invalid configuration. Partials cannot bind to Entities, only Components`)
+      throw new Error(`Partial "${this.name}": Invalid configuration. Partials cannot bind to Entities, only Custom Elements`)
     }
 
     return NodeManager.bind(this, ...arguments)

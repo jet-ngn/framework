@@ -8,9 +8,7 @@ export default class TagInterpolation extends MultipleChildInterpolation {
   }
 
   reconcile (update) {
-    update.render()
-
-    if (update.rendered.length !== this.rendered.length) {
+    if (update.value.nodes.length !== this.value.nodes.length) {
       return this.replaceWith(update.render())
     }
 

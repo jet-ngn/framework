@@ -184,7 +184,7 @@ export default class StateManager {
     })
   }
 
-  #execChange = (state, payload = null, routeConfig) => {
+  #execChange = (state, payload, routeConfig) => {
     const currentRoute = this.currentRoute ? this.currentRoute.toJSON() : null
 
     const change = new StateChange({

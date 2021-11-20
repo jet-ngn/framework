@@ -75,14 +75,14 @@ export default class Template {
   }
 
   reconcile (update) {
-    for (let i = 0, length = update.nodes.length; i < length; i++) {
+    for (let i = 0, { length } = update.nodes; i < length; i++) {
       const node = update.nodes[i]
 
       if (node.constructor !== this.nodes[i].constructor) {
         this.nodes[i].replaceWith(node.render())
         continue
       }
-      
+
       this.nodes[i].reconcile(node)
     }
 

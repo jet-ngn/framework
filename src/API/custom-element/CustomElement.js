@@ -1,7 +1,7 @@
 import Driver from '../Driver.js'
 import PropertyManager from './properties/PropertyManager.js'
 import NodeManager from '../NodeManager.js'
-import ComponentRegistry from '../../registries/ComponentRegistry.js'
+import CustomElementRegistry from '../../registries/CustomElementRegistry.js'
 
 import Template from '../../renderer/Template.js'
 import CSSParser from '../../parser/CSSParser.js'
@@ -9,7 +9,7 @@ import Renderer from '../../renderer/Renderer.js'
 import { DOMEventRegistry } from '../../registries/DOMEventRegistry.js'
 import { html } from '../../tag/tags.js'
 
-const CustomElement = superClass => class extends Driver(superClass) {
+const BaseElement = superClass => class extends Driver(superClass) {
   #connected = false
   #attributeManager
   #retainFormatting
@@ -29,7 +29,7 @@ const CustomElement = superClass => class extends Driver(superClass) {
   }
 
   get type () {
-    return 'component'
+    return 'custom-element'
   }
 
   // attributeChangedCallback (name, previous, current) {
@@ -118,16 +118,16 @@ const CustomElement = superClass => class extends Driver(superClass) {
   }
 }
 
-export default function Component (tag, cfg) {
+export default function CustomElement (tag, cfg) {
   if (!!customElements.get(tag)) {
     throw new Error(`Custom Element "${tag}" already exists`)
   }
 
   if (NGN.typeof(cfg) !== 'object') {
-    throw new TypeError(`Component Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
+    throw new TypeError(`Custom Element Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
   }
 
-  class Component extends CustomElement(cfg.base ?? HTMLElement) {
+  class CustomElement extends BaseElement(cfg.base ?? HTMLElement) {
     #cfg
     #eventRegistry
     #propertyManager
@@ -183,7 +183,7 @@ export default function Component (tag, cfg) {
     }
   }
 
-  ComponentRegistry.add(tag, Component)
-  customElements.define(tag, Component)
-  return Component
+  CustomElementRegistry.add(tag, CustomElement)
+  customElements.define(tag, CustomElement)
+  return CustomElement
 }

@@ -58,9 +58,9 @@ export default class Property {
 
     if (!!value) {
       if (value.constructor !== this.#type) {
-        throw new Error(`Component <${this.#context.nodeName.toLowerCase()}> "${this.#context.name}:" ${this.#isAttribute ? 'Attribute' : 'Property'} "${this.#name}" expected a value of type "${this.#type.name.toLowerCase()}", received "${NGN.typeof(value)}"`)
+        throw new Error(`Custom Element <${this.#context.nodeName.toLowerCase()}> "${this.#context.name}:" ${this.#isAttribute ? 'Attribute' : 'Property'} "${this.#name}" expected a value of type "${this.#type.name.toLowerCase()}", received "${NGN.typeof(value)}"`)
       } else if (this.#validValues && !this.#validValues.includes(value)) {
-        throw new Error(`Component <${this.#context.nodeName.toLowerCase()}> "${this.#context.name}:" ${this.#isAttribute ? 'Attribute' : 'Property'} "${this.#name}" expected one of the following values: "${this.#validValues.join('", "')}". Received "${value}"`)
+        throw new Error(`Custom Element <${this.#context.nodeName.toLowerCase()}> "${this.#context.name}:" ${this.#isAttribute ? 'Attribute' : 'Property'} "${this.#name}" expected one of the following values: "${this.#validValues.join('", "')}". Received "${value}"`)
       }
     }
 

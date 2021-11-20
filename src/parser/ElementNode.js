@@ -1,7 +1,7 @@
 import HTMLParser from './HTMLParser.js'
 import ParsedNode from './ParsedNode.js'
 import ElementReconciler from '../reconciler/ElementReconciler.js'
-import ComponentRegistry from '../registries/ComponentRegistry.js'
+import CustomElementRegistry from '../registries/CustomElementRegistry.js'
 import DOMEventRegistry from '../registries/DOMEventRegistry.js'
 
 export default class ElementNode extends ParsedNode {
@@ -30,7 +30,7 @@ export default class ElementNode extends ParsedNode {
       context.addReference(ref, this)
     }
 
-    if (this.isComponent) {
+    if (this.isCustom) {
       const handler = evt => {
         this.source.initialize({ data: this.#boundData ?? null, manager: this.context })
         this.source.removeEventListener('connected', handler)
@@ -67,8 +67,8 @@ export default class ElementNode extends ParsedNode {
     return this.#id
   }
 
-  get isComponent () {
-    return ComponentRegistry.has(this.tag.toLowerCase())
+  get isCustom () {
+    return CustomElementRegistry.has(this.tag.toLowerCase())
   }
 
   get isCustomElement () {
@@ -101,9 +101,11 @@ export default class ElementNode extends ParsedNode {
   }
 
   addEventListeners (events) {
-    Object.keys(events).forEach(evt => {
-      this.addEventListener(evt, events[evt])
-    })
+    Object.keys(events).forEach(evt => this.addEventListener(evt, events[evt]))
+  }
+
+  applyProperty (property, value) {
+    this.source[property] = value
   }
 
   bindData (data) {
@@ -124,10 +126,6 @@ export default class ElementNode extends ParsedNode {
 
   hasEventListeners () {
     return DOMEventRegistry.elementHasHandlers(this)
-  }
-
-  removeAllEventListeners () {
-    console.log('REMOVE EM');
   }
 
   removeEventListener (evt, handler) {

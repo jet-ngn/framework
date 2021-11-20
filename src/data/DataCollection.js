@@ -137,15 +137,12 @@ export default class DataCollection {
       }
 
       const update = {
+        field: change.field,
         previous: change.old,
         current: change.new
       }
 
-      this.#context.emit(`data${name ? `.${name}` : ''}.changed`, {
-        name: change.field,
-        ...update
-      })
-
+      this.#context.emit(`data${name ? `.${name}` : ''}.changed`, update)
       this.#context.emit(`data${name ? `.${name}` : ''}.${change.field}.changed`, update)
     })
   }

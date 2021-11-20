@@ -1,8 +1,8 @@
-import { createId } from '../Utilities.js'
+import { createID } from '../Utilities.js'
 
 export default class EventHandler {
   #context
-  #id = createId()
+  #id = createID()
   #min
   #max
   #interval

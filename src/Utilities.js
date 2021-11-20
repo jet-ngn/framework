@@ -1,4 +1,4 @@
-export function createId (type = 'nano') {
+export function createID (type = 'nano') {
   switch (type) {
     case 'nano':
     case 'uuid':

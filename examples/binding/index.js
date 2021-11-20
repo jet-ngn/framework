@@ -1,4 +1,4 @@
-import { Entity, html, ready } from '../../src/index.js'
+import { Bus, Entity, html, Partial } from '../../src/index.js'
 
 const Ref1 = new Entity({
   name: 'ref1',
@@ -22,6 +22,30 @@ const Ref2 = new Entity({
   }
 })
 
+const Input = new Partial({
+  name: 'input',
+
+  render (value) {
+    return html`${this.bind({
+      properties: { value }
+    }, html`<input type="text">`)}`
+  }
+})
+
+const Textarea = new Partial({
+  name: 'textarea',
+
+  render (value) {
+    return html`
+      ${this.bind({
+        attributes: {
+          class: Math.random(.5)
+        }
+      }, html`<textarea>${value}</textarea>`)}
+    `
+  }
+})
+
 const Demo = new Entity({
   selector: 'body',
   name: 'binding',
@@ -32,21 +56,37 @@ const Demo = new Entity({
 
   on: {
     initialize () {
+      this.emit('render', 'START')
+
+      setTimeout(() => this.emit('render', 'UPDATE'), 2000)
+    },
+
+    render (value) {
       this.render(html`
         <hr />
 
-        ${this.bind({
-          on: {
-            click: evt => this.emit('bind.ref1')
-          }
-        }, html`<button>Bind Ref 1</button>`)}
+        ${Input.render(value)}
 
-        ${this.bind({
-          on: {
-            click: evt => this.emit('bind.ref2')
-          }
-        }, html`<button>Bind Ref 2</button>`)}
+        ${Textarea.render(value)}
       `)
+
+      // ${this.bind({
+      //   on: {
+      //     click: evt => this.emit('bind.ref1')
+      //   }
+      // }, html`<button>Bind Ref 1</button>`)}
+
+      // ${this.bind({
+      //   on: {
+      //     click: evt => this.emit('bind.ref2')
+      //   }
+      // }, html`<button>Bind Ref 2</button>`)}
+
+      // ${this.bind({
+      //   on: {
+      //     click: evt => this.emit('bind.input')
+      //   }
+      // }, html`<button>Bind Input</button>`)}
     },
 
     bind: {
@@ -65,4 +105,4 @@ const Demo = new Entity({
   }
 })
 
-ready(() => Demo.initialize())
+Bus.on('ready', () => Demo.initialize())

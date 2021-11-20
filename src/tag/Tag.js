@@ -9,6 +9,10 @@ export default class Tag {
     this.#interpolations = interpolations
   }
 
+  // get raw () {
+  //   return 
+  // }
+
   get type () {
     return this.#type
   }
