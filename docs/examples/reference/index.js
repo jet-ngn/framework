@@ -1,4 +1,4 @@
-import { Entity, html, ready } from '../../src/index.js'
+import { Entity, html, ready } from '../../../src/index.js'
 
 const Entity1 = new Entity({
   name: 'entity_1',

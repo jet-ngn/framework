@@ -1,0 +1,19 @@
+{
+  "name": "jet-src",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Jet UI Source Code",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Graham Butler",
+  "license": "ISC",
+  "dependencies": {
+    "ngn": "^2.0.0-alpha.11"
+  }
+}

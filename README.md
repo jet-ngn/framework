@@ -1,7 +1,8 @@
-# Jet UI Framework
-Another one?
+# Jet
+Jet (Jet-NGN) is a JavaScript UI library.
 
 ## Docs
 
 1. [Overview]()
-1. [Entity]()
+1. [API Reference]()
+1. [Guides]()

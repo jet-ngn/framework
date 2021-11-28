@@ -1,37 +1,24 @@
 {
   "name": "jet",
-  "version": "2.0.0",
-  "description": "The JET-NGN JavaScript UI framework",
+  "version": "3.0.0",
+  "description": "The Jet-NGN JavaScript UI framework",
   "main": "src/index.js",
   "type": "module",
+  "bin": {
+    "jet": "./build/cli.js"
+  },
   "scripts": {
-    "build": "dev build",
-    "manually": "dev test -rt manual tests/*.js",
-    "test": "dev test -rt browser tests/*.js",
-    "ws": "dev ws"
+    "setup": "rm -rf ./node_modules && npm install && npm link && cd build && rm -rf ./node_modules && npm install && cd ./productionline && rm -rf ./node_modules && npm install && cd ../../src && rm -rf ./node_modules && npm install && cd ../test && rm -rf ./node_modules && npm install && cd ../docs/examples && rm -rf ./node_modules && npm install",
+    "update": "npm update && npm link && cd build && npm update && cd ./productionline && npm update && cd ../../src && npm update && cd ../test && npm update && cd ../docs/examples && npm update"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jet-ngn/framework.git"
   },
   "author": "Graham Butler",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "bugs": {
     "url": "https://github.com/jet-ngn/framework/issues"
   },
-  "homepage": "https://github.com/jet-ngn/framework#readme",
-  "devDependencies": {
-    "@author.io/dev": "^1.1.6"
-  },
-  "dev": {
-    "verbose": true,
-    "alias": {
-      "ngn": "/app/lib/ngn.min.js",
-      "jet": "/app/.dist/jet/index.js",
-      "jet-debug": "/app/.dist/jet-debug/index.js"
-    },
-    "autoimport": [
-      "import NGN from 'ngn'"
-    ]
-  }
+  "homepage": "https://github.com/jet-ngn/framework#readme"
 }

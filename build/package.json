@@ -1,0 +1,19 @@
+{
+  "name": "jet-build",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build tool for Jet UI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Graham Butler",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cliui": "^7.0.4",
+    "esbuild": "^0.13.14",
+    "fs-extra": "^10.0.0"
+  }
+}
