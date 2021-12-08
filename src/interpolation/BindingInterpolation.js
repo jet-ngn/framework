@@ -1,4 +1,5 @@
 import Constants from '../Constants.js'
+import Entity from '../API/Entity.js'
 
 import StyleRegistry from '../registries/StyleRegistry.js'
 // import DOMEventRegistry from '../registries/DOMEventRegistry.js'
@@ -224,7 +225,7 @@ export default class BindingInterpolation extends Interpolation {
   }
 
   #bindEntity = element => {
-    const { entity } = this.#config
+    let { entity } = this.#config
     
     const cfg = {
       manager: this.#template.context,
@@ -235,6 +236,7 @@ export default class BindingInterpolation extends Interpolation {
       cfg.data = this.#config.data
     }
 
+    entity = entity instanceof Entity ? entity : new Entity(entity)
     entity[entity.initialized ? 'reinitialize' : 'initialize'](cfg)
   }
 

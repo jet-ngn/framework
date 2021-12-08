@@ -1,6 +1,6 @@
 import { Bus, Entity, html } from '../../src/index.js'
 
-const Box1 = new Entity({
+const Box1 = {
   name: 'box.1',
 
   on: {
@@ -33,7 +33,7 @@ const Box1 = new Entity({
       `)
     }
   }
-})
+}
 
 const Demo = new Entity({
   selector: 'body',
