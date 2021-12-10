@@ -9,5 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Graham Butler",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "tappedout": "^1.1.8"
+  }
 }

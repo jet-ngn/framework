@@ -49,11 +49,6 @@ class Listener {
   abort () {
     this.#abortController.abort()
   }
-
-  apply (element) {
-    // TODO: Register this event in the DOMEventManager
-    element.addEventListener(this.#event, this.#handler, this.#options)
-  }
 }
 
 class EventManager {
@@ -69,7 +64,8 @@ class EventManager {
 
     listener.options.signal.onabort = evt => this.#listeners.delete(listener.id)
     this.#listeners.set(listener.id, listener)
-    listener.apply(this.#context)
+    // TODO: Register this event in the DOMEventManager
+    this.#context.addEventListener(listener.event, listener.handler, listener.options)
 
     return listener
   }

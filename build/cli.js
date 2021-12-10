@@ -22,12 +22,12 @@ const builder = new ProductionLine({
 
     {
       name: 'build',
-      description: 'Build Jet UI Library',
+      description: 'Build Jet UI Library distributable package.',
 
       flags: {
         dev: {
           type: 'boolean',
-          description: 'Generate distributable package.'
+          description: 'Build without minification.'
         },
 
         watch: {
@@ -55,7 +55,7 @@ const builder = new ProductionLine({
             minify: !dev,
             bundle: true,
             sourcemap: !dev,
-            target: [flag('target') ?? 'es2020'],
+            target: ['es2020'],
             format: 'esm',
             keepNames: true,
             

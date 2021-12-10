@@ -8,36 +8,36 @@ import Element from './Element.js'
 //   // console.log(t3)
 // })
 
-// { // Test cases for event handling
-//   const test = new Element(document.querySelector('.test'))
-//   // const con = new AbortController
-//   // const l = test.on('click', evt => {
-//   //   console.log('ABORTING')
-//   //   // con.abort()
-//   // }, { signal: con.signal })
+{ // Test cases for event handling
+  const test = new Element(document.querySelector('.test'))
+  // const con = new AbortController
+  // const l = test.on('click', evt => {
+  //   console.log('ABORTING')
+  //   // con.abort()
+  // }, { signal: con.signal })
   
-//   // con.abort()
+  // con.abort()
 
-//   // console.log(l);
+  // console.log(l);
 
 
-//   const handler = evt => {
-//     console.log('stored handler')
-//   }
+  const handler = evt => {
+    console.log('stored handler')
+  }
 
-//   test.on('click', evt => {
-//     console.log('FIRST HANDLER')
-//   })
+  test.on('click', evt => {
+    console.log('FIRST HANDLER')
+  })
 
-//   test.on('click', handler)
+  test.on('click', handler)
 
-//   const listener = test.on('click', evt => {
-//     console.log('SECOND HANDLER')
-//     test.off('click')
-//     // test.off('click', handler)
-//     // test.off(listener.id)
-//   })
-// }
+  const listener = test.on('click', evt => {
+    console.log('SECOND HANDLER')
+    test.off('click')
+    // test.off('click', handler)
+    // test.off(listener.id)
+  })
+}
 
 // console.log(test.addEventListener('click', console.log, {
 //   signal: new AbortController().signal

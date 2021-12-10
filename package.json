@@ -5,11 +5,12 @@
   "main": "src/index.js",
   "type": "module",
   "bin": {
-    "jet": "./build/cli.js"
+    "jet": "./cli.js"
   },
   "scripts": {
     "setup": "rm -rf ./node_modules && npm install && npm link && cd build && rm -rf ./node_modules && npm install && cd ./productionline && rm -rf ./node_modules && npm install && cd ../../src && rm -rf ./node_modules && npm install && cd ../test && rm -rf ./node_modules && npm install && cd ../docs/examples && rm -rf ./node_modules && npm install",
-    "update": "npm update && npm link && cd build && npm update && cd ./productionline && npm update && cd ../../src && npm update && cd ../test && npm update && cd ../docs/examples && npm update"
+    "update": "npm update && npm link && cd build && npm update && cd ./productionline && npm update && cd ../../src && npm update && cd ../test && npm update && cd ../docs/examples && npm update",
+    "test": "cd test && node index.js"
   },
   "repository": {
     "type": "git",
@@ -20,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/jet-ngn/framework/issues"
   },
-  "homepage": "https://github.com/jet-ngn/framework#readme"
+  "homepage": "https://github.com/jet-ngn/framework#readme",
+  "dependencies": {
+    "@author.io/shell": "^1.8.16"
+  }
 }
