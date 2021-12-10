@@ -1,3 +1,5 @@
+import Entity from "./API/Entity.js"
+
 export function createID (type = 'nano') {
   switch (type) {
     case 'nano':

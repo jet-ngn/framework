@@ -1,4 +1,6 @@
 // import Assets from './API/Assets.js'
+import App from './API/App.js'
+import Bus from './API/Bus.js'
 import CustomElement from './API/custom-element/CustomElement.js'
 import DataModel from './data/DataModel.js'
 import DataStore from './data/DataStore.js'
@@ -16,24 +18,31 @@ if (!window.hasOwnProperty('NGN')) {
   throw new Error('Jet requires NGN. See https://github.com/ngnjs/NGN')
 }
 
-const { BUS, EventEmitter, Tasks } = NGN
+const { EventEmitter, Tasks } = NGN
 
-// const Diagnostics = {
-//   PerformanceMonitor
-// }
+const Diagnostics = {
+  // PerformanceMonitor
+
+  logEvents: function () {
+    Bus.on('*', function () {
+      console.log(this.event)
+    })
+  }
+}
 
 const Utilities = {
   createID,
   elementIsVisible
 }
 
-handleDOMContentLoaded(() => BUS.emit('ready'))
+handleDOMContentLoaded(() => Bus.emit('ready'))
 
 export {
   // Assets,
-  BUS as Bus,
+  App,
+  Bus,
   CustomElement,
-  // Diagnostics,
+  Diagnostics,
   Entity,
   EventEmitter,
   DataModel,

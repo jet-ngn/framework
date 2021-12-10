@@ -88,7 +88,6 @@ export default class EventManager {
 
     const context = this.#context
     const events = this.#events
-    const self = this
 
     NGN.BUS.on(handler.event, function () {
       const { action } = handler.call(context, this.event, ...arguments)

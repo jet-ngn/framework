@@ -83,7 +83,7 @@ export default class EventHandler {
       this.#callback(context)
       return { action: 'execute' }
     }
-
+    
     const evt = {
       name: this.#event,
       calls: this.#calls
@@ -93,7 +93,7 @@ export default class EventHandler {
       evt.referredEvent = name
     }
 
-    if (source && source !== this.#context) {
+    if (source && source !== this.#context && source) {
       evt.source = source
     }
 

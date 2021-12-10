@@ -1,4 +1,5 @@
 import Constants from '../Constants.js'
+import Entity from './Entity.js'
 import Template from '../renderer/Template.js'
 import Tag from '../tag/Tag.js'
 
@@ -28,7 +29,7 @@ export default class NodeManager {
 
   static bindRef (context, cfg, ref) {
     const bound = NodeManager.boundRefs.get(ref)
-    const { entity, attributes, data, on } = cfg
+    let { entity, attributes, data, on } = cfg
 
     if (!bound) {
       const template = document.createElement('template')
@@ -52,6 +53,7 @@ export default class NodeManager {
         ref.append(bound.initialChildren.cloneNode(true))
       }
 
+      entity = entity instanceof Entity ? entity : new Entity(entity)
       entity[entity.initialized ? 'reinitialize' : 'initialize']({
         element: ref.element,
         data: data ?? {},

@@ -1,4 +1,4 @@
-import { Bus, Entity, html } from '../../src/index.js'
+import { App, Bus, Diagnostics, html } from '../../src/index.js'
 
 const Box1 = {
   name: 'box.1',
@@ -35,11 +35,15 @@ const Box1 = {
   }
 }
 
-const Demo = new Entity({
+const Demo = {
   selector: 'body',
   name: 'all',
 
   on: {
+    test (str) {
+      console.log(str)
+    },
+
     initialize () {
       console.log('Entity "initialize" event fired.')
 
@@ -64,12 +68,25 @@ const Demo = new Entity({
 
     initialized () {
       console.log('Entity "initialized" event fired.')
+
+      Bus.emit('all.test', 'WORKS')
     }
   }
+}
+
+const Test = new App({
+  name: 'Test App',
+  version: '1.0.0',
+  root: Demo,
+  
+  contributors: [{
+    name: 'Graham Butler',
+    role: 'Lead Developer',
+    contact: {
+      homepage: 'https://github.com/gbdrummer'
+    }
+  }]
 })
 
-// Bus.on('*', function () {
-//   console.log(this.event)
-// })
-
-Bus.on('ready', () => Demo.initialize())
+Test.start()
+// Diagnostics.logEvents()
