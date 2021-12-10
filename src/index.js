@@ -1,50 +1,70 @@
-console.log('WORKS')
+import NGN from 'NGN'
+import Element from './Element.js'
 
-// import Assets from './API/Assets.js'
-// import CustomElement from './API/custom-element/CustomElement.js'
-// import DataModel from './data/DataModel.js'
-// import DataStore from './data/DataStore.js'
-// import Entity from './API/Entity.js'
-// import Partial from './API/Partial.js'
-// // import PerformanceMonitor from './diagnostics/PerformanceMonitor.js'
-// import { css, html, markdown, svg } from './tag/tags.js'
-// import { handleDOMContentLoaded, createID, elementIsVisible } from './Utilities.js'
-
-// globalThis.addEventListener('error', evt => {
-//   return false
+// NGN.LEDGER.on('*', function (evt, handler, id) {
+//   console.log(evt);
+//   // console.log(t1)
+//   // console.log(t2)
+//   // console.log(t3)
 // })
 
-// if (!window.hasOwnProperty('NGN')) {
-//   throw new Error('Jet requires NGN. See https://github.com/ngnjs/NGN')
+// { // Test cases for event handling
+//   const test = new Element(document.querySelector('.test'))
+//   // const con = new AbortController
+//   // const l = test.on('click', evt => {
+//   //   console.log('ABORTING')
+//   //   // con.abort()
+//   // }, { signal: con.signal })
+  
+//   // con.abort()
+
+//   // console.log(l);
+
+
+//   const handler = evt => {
+//     console.log('stored handler')
+//   }
+
+//   test.on('click', evt => {
+//     console.log('FIRST HANDLER')
+//   })
+
+//   test.on('click', handler)
+
+//   const listener = test.on('click', evt => {
+//     console.log('SECOND HANDLER')
+//     test.off('click')
+//     // test.off('click', handler)
+//     // test.off(listener.id)
+//   })
 // }
 
-// const { BUS, EventEmitter, Tasks } = NGN
+// console.log(test.addEventListener('click', console.log, {
+//   signal: new AbortController().signal
+// }));
 
-// // const Diagnostics = {
-// //   PerformanceMonitor
-// // }
+// test.classList.add('tessst', 'heyyyy')
+// test.classList = new Map([['test', 'hey']])
 
-// const Utilities = {
-//   createID,
-//   elementIsVisible
-// }
+// console.log(test.classList);
 
-// handleDOMContentLoaded(() => BUS.emit('ready'))
 
-// export {
-//   // Assets,
-//   BUS as Bus,
-//   CustomElement,
-//   // Diagnostics,
-//   Entity,
-//   EventEmitter,
-//   DataModel,
-//   DataStore,
-//   Partial,
-//   Tasks as Queue,
-//   Utilities,
-//   css,
-//   html,
-//   markdown,
-//   svg
-// }
+
+// import Bus from './bus/Bus.js'
+
+// console.log(NGN)
+
+// NGN.BUS.on('test', function (t1, t2) {
+//   console.log(t1, t2)
+//   console.log(this);
+// })
+
+// NGN.BUS.emit('test', 'hey')
+
+// Bus.on({
+//   test () {
+//     console.log('WORKS')
+//   }
+// })
+
+// Bus.emit('test')

@@ -5,10 +5,9 @@ import ProductionLine from './productionline/index.js'
 import ESBuild from 'esbuild'
 
 const builder = new ProductionLine({
-  name: 'jet-builder',
-  description: 'Build tool for Jet UI Library',
+  name: 'jet-build',
+  description: 'Build tool to produce Jet UI Library distribution package',
   version: '0.0.1',
-  root: '../',
 
   commands: [
     // {
@@ -56,61 +55,52 @@ const builder = new ProductionLine({
             minify: !dev,
             bundle: true,
             sourcemap: !dev,
-            target: flag('target') ?? ['es2020'],
+            target: [flag('target') ?? 'es2020'],
+            format: 'esm',
             keepNames: true,
             
-            // external: !!flag('bundle') ? [
-            //   'os',
-            //   '@ngnjs/libnet-node',
-            //   '@ngnjs/crypto',
-            //   '@ngnjs/net',
-            //   'crypto',
-            //   'http',
-            //   'https'
-            // ] : [],
+            external: [
+              'os',
+              // '@ngnjs/libnet-node',
+              // '@ngnjs/crypto',
+              // '@ngnjs/net',
+              // 'crypto',
+              // 'http',
+              // 'https'
+            ],
 
-            // plugins: [{
-            //   name: 'path-aliases',
+            plugins: [{
+              name: 'path-aliases',
               
-            //   setup (build) {
-            //     build.onResolve({ filter: /^jet/ }, args => ({
-            //       path: path.join(source, 'lib', args.path, 'index.js')
-            //     }))
+              setup (build) {
+                // build.onResolve({ filter: /^author-shell/ }, args => ({
+                //   path: path.join(source, 'node_modules', '@author.io', 'shell', 'index.js')
+                // }))
 
-            //     build.onResolve({ filter: /^firebase\// }, args => ({
-            //       path: path.join(source, 'node_modules', args.path, 'dist', 'index.esm.js')
-            //     }))
+                build.onResolve({ filter: /^NGN/ }, args => ({
+                  path: path.join(source, 'node_modules', 'ngn', 'index.js')
+                }))
 
-            //     build.onResolve({ filter: /^IAM/ }, args => ({
-            //       path: path.join(source, 'node_modules', '@author.io', 'iam', 'index.js')
-            //     }))
+                // build.onResolve({ filter: /^NET/ }, args => ({
+                //   path: path.join(source, 'node_modules', '@ngnjs', 'net', 'index.js')
+                // }))
 
-            //     build.onResolve({ filter: /^author-shell/ }, args => ({
-            //       path: path.join(source, 'node_modules', '@author.io', 'shell', 'index.js')
-            //     }))
-
-            //     build.onResolve({ filter: /^NGN/ }, args => ({
-            //       path: path.join(source, 'node_modules', 'ngn', 'index.js')
-            //     }))
-
-            //     build.onResolve({ filter: /^NET/ }, args => ({
-            //       path: path.join(source, 'node_modules', '@ngnjs', 'net', 'index.js')
-            //     }))
-
-            //     build.onResolve({ filter: /^@ngnjs\/crypto/ }, args => ({
-            //       path: path.join(source, 'node_modules', '@ngnjs', 'crypto', 'index.js')
-            //     }))
+                // build.onResolve({ filter: /^@ngnjs\/crypto/ }, args => ({
+                //   path: path.join(source, 'node_modules', '@ngnjs', 'crypto', 'index.js')
+                // }))
             
-            //     // Mark all paths starting with "http://" or "https://" as external
-            //     build.onResolve({ filter: /^https?:\/\// }, args => {
-            //       return { path: args.path, external: true }
-            //     })
-            //   },
-            // }]
-          }).then(({ warnings }) => {
+                // Mark all paths starting with "http://" or "https://" as external
+                // build.onResolve({ filter: /^https?:\/\// }, args => {
+                //   return { path: args.path, external: true }
+                // })
+              },
+            }]
+          }).then(async ({ warnings }) => {
             if (warnings.length > 0) {
               warnings.forEach(console.log)
             }
+
+            await builder.project.copyFile('index.html')
 
             next()
           }).catch(e => {

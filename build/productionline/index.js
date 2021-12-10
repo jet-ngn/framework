@@ -82,8 +82,13 @@ class Project {
     }
 
     for (const filepath of filepaths) {
-      await fs.copy(path.join(this.#source, filepath), path.join(this.#output, filepath))
+      await this.copyFile(filepath)
+      // await fs.copy(path.join(this.#source, filepath), path.join(this.#output, filepath))
     }
+  }
+
+  async copyFile (from, to) {
+    await fs.copy(path.join(this.#source, from), path.join(this.#output, to ?? from))
   }
 
   /**
