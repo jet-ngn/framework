@@ -53,7 +53,7 @@ export default class NodeManager {
         ref.append(bound.initialChildren.cloneNode(true))
       }
 
-      entity = entity instanceof Entity ? entity : new Entity(entity)
+      entity = entity instanceof Entity ? entity : new Entity(...(Array.isArray(entity) ? entity : [entity]))
       entity[entity.initialized ? 'reinitialize' : 'initialize']({
         element: ref.element,
         data: data ?? {},

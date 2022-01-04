@@ -235,8 +235,9 @@ export default class BindingInterpolation extends Interpolation {
     if (this.#config.hasOwnProperty('data')) {
       cfg.data = this.#config.data
     }
-
-    entity = entity instanceof Entity ? entity : new Entity(entity)
+    console.log(entity);
+    entity = entity instanceof Entity ? entity : new Entity(...(Array.isArray(entity) ? entity : [entity]))
+    console.log(entity)
     entity[entity.initialized ? 'reinitialize' : 'initialize'](cfg)
   }
 

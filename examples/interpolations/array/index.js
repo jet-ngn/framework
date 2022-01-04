@@ -1,4 +1,4 @@
-import { Entity, Partial, DataStore, html, ready } from '../../../src/index.js'
+import { Entity, Partial, DataStore, html, Bus } from '../../../src/index.js'
 import Items from './Items.js'
 import Button from './Button.js'
 
@@ -18,12 +18,12 @@ const Demo = new Entity({
   },
 
   on: {
-    'data.items.*' (evt, items) {
+    'data.items.loaded' (items) {
       this.emit('items.render', items)
     },
 
     button: {
-      'render-items' (evt, items) {
+      'render-items' (items) {
         this.data.items.load(items)
       }
     },
@@ -46,4 +46,4 @@ const Demo = new Entity({
   }
 })
 
-ready(() => Demo.initialize())
+Bus.on('ready', () => Demo.initialize())

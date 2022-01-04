@@ -1,3 +1,7 @@
+# bind function
+
+Add a "transfer" property. This takes any data and simply brings a reference to it into the bound entity. It can be accessed via `this.transfer`
+
 # Event Bus
 
 - change "ready" event to "DOMContentLoaded". There is no reason to obscure the native event names.

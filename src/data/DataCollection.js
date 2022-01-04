@@ -96,12 +96,25 @@ export default class DataCollection {
   }
 
   #addField = (name, cfg) => {
-    this.#fields.addField(name, cfg)
+    if (typeof cfg === 'function' || typeof cfg.type === 'function') {
+      this.#fields.addField(name, cfg)
 
-    Object.defineProperty(this, name, {
-      get: () => this.#fields[name],
-      set: value => this.#setField(name, value)
-    })
+      return Object.defineProperty(this, name, {
+        get: () => this.#fields[name],
+        set: value => this.#setField(name, value)
+      })
+    }
+
+    if (cfg.type === 'store') {
+      return this.#addStore(name, new DataStore(cfg.model))
+    }
+
+    if (cfg.type === 'model') {
+      delete cfg.type
+      return this.#addModel(name, new DataModel(cfg))
+    }
+
+    throw new Error(`Invalid data field type "${cfg.type}"`)
   }
 
   #addModel = (name, model) => {

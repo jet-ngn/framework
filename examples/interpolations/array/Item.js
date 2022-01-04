@@ -5,10 +5,16 @@ export default Partial({
 
   render ({ title, description }) {
     return html`
-      <li>
-        <h2>${title}</h2>
-        <p>${description}</p>
-      </li>
+      ${this.bind({
+        attributes: {
+          test: true
+        }
+      }, html`
+        <li>
+          <h2>${title}</h2>
+          <p>${description}</p>
+        </li>
+      `)}
     `
   }
 })

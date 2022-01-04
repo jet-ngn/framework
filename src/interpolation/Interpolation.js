@@ -15,6 +15,10 @@ export default class Interpolation {
     return this.#context
   }
 
+  get parentNode () {
+    return this.rendered.parentNode
+  }
+
   get retainFormatting () {
     return this.#retainFormatting
   }

@@ -5,7 +5,7 @@ export default new Entity({
   name: 'items',
 
   on: {
-    render (evt, items) {
+    render (items) {
       this.render(html`
         ${items.map(item => html`
           ${Item.render(item)}
