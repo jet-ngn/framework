@@ -1,10 +1,24 @@
-import DOMElement from './DOMElement.js'
+import { html } from './Tags.js'
+import JetElementNode from './JetElementNode.js'
 
 export default class Tests {
   static run () {
-    const test = new DOMElement(document.querySelector('.test'))
+    const test = new JetElementNode(document.querySelector('.test'))
+    const div = document.querySelector('.test .div')
 
-    test.addEventListener('click', console.log, { once: true })
+    const child = document.createElement('div')
+
+    console.log(test.contains(div));
+
+    // test.appendChild(child)
+
+    // test.render(html`
+    //   <div>child</div>
+    // `)
+  }
+}
+
+// test.addEventListener('click', console.log, { once: true })
 
     // const listener = test.on('click', evt => {
     //   console.log('CLICKED')
@@ -12,8 +26,6 @@ export default class Tests {
     // }, {
     //   once: true
     // })
-  }
-}
 
 // NGN.BUS.on('*', function () {
 //   console.log(this.event)

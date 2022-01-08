@@ -49,7 +49,7 @@ class HTMLParser {
   }
 
   normalizeString (string) {
-    return string.replace(/\r?\n|\r/g, '')//.replace(/\s+/g, ' ')
+    return string.replace(/\r?\n|\r/g, '')
   }
 
   parse ({ context, tag, interpolationManager, retainFormatting }) {
