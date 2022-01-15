@@ -10,73 +10,51 @@ const builder = new ProductionLine({
   version: '0.0.1',
 
   commands: [
-    // {
-    //   name: 'buildjs',
-
-    //   handler ({ flag }, tasks) {
-    //     tasks.add('Build JavaScript', next => {
-    //       next()
-    //     })
-    //   }
-    // },
-
     {
       name: 'build',
       description: 'Build Jet UI Library distributable package.',
 
       flags: {
-        dev: {
-          type: 'boolean',
-          description: 'Build without minification.'
-        },
-
         watch: {
           type: 'boolean',
           description: 'Watch and rebuild when changes are made.'
         }
       },
 
-      handler ({ flag }, tasks) {
-        const dev = !!flag('dev')
+      handler ({ flag }, { project, tasks }) {
+        const { source, output, version } = project
 
         tasks.add('Cleaning output directory', next => {
           builder.clean()
           next()
         })
 
-        tasks.add('Creating bundle', next => {
-          const { source, output } = builder.project
-          const dev = flag('dev')
-          const watch = flag('watch')
-
-          ESBuild.build({
+        tasks.add('Creating bundle', async (next) => {
+          const cfg = {
             entryPoints: [path.join(source, 'index.js')],
             outfile: path.join(output, 'index.js'),
-            minify: !dev,
+            minify: true,
+            keepNames: true,
             bundle: true,
-            sourcemap: !dev,
+            external: ['os'],
+            sourcemap: true,
             target: ['es2020'],
             format: 'esm',
-            keepNames: true,
-            
-            external: [
-              'os',
-              // '@ngnjs/libnet-node',
-              // '@ngnjs/crypto',
-              // '@ngnjs/net',
-              // 'crypto',
-              // 'http',
-              // 'https'
-            ],
+            color: true,
+            metafile: true,
+
+            banner: {
+              js: `/**
+ * Jet UI Framework v${version}
+ * Copyright ${new Date().getFullYear()} Ecor Ventures, LLC
+ * Documentation: https://docs.jetui.com
+ **/`
+            },
 
             plugins: [{
               name: 'path-aliases',
               
               setup (build) {
-                // build.onResolve({ filter: /^author-shell/ }, args => ({
-                //   path: path.join(source, 'node_modules', '@author.io', 'shell', 'index.js')
-                // }))
-
                 build.onResolve({ filter: /^NGN/ }, args => ({
                   path: path.join(source, 'node_modules', 'ngn', 'index.js')
                 }))
@@ -88,54 +66,30 @@ const builder = new ProductionLine({
                 // build.onResolve({ filter: /^@ngnjs\/crypto/ }, args => ({
                 //   path: path.join(source, 'node_modules', '@ngnjs', 'crypto', 'index.js')
                 // }))
-            
-                // Mark all paths starting with "http://" or "https://" as external
-                // build.onResolve({ filter: /^https?:\/\// }, args => {
-                //   return { path: args.path, external: true }
-                // })
               },
             }]
-          }).then(async ({ warnings }) => {
-            if (warnings.length > 0) {
-              warnings.forEach(console.log)
-            }
+          }
 
-            await builder.project.copyFile('index.html')
-
-            next()
-          }).catch(e => {
+          const { warnings, metafile } = await ESBuild.build(cfg).catch(e => {
             console.error(e)
             process.exit(1)
           })
+
+          if (warnings.length > 0) {
+            warnings.forEach(console.log)
+          }
+
+          const bytes = metafile.outputs[path.join(path.basename(output), 'index.js')].bytes
+          console.log(`        Output size: ${Math.round(((bytes / 1024) + Number.EPSILON) * 100) / 100}kb`)
+
+          await project.copyFile('index.html')
+
+          next()
         })
       }
     },
 
-    {
-      name: 'examples',
-
-      handler () {
-        console.log('Show help')
-      },
-
-      commands: [
-        {
-          name: 'build',
-  
-          handler () {
-            console.log('BUILD EXAMPLES')
-          }
-        },
-      ]
-    },
-
-    {
-      name: 'test',
-
-      handler () {
-        console.log('RUN TEST SUITE')
-      }
-    }
+    
   ]
 })
 

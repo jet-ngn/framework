@@ -1,29 +1,14 @@
 import path from 'path'
 import fs from 'fs-extra'
-import { Shell } from '@author.io/shell'
+import EventEmitter from 'events'
+import ESBuild from 'esbuild'
 import glob from 'glob'
 import chokidar from 'chokidar'
 import { PerformanceObserver, performance } from 'perf_hooks'
 import CLIUI from 'cliui'
 import chalk from 'chalk'
 import Queue from 'shortbus'
-
-const stdout = new CLIUI({
-  wrap: true
-})
-
-const observer = new PerformanceObserver(items => {
-  const entry = items.getEntries()[0]
-  const complete = entry.name === 'time elapsed'
-
-  stdout.span({
-    text: `${complete ? chalk.bold('Build completed') : '...Done'} in ${entry.duration}ms.`,
-    padding: [complete ? 1 : 0, 0, 1, complete ? 3 : 8]
-  })
-
-  console.log(stdout.toString())
-  stdout.resetOutput()
-})
+import { log } from 'console'
 
 class Project {
   #root
@@ -91,6 +76,10 @@ class Project {
     await fs.copy(path.join(this.#source, from), path.join(this.#output, to ?? from))
   }
 
+  async writeFile (filepath, contents) {
+    await fs.writeFile(path.join(this.#output, filepath), contents)
+  }
+
   /**
    * Retrieves all files matching the specified pattern within a directory
    * @param  {string} pattern
@@ -108,60 +97,41 @@ class Project {
       ignore: [...this.#ignoredPaths, ...(Array.isArray(ignore) ? ignore : [ignore])]
     })
   }
-
-  unwatch () {
-    if (!this.#watcher) {
-      return
-    }
-
-    this.#unwatch()
-  }
-
-  watch (cb) {
-    if (this.#watcher) {
-      this.#unwatch(true)
-    }
-
-    this.#watcher = chokidar.watch(path.join(this.#source, path.sep), {
-      ignored: this.#ignoredPaths,
-      ignoreInitial: true,
-      persistent: true
-    })
-
-    this.#watcher
-      .on('change', cb)
-      .on('error', err => {
-        console.log(err)
-        process.end(1)
-      })
-  }
-
-  #unwatch = (suppressEvents = false) => {
-    this.#watcher.close()
-    this.#watcher = null
-
-    if (!suppressEvents) {
-      this.emit('unwatch')
-    }
-  }
 }
 
-export default class ProductionLine {
-  #shell
+export default class ProductionLine extends EventEmitter {
   #project
+  #completed = false
   #tasks = new Queue
+  #stdout = new CLIUI({ wrap: true })
+  #watcher = null
+
+  #observer = new PerformanceObserver(items => {
+    const entry = items.getEntries()[0]
+  
+    this.#stdout.span({
+      text: `${this.#completed ? chalk.bold('Build completed') : '...Done'} in ${entry.duration}ms.`,
+      padding: [this.#completed ? 1 : 0, 0, 1, this.#completed ? 3 : 8]
+    })
+  
+    console.log(this.#stdout.toString())
+    this.#stdout.resetOutput()
+
+    this.#completed && this.emit('complete')
+  })
 
   constructor ({ name, description, version, commands }) {
+    super()
     this.#project = new Project(arguments[0])
     
-    ;['name', 'commands'].forEach(property => {
+    ;['name'].forEach(property => {
       if (!arguments[0].hasOwnProperty(property)) {
         console.error(`ProductionLine configuration error: "${property}" property is required!`)
         return process.exit(1)
       }
     })
 
-    this.#shell = new Shell({ name, description, version, commands })
+    // this.#shell = new Shell({ name, description, version, commands })
   }
 
   get project () {
@@ -172,19 +142,52 @@ export default class ProductionLine {
     await this.#project.clearOutputDirectory()
   }
 
-  exec (command, cb) {
-    this.#shell.exec(command, this.#tasks, cb)
+  addTask (name, callback) {
+    this.#tasks.add(...arguments)
   }
 
-  run (args) {
+  clearTasks () {
+    this.#tasks = new Queue
+  }
+
+  async bundle (cfg) {
+    cfg = {
+      ...cfg,
+      color: true,
+      metafile: true,
+      incremental: true
+    }
+
+    const { output } = this.#project
+
+    const { warnings, metafile } = await ESBuild.build(cfg).catch(e => {
+      console.error(e)
+      process.exit(1)
+    })
+
+    if (warnings.length > 0) {
+      warnings.forEach(console.log)
+    }
+
+    let bytes = 0
+
+    cfg.entryPoints.forEach(entry => {
+      bytes += metafile.outputs[path.join(path.basename(output), path.basename(entry))].bytes
+    })
+
+    console.log(`        Output size: ${Math.round(((bytes / 1024) + Number.EPSILON) * 100) / 100}kb`)
+  }
+
+  run () {
+    this.#completed = false
     const { name, version, source, output, ignoredPaths } = this.#project
 
-    stdout.div({
+    this.#stdout.div({
       text: chalk.bold(`Building ${name} v${version}`),
       padding: [1,0,1,3]
     })
 
-    stdout.div({
+    this.#stdout.div({
       text: chalk.bold('Source:'),
       width: 20,
       padding: [0,0,0,3]
@@ -192,7 +195,7 @@ export default class ProductionLine {
       text: source
     })
 
-    stdout.div({
+    this.#stdout.div({
       text: chalk.bold('Output:'),
       width: 20,
       padding: [0,0,1,3]
@@ -201,36 +204,34 @@ export default class ProductionLine {
     })
 
     if (this.#project.hasIgnoredPaths) {
-      stdout.div({
+      this.#stdout.div({
         text: `Ignored: ${ignoredPaths.join(', ')}`,
         padding: [1,0,1,3]
       })
     }
 
-    console.log(stdout.toString())
-    stdout.resetOutput()
+    console.log(this.#stdout.toString())
+    this.#stdout.resetOutput()
 
     const start = `${this.#project.name} build start`
     const end = `${this.#project.name} build end`
 
     performance.mark(start)
-    observer.observe({ entryTypes: ['measure'] })
+    this.#observer.observe({ entryTypes: ['measure'] })
     
-    this.#shell.exec(args.slice(2).join(' '), this.#tasks)
-
     this.#tasks.on('stepstarted', ({ name, number }) => {
       performance.mark(`${name} start`)
 
-      stdout.div({
+      this.#stdout.div({
         text: `${number}) ${name}`,
         padding: [0,0,0,5]
       })
 
-      console.log(stdout.toString())
-      stdout.resetOutput()
+      console.log(this.#stdout.toString())
+      this.#stdout.resetOutput()
     })
 
-    this.#tasks.on('stepcomplete', ({ name, number }) => {
+    this.#tasks.on('stepcomplete', ({ name }) => {
       const start = `${name} start`
       const end = `${name} end`
 
@@ -238,12 +239,67 @@ export default class ProductionLine {
       performance.measure(`${name} time elapsed`, start, end)
     })
 
+    this.#tasks.on('complete', () => {
+      this.#completed = true
+
+      performance.mark(end)
+      performance.measure('time elapsed', start, end)
+      performance.clearMarks()
+      
+      this.#observer.disconnect()
+    })
+
     this.#tasks.run(true)
+  }
+
+  unwatch () {
+    if (!this.#watcher) {
+      return
+    }
+
+    this.#unwatch()
+  }
+
+  watch (cb) {
+    const stdout = new CLIUI({ wrap: true })
+    const { source, ignoredPaths } = this.#project
+
+    stdout.div({
+      text: `Monitoring ${source} for changes...`,
+      padding: [0,0,0,3]
+    })
+
+    stdout.div({
+      text: 'Press ctrl+c to exit.',
+      padding: [1,0,1,3]
+    })
+
+    console.log(stdout.toString())
     
-    performance.mark(end)
-    performance.measure('time elapsed', start, end)
-    performance.clearMarks()
-    
-    observer.disconnect()
+    if (!!this.#watcher) {
+      this.#unwatch(true)
+    }
+
+    this.clearTasks()
+
+    this.#watcher = chokidar.watch(path.join(source, path.sep), {
+      ignored: ignoredPaths,
+      ignoreInitial: true,
+      persistent: true
+    })
+
+    this.#watcher.on('change', cb).on('error', err => {
+      console.log(err)
+      process.end(1)
+    })
+  }
+
+  #unwatch = (suppressEvents = false) => {
+    this.#watcher.close()
+    this.#watcher = null
+
+    if (!suppressEvents) {
+      this.emit('unwatch')
+    }
   }
 }

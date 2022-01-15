@@ -1,24 +1,20 @@
 export default class Tag {
   #type
-  #strings
+  #template
   #interpolations
 
-  constructor ({ type, strings, interpolations }) {
+  constructor ({ type, template, interpolations }) {
     this.#type = type
-    this.#strings = strings
+    this.#template = template
     this.#interpolations = interpolations
-  }
-
-  parse () {
-    console.log('PARSE')
   }
 
   get type () {
     return this.#type
   }
 
-  get strings () {
-    return [...this.#strings]
+  get template () {
+    return [...this.#template]
   }
 
   get interpolations () {

@@ -1,7 +1,7 @@
 import Tag from './Tag.js'
 
-function tag (type, strings, ...interpolations) {
-  return new Tag({ type, strings, interpolations })
+function tag (type, template, ...interpolations) {
+  return new Tag({ type, template, interpolations })
 }
 
 export function css () {

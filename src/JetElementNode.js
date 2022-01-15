@@ -7,6 +7,8 @@ import Template from '../src-OLD/renderer/Template'
 // import BrowserEventManager from './BrowserEventManager.js'
 
 export default class JetElementNode extends JetNode {
+  #eventListeners = []
+
   addEventListener () {
     return this.on(...arguments)
   }

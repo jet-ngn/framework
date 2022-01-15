@@ -1,14 +1,66 @@
-import { html } from './Tags.js'
-import JetElementNode from './JetElementNode.js'
+// import { html } from './Tags.js'
+// import JetElementNode from './JetElementNode.js'
+// import Bindable from './Bindable.js'
+// import Renderer from '../src-OLD/renderer/Renderer.js'
+
+// import App from './App.js'
+import Entity from './Entity.js'
 
 export default class Tests {
   static run () {
-    const test = new JetElementNode(document.querySelector('.test'))
-    const div = document.querySelector('.test .div')
+    const hey = new Entity({
+      name: 'wut'
+    })
 
-    const child = document.createElement('div')
+    console.log('HELLO');
 
-    console.log(test.contains(div));
+    console.log(hey)
+
+    const test = new Entity({
+      name: 'test'
+    })
+
+    console.log(test)
+
+    // let bool = true
+    // let str = 'test'
+    // let str2 = 'wut'
+
+    // render.html`
+    //   ${data.bind('test', test => test ? html`true` : html`false`)}
+    //   ${data.bind('test', test => test && html`Hey`)}
+    // `
+
+    // const obj = new Bindable({
+    //   test: 'hey',
+    //   wut: 'blah',
+
+    //   hey: {
+    //     blah: true,
+    //     bleh: 'nope'
+    //   }
+    // })
+
+    // this.render(html`
+    //   <h1>Test</h1>
+
+    //   ${obj.hey.bind('blah') ? html`<div>blah: true</div>` : html`<div>blah: false</div>`}
+    // `)
+
+    // console.log(obj.observe('test', test => 23))
+
+    // console.log(obj);
+
+    // obj.on('observable.set', console.log)
+
+    // obj.test = 'tesssst'
+
+    // const test = new JetElementNode(document.querySelector('.test'))
+    // const div = document.querySelector('.test .div')
+
+    // const child = document.createElement('div')
+
+    // console.log(test.contains(div));
 
     // test.appendChild(child)
 

@@ -1,6 +1,7 @@
 export default class JetNode {
   #source = null
   #revocable
+  #test
 
   #getValue = (target, value) => value ? (typeof value === 'function' ? value.bind(target) : value) : null
 
@@ -20,10 +21,8 @@ export default class JetNode {
   }
 
   remove () {
-    NGN.INTERNAL(`${this.constructor.name}.remove`, this)
-    this.#revocable.revoke()
+    // NGN.INTERNAL(`${this.constructor.name}.remove`, this)
     this.#source.remove()
-    NGN.INTERNAL(`${this.constructor.name}.removed`, this)
-    this.#source = null
+    // NGN.INTERNAL(`${this.constructor.name}.removed`, this)
   }
 }
