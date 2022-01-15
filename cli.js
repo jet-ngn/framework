@@ -23,7 +23,7 @@ const shell = new Shell({
       },
 
       async handler ({ flag, input }) {
-        const { source, output, version } = Builder.project
+        const { source, output, version, homepage, description, bugsURL } = Builder.project
 
         Builder.addTask('Cleaning output directory', next => {
           Builder.clean()
@@ -44,9 +44,11 @@ const shell = new Shell({
 
             banner: {
               js: `/**
- * Jet UI Framework v${version}
+ * Jet v${version}
+ * ${description}
  * Copyright ${new Date().getFullYear()} Ecor Ventures, LLC
- * Documentation: https://docs.jetui.com
+ * Documentation: ${homepage}
+ * Submit bug reports to: ${bugsURL}
  **/`
             },
 

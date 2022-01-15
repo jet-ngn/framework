@@ -8,7 +8,6 @@ import { PerformanceObserver, performance } from 'perf_hooks'
 import CLIUI from 'cliui'
 import chalk from 'chalk'
 import Queue from 'shortbus'
-import { log } from 'console'
 
 class Project {
   #root
@@ -16,7 +15,6 @@ class Project {
   #source
   #output
   #ignoredPaths = []
-  #watcher
 
   constructor ({ root, source, output, ignore }) {
     this.#root = path.resolve(root ?? process.cwd())
@@ -24,6 +22,14 @@ class Project {
     this.#source = path.resolve(this.#root, source ?? './src')
     this.#output = path.resolve(this.#root, output ?? './.dist')
     this.#ignoredPaths = ignore ?? []
+  }
+
+  get bugsURL () {
+    return this.#pkg.bugs.url ?? 'NO BUGS URL SPECIFIED'
+  }
+
+  get description () {
+    return this.#pkg.description ?? ''
   }
 
   get output () {
@@ -44,6 +50,10 @@ class Project {
 
   get version () {
     return this.#pkg.version ?? 'NO VERSION INFORMATION'
+  }
+
+  get homepage () {
+    return this.#pkg.homepage ?? 'NO HOMEPAGE SPECIFIED'
   }
 
   async clearDirectory (dirpath) {
