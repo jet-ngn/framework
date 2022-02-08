@@ -3,7 +3,6 @@
 import Builder from './build/index.js'
 import { Shell } from '@author.io/shell'
 import path from 'path'
-import { log } from 'console'
 
 const shell = new Shell({
   name: 'jet-dev',
@@ -16,14 +15,20 @@ const shell = new Shell({
       description: 'Build Jet UI Library distributable package.',
       
       flags: {
+        dev: {
+          type: 'boolean',
+          description: 'Run a development build. This will prevent minification.'
+        },
+
         watch: {
           type: 'boolean',
-          description: 'Watch and rebuild when changes are made.'
+          description: 'Watch the source directory and rebuild when changes are made.'
         }
       },
 
-      async handler ({ flag, input }) {
+      handler ({ flag, input }) {
         const { source, output, version, homepage, description, bugsURL } = Builder.project
+        const dev = flag('dev')
 
         Builder.addTask('Cleaning output directory', next => {
           Builder.clean()
@@ -34,13 +39,28 @@ const shell = new Shell({
           await Builder.bundle({
             entryPoints: [path.join(source, 'index.js')],
             outfile: path.join(output, 'index.js'),
-            minify: true,
-            keepNames: true,
-            bundle: true,
-            external: ['os'],
+            minify: !dev,
             sourcemap: true,
+            bundle: true,
+            external: [
+              'os',
+              '@ngnjs/libnet-node',
+              '@ngnjs/crypto',
+              '@ngnjs/net',
+              'crypto',
+              'http',
+              'https'
+            ],
             target: ['es2020'],
             format: 'esm',
+
+            aliases: [{
+            //   filter: /^NGN/,
+            //   filepath: path.join(source, 'node_modules', 'ngn', 'index.js')
+            // }, {
+              filter: /^NGN\/libdata/,
+              filepath: path.join(source, 'node_modules', '@ngnjs', 'libdata', 'index.js')
+            }],
 
             banner: {
               js: `/**
@@ -50,25 +70,7 @@ const shell = new Shell({
  * Documentation: ${homepage}
  * Submit bug reports to: ${bugsURL}
  **/`
-            },
-
-            plugins: [{
-              name: 'path-aliases',
-              
-              setup (build) {
-                build.onResolve({ filter: /^NGN/ }, args => ({
-                  path: path.join(source, 'node_modules', 'ngn', 'index.js')
-                }))
-
-                // build.onResolve({ filter: /^NET/ }, args => ({
-                //   path: path.join(source, 'node_modules', '@ngnjs', 'net', 'index.js')
-                // }))
-
-                // build.onResolve({ filter: /^@ngnjs\/crypto/ }, args => ({
-                //   path: path.join(source, 'node_modules', '@ngnjs', 'crypto', 'index.js')
-                // }))
-              },
-            }]
+            }
           })
 
           next()
@@ -79,11 +81,13 @@ const shell = new Shell({
           next()
         })
 
-        Builder.once('complete', () => {
-          if (flag('watch')) {
-            Builder.watch(file => shell.exec(`build${input === '' ? '' : ` ${input}`}`))
-          }
-        })
+        if (flag('watch')) {
+          Builder.once('complete', () => {
+            if (flag('watch')) {
+              return Builder.watch(file => shell.exec(`build${input === '' ? '' : ` ${input}`}`))
+            }
+          })
+        }
 
         Builder.run()
       },

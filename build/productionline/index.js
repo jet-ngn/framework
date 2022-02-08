@@ -25,7 +25,7 @@ class Project {
   }
 
   get bugsURL () {
-    return this.#pkg.bugs.url ?? 'NO BUGS URL SPECIFIED'
+    return this.#pkg.bugs?.url ?? 'NO BUGS URL SPECIFIED'
   }
 
   get description () {
@@ -44,6 +44,10 @@ class Project {
     return this.#pkg.name ?? 'UNNAMED PROJECT'
   }
 
+  get license () {
+    return this.#pkg.license ?? 'NO LICENSE'
+  }
+
   get source () {
     return this.#source
   }
@@ -56,12 +60,12 @@ class Project {
     return this.#pkg.homepage ?? 'NO HOMEPAGE SPECIFIED'
   }
 
-  async clearDirectory (dirpath) {
+  clearDirectory (dirpath) {
     return fs.emptyDirSync(path.join(this.#output, dirpath))
   }
 
-  async clearOutputDirectory () {
-    return await this.clearDirectory('')
+  clearOutputDirectory () {
+    return this.clearDirectory('')
   }
 
   async copyDirectory ({ from, to, pattern = '', ignore }) {
@@ -83,11 +87,11 @@ class Project {
   }
 
   async copyFile (from, to) {
-    await fs.copy(path.join(this.#source, from), path.join(this.#output, to ?? from))
+    return await fs.copy(path.join(this.#source, from), path.join(this.#output, to ?? from))
   }
 
   async writeFile (filepath, contents) {
-    await fs.writeFile(path.join(this.#output, filepath), contents)
+    return await fs.writeFile(path.join(this.#output, filepath), contents)
   }
 
   /**
@@ -126,8 +130,6 @@ export default class ProductionLine extends EventEmitter {
   
     console.log(this.#stdout.toString())
     this.#stdout.resetOutput()
-
-    this.#completed && this.emit('complete')
   })
 
   constructor ({ name, description, version, commands }) {
@@ -140,16 +142,14 @@ export default class ProductionLine extends EventEmitter {
         return process.exit(1)
       }
     })
-
-    // this.#shell = new Shell({ name, description, version, commands })
   }
 
   get project () {
     return this.#project
   }
 
-  async clean () {
-    await this.#project.clearOutputDirectory()
+  clean () {
+    return this.#project.clearOutputDirectory()
   }
 
   addTask (name, callback) {
@@ -161,12 +161,27 @@ export default class ProductionLine extends EventEmitter {
   }
 
   async bundle (cfg) {
+    const { aliases } = cfg
+
     cfg = {
       ...cfg,
+      
+      keepNames: true,
       color: true,
       metafile: true,
-      incremental: true
+
+      plugins: [{
+        name: 'path-aliases',
+        
+        setup (build) {
+          (aliases ?? []).forEach(({ filter, filepath }) => {
+            build.onResolve({ filter }, args => ({ path: filepath }))
+          })
+        },
+      }]
     }
+
+    delete cfg.aliases
 
     const { output } = this.#project
 
@@ -257,6 +272,7 @@ export default class ProductionLine extends EventEmitter {
       performance.clearMarks()
       
       this.#observer.disconnect()
+      this.#completed && this.emit('complete')
     })
 
     this.#tasks.run(true)
@@ -271,20 +287,19 @@ export default class ProductionLine extends EventEmitter {
   }
 
   watch (cb) {
-    const stdout = new CLIUI({ wrap: true })
     const { source, ignoredPaths } = this.#project
 
-    stdout.div({
+    this.#stdout.div({
       text: `Monitoring ${source} for changes...`,
       padding: [0,0,0,3]
     })
 
-    stdout.div({
+    this.#stdout.div({
       text: 'Press ctrl+c to exit.',
       padding: [1,0,1,3]
     })
 
-    console.log(stdout.toString())
+    console.log(this.#stdout.toString())
     
     if (!!this.#watcher) {
       this.#unwatch(true)
@@ -299,8 +314,8 @@ export default class ProductionLine extends EventEmitter {
     })
 
     this.#watcher.on('change', cb).on('error', err => {
-      console.log(err)
-      process.end(1)
+      console.error(err)
+      process.exit(1)
     })
   }
 
