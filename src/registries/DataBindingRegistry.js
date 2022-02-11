@@ -64,7 +64,7 @@ class DataBindingRegistry {
       if (!!attributeBindings) {
         attributeBindings.forEach(({ field, attribute, element, process }) => {
           this.#handleUpdate(field, change, () => {
-            element.setAttribute(attribute, process ? process(change.new) : change.new)
+            element.setAttribute(attribute, process ? process(field ? change.new : model.data) : change.new)
           })
         })
       }
@@ -74,7 +74,7 @@ class DataBindingRegistry {
       if (!!classNameBindings) {
         classNameBindings.forEach(({ field, className, element, process }) => {
           this.#handleUpdate(field, change, () => {
-            element.classList.toggle(className, change.new)
+            element.classList.toggle(className, field ? change.new : process(model.data))
           })
         })
       }
@@ -84,7 +84,7 @@ class DataBindingRegistry {
       if (!!interpolationBindings) {
         interpolationBindings.forEach(({ field, interpolation, process }) => {
           this.#handleUpdate(field, change, () => {
-            interpolation.update(process ? process(change.new) : change.new)
+            interpolation.update(process ? process(field ? change.new : model.data) : change.new)
           })
         })
       }
@@ -103,6 +103,10 @@ class DataBindingRegistry {
   }
 
   #handleUpdate = (field, change, cb) => {
+    if (!field) {
+      return cb()
+    }
+
     if (field !== change.field || change.new === change.old) {
       return
     }

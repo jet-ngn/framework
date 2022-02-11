@@ -9,14 +9,17 @@ export default class Entity extends Driver() {
 
   // #routeManager
 
-  constructor (defaultConfig, ...additionalConfigs) {
-    [defaultConfig, ...additionalConfigs].forEach(cfg => {
-      if (NGN.typeof(cfg) !== 'object') {
-        throw new TypeError(`Entity Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
-      }
-    })
+  constructor (cfg) {
+    if (NGN.typeof(cfg) !== 'object') {
+      throw new TypeError(`Entity Configuration: Expected object, but received ${NGN.typeof(cfg)}`)
+    }
 
-    const cfg = CompositionUtils.composeConfigs(defaultConfig, ...additionalConfigs)
+    const { composes } = cfg
+    delete cfg.composes
+
+    if (Array.isArray(composes) && composes.length > 0) {
+      cfg = CompositionUtils.composeConfigs(cfg, ...composes)
+    }
 
     super(cfg.name, cfg)
 

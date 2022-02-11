@@ -2,8 +2,9 @@ import Constants from '../Constants.js'
 
 export default class DataModel extends NgnDataModel {
   bind (field, process) {
-    if (!this.hasOwnProperty(field)) {
-      throw new ReferenceError(`Data field "${field}" not found`)
+    if (typeof field === 'function') {
+      process = field
+      field = null
     }
 
     return {

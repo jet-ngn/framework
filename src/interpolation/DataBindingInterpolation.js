@@ -11,8 +11,8 @@ export default class DataBindingInterpolation extends Interpolation {
   constructor (context, { model, field, process }, retainFormatting) {
     super(...arguments)
 
-    const value = model[field]
-    this.#value = process ? process(value) : value
+    const value = field ? model[field] : null
+    this.#value = process ? process(field ? value : model.data) : value
 
     DataBindingRegistry.registerInterpolationBinding({
       model,

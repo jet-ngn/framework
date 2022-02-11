@@ -54,8 +54,8 @@ export default class AttributeBinding {
       })
     }
 
-    const value = model[field]
-    return process ? process(value) : value
+    const value = field ? model[field] : null
+    return process ? process(field ? value : model.data) : value
   }
 
   #processAttribute = (name, value, namespace) => {
