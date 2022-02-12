@@ -3,7 +3,6 @@ import fs from 'fs-extra'
 import EventEmitter from 'events'
 import ESBuild from 'esbuild'
 import glob from 'glob'
-import HTMLMinifier from 'html-minifier'
 import chokidar from 'chokidar'
 import { PerformanceObserver, performance } from 'perf_hooks'
 import CLIUI from 'cliui'
@@ -13,10 +12,16 @@ import Queue from 'shortbus'
 class Project {
   #root
   #pkg
+  #source
+  #output
+  #ignoredPaths = []
 
-  constructor ({ root }) {
+  constructor ({ root, source, output, ignore }) {
     this.#root = path.resolve(root ?? process.cwd())
     this.#pkg = JSON.parse(fs.readFileSync(path.join(this.#root, 'package.json')))
+    this.#source = path.resolve(this.#root, source ?? './src')
+    this.#output = path.resolve(this.#root, output ?? './.dist')
+    this.#ignoredPaths = ignore ?? []
   }
 
   get bugsURL () {
@@ -27,6 +32,14 @@ class Project {
     return this.#pkg.description ?? ''
   }
 
+  get output () {
+    return this.#output
+  }
+
+  get hasIgnoredPaths () {
+    return this.#ignoredPaths.length > 0
+  }
+
   get name () {
     return this.#pkg.name ?? 'UNNAMED PROJECT'
   }
@@ -35,8 +48,8 @@ class Project {
     return this.#pkg.license ?? 'NO LICENSE'
   }
 
-  get root () {
-    return this.#root
+  get source () {
+    return this.#source
   }
 
   get version () {
@@ -46,114 +59,13 @@ class Project {
   get homepage () {
     return this.#pkg.homepage ?? 'NO HOMEPAGE SPECIFIED'
   }
-}
 
-export default class ProductionLine extends EventEmitter {
-  #project
-  #completed = false
-  #tasks = new Queue
-  #stdout = new CLIUI({ wrap: true })
-  #totalBytes = 0
-  #watcher = null
-  
-  #source = null
-  #output = null
-  #ignoredPaths = []
-
-  #observer = new PerformanceObserver(items => {})
-
-  constructor ({ source, output, ignore }) {
-    super()
-    
-    this.#project = new Project(arguments[0])
-    this.#source = path.resolve(this.#project.root, source ?? './src')
-    this.#output = path.resolve(this.#project.root, output ?? './.dist')
-    this.#ignoredPaths = ignore ?? []
-    
-    ;['name'].forEach(property => {
-      if (!arguments[0].hasOwnProperty(property)) {
-        console.error(`ProductionLine configuration error: "${property}" property is required!`)
-        return process.exit(1)
-      }
-    })
+  clearDirectory (dirpath) {
+    return fs.emptyDirSync(path.join(this.#output, dirpath))
   }
 
-  get hasIgnoredPaths () {
-    return this.#ignoredPaths.length > 0
-  }
-
-  get output () {
-    return this.#output
-  }
-
-  get project () {
-    return this.#project
-  }
-
-  get source () {
-    return this.#source
-  }
-
-  addTask (name, callback) {
-    this.#tasks.add(...arguments)
-  }
-
-  async bundle (cfg) {
-    const { aliases } = cfg
-
-    cfg = {
-      ...cfg,
-      
-      keepNames: true,
-      color: true,
-      metafile: true,
-
-      plugins: [{
-        name: 'path-aliases',
-        
-        setup (build) {
-          (aliases ?? []).forEach(({ filter, filepath }) => {
-            build.onResolve({ filter }, args => ({ path: filepath }))
-          })
-
-          // Mark all paths starting with "http://" or "https://" as external
-          build.onResolve({ filter: /^https?:\/\// }, args => ({ path: args.path, external: true }))
-        },
-      }]
-    }
-
-    delete cfg.aliases
-
-    const { warnings, metafile } = await ESBuild.build(cfg).catch(e => {
-      console.error(e)
-      process.exit(1)
-    })
-
-    if (warnings.length > 0) {
-      warnings.forEach(console.log)
-    }
-
-    let bytes = 0
-
-    cfg.entryPoints.forEach(entry => {
-      bytes += metafile.outputs[path.join(path.basename(this.#output), entry.replace(this.#source, ''))].bytes
-    })
-
-    this.#totalBytes += bytes
-
-    console.log(`        ${chalk.bold('Bundle size:')} ${Math.round(((bytes / 1024) + Number.EPSILON) * 100) / 100}kb`)
-  }
-
-  async clean () {
-    return await this.clearDirectory()
-  }
-
-  async clearDirectory (dirpath = '') {
-    return await fs.emptyDir(path.join(this.#output, dirpath))
-  }
-
-  clearTasks () {
-    this.#tasks = new Queue
+  clearOutputDirectory () {
+    return this.clearDirectory('')
   }
 
   async copyDirectory ({ from, to, pattern = '', ignore }) {
@@ -170,11 +82,16 @@ export default class ProductionLine extends EventEmitter {
 
     for (const filepath of filepaths) {
       await this.copyFile(filepath)
+      // await fs.copy(path.join(this.#source, filepath), path.join(this.#output, filepath))
     }
   }
 
   async copyFile (from, to) {
     return await fs.copy(path.join(this.#source, from), path.join(this.#output, to ?? from))
+  }
+
+  async writeFile (filepath, contents) {
+    return await fs.writeFile(path.join(this.#output, filepath), contents)
   }
 
   /**
@@ -194,16 +111,101 @@ export default class ProductionLine extends EventEmitter {
       ignore: [...this.#ignoredPaths, ...(Array.isArray(ignore) ? ignore : [ignore])]
     })
   }
+}
 
-  async minifyHTML (html) {
-    return HTMLMinifier.minify(html, {
-      collapseWhitespace: true
+export default class ProductionLine extends EventEmitter {
+  #project
+  #completed = false
+  #tasks = new Queue
+  #stdout = new CLIUI({ wrap: true })
+  #watcher = null
+
+  #observer = new PerformanceObserver(items => {
+    const entry = items.getEntries()[0]
+  
+    this.#stdout.span({
+      text: `${this.#completed ? chalk.bold('Build completed') : '...Done'} in ${entry.duration}ms.`,
+      padding: [this.#completed ? 1 : 0, 0, 1, this.#completed ? 3 : 8]
     })
+  
+    console.log(this.#stdout.toString())
+    this.#stdout.resetOutput()
+  })
+
+  constructor ({ name, description, version, commands }) {
+    super()
+    this.#project = new Project(arguments[0])
+    
+    ;['name'].forEach(property => {
+      if (!arguments[0].hasOwnProperty(property)) {
+        console.error(`ProductionLine configuration error: "${property}" property is required!`)
+        return process.exit(1)
+      }
+    })
+  }
+
+  get project () {
+    return this.#project
+  }
+
+  clean () {
+    return this.#project.clearOutputDirectory()
+  }
+
+  addTask (name, callback) {
+    this.#tasks.add(...arguments)
+  }
+
+  clearTasks () {
+    this.#tasks = new Queue
+  }
+
+  async bundle (cfg) {
+    const { aliases } = cfg
+
+    cfg = {
+      ...cfg,
+      
+      keepNames: true,
+      color: true,
+      metafile: true,
+
+      plugins: [{
+        name: 'path-aliases',
+        
+        setup (build) {
+          (aliases ?? []).forEach(({ filter, filepath }) => {
+            build.onResolve({ filter }, args => ({ path: filepath }))
+          })
+        },
+      }]
+    }
+
+    delete cfg.aliases
+
+    const { output } = this.#project
+
+    const { warnings, metafile } = await ESBuild.build(cfg).catch(e => {
+      console.error(e)
+      process.exit(1)
+    })
+
+    if (warnings.length > 0) {
+      warnings.forEach(console.log)
+    }
+
+    let bytes = 0
+
+    cfg.entryPoints.forEach(entry => {
+      bytes += metafile.outputs[path.join(path.basename(output), path.basename(entry))].bytes
+    })
+
+    console.log(`        Output size: ${Math.round(((bytes / 1024) + Number.EPSILON) * 100) / 100}kb`)
   }
 
   run () {
     this.#completed = false
-    const { name, version } = this.#project
+    const { name, version, source, output, ignoredPaths } = this.#project
 
     this.#stdout.div({
       text: chalk.bold(`Building ${name} v${version}`),
@@ -215,7 +217,7 @@ export default class ProductionLine extends EventEmitter {
       width: 20,
       padding: [0,0,0,3]
     }, {
-      text: this.#source
+      text: source
     })
 
     this.#stdout.div({
@@ -223,12 +225,12 @@ export default class ProductionLine extends EventEmitter {
       width: 20,
       padding: [0,0,1,3]
     }, {
-      text: this.#output
+      text: output
     })
 
-    if (this.hasIgnoredPaths) {
+    if (this.#project.hasIgnoredPaths) {
       this.#stdout.div({
-        text: `Ignored: ${this.#ignoredPaths.join(', ')}`,
+        text: `Ignored: ${ignoredPaths.join(', ')}`,
         padding: [1,0,1,3]
       })
     }
@@ -237,6 +239,7 @@ export default class ProductionLine extends EventEmitter {
     this.#stdout.resetOutput()
 
     const start = `${this.#project.name} build start`
+    const end = `${this.#project.name} build end`
 
     performance.mark(start)
     this.#observer.observe({ entryTypes: ['measure'] })
@@ -259,36 +262,15 @@ export default class ProductionLine extends EventEmitter {
 
       performance.mark(end)
       performance.measure(`${name} time elapsed`, start, end)
-
-      const [{ duration }] = this.#observer.takeRecords()
-
-      this.#stdout.span({
-        text: `...Done in ${Math.round(duration)}ms.`,
-        padding: [0,0,1,8]
-      })
-    
-      console.log(this.#stdout.toString())
-      this.#stdout.resetOutput()
     })
 
     this.#tasks.on('complete', () => {
-      const end = `${this.#project.name} build end`
       this.#completed = true
 
       performance.mark(end)
       performance.measure('time elapsed', start, end)
-
-      const [{ duration }] = this.#observer.takeRecords()
-      
-      this.#stdout.span({
-        text: `${chalk.bold('Completed')} in ${Math.round(duration)}ms.`,
-        padding: [1,0,1,3]
-      })
-
-      console.log(this.#stdout.toString())
-      this.#stdout.resetOutput()
-
       performance.clearMarks()
+      
       this.#observer.disconnect()
       this.#completed && this.emit('complete')
     })
@@ -305,8 +287,10 @@ export default class ProductionLine extends EventEmitter {
   }
 
   watch (cb) {
+    const { source, ignoredPaths } = this.#project
+
     this.#stdout.div({
-      text: `Monitoring ${this.#source} for changes...`,
+      text: `Monitoring ${source} for changes...`,
       padding: [0,0,0,3]
     })
 
@@ -323,8 +307,8 @@ export default class ProductionLine extends EventEmitter {
 
     this.clearTasks()
 
-    this.#watcher = chokidar.watch(path.join(this.#source, path.sep), {
-      ignored: this.#ignoredPaths,
+    this.#watcher = chokidar.watch(path.join(source, path.sep), {
+      ignored: ignoredPaths,
       ignoreInitial: true,
       persistent: true
     })
@@ -333,10 +317,6 @@ export default class ProductionLine extends EventEmitter {
       console.error(err)
       process.exit(1)
     })
-  }
-
-  async writeFile (filepath, contents) {
-    return await fs.writeFile(path.join(this.#output, filepath), contents)
   }
 
   #unwatch = (suppressEvents = false) => {

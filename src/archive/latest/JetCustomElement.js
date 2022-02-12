@@ -1,13 +1,13 @@
 import { typeOf } from 'NGN/libdata'
-import Driver from './Driver.js'
+import Entity from './Entity.js'
 
 function JetBaseCustomElement (superclass = HTMLElement) {
-  return class JetBaseCustomElement extends Driver(superclass) {
+  return class JetBaseCustomElement extends Entity(superclass) {
     #connected = false
 
-    constructor (cfg) {
-      super(cfg)
-    }
+    // constructor (cfg) {
+    //   super(cfg)
+    // }
   }
 }
 
@@ -17,10 +17,10 @@ export default class JetCustomElement {
       throw new TypeError(`Jet Custom Element Configuration: Expected object, but received ${typeOf(cfg)}`)
     }
 
-    return class JetCustomElement extends JetBaseCustomElement(cfg.base) {
-      constructor () {
-        super(cfg)
-      }
+    return class JetCustomElement extends JetBaseCustomElement(cfg.extends) {
+      // constructor () {
+      //   super(cfg)
+      // }
     }
   }
 }

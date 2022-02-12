@@ -27,7 +27,8 @@ const shell = new Shell({
       },
 
       handler ({ flag, input }) {
-        const { source, output, version, homepage, description, bugsURL } = Builder.project
+        const { source, output } = Builder
+        const { version, homepage, description, bugsURL } = Builder.project
         const dev = flag('dev')
 
         Builder.addTask('Cleaning output directory', next => {
@@ -77,7 +78,7 @@ const shell = new Shell({
         })
 
         Builder.addTask('Copy index.html', async (next) => {
-          await Builder.project.copyFile('index.html')
+          await Builder.copyFile('index.html')
           next()
         })
 

@@ -1,42 +1,116 @@
 import Entity from './Entity.js'
-import JetCustomElement from './JetCustomElement.js'
+import { defineCustomElement } from './CustomElement.js'
 
-const TestElement = new JetCustomElement({
-  name: 'jet-test'
-})
+const Test = Entity({
+  name: 'test',
+  selector: 'body',
 
-customElements.define('jet-test', TestElement)
+  on: {
+    '*' () {
+      console.log(this.event);
+    },
 
-const hello = new Entity({
-  // name: 'hello',
-  // selector: '.hello',
+    test: {
+      hey () {
+        console.log('HEY')
+      },
 
-  states: {
-    test () {
-      console.log('YO');
+      wut: {
+        hey () {
+          console.log('HEYYYYY');
+        }
+      }
+    },
+
+    initialize () {
+      console.log(this.event)
     }
   }
 })
 
-const test = new Entity({
-  // name: 'test',
+Test.emit('initialize', 'test')
+Test.emit('initialize')
 
-  extends: [hello],
+Test.emit('test.hey')
+// Test.emit('test.wut.hey')
 
-  states: {
-    test () {
-      console.log('wut');
-    }
-  }
+// Test.off('test.hey')
 
-  // extends: [
-  //   hello,
+// Test.emit('test.hey')
 
-  //   {
-  //     name: 'hey',
-  //     extends: [hello]
-  //   }
-  // ]
-})
+// defineCustomElement('jet-test', {
+//   on: {
+//     initialize () {
+//       console.log('jet-test INIT')
+//     }
+//   }
+// })
 
-console.log(test);
+// const JetTestElement = CustomElement({
+//   name: 'jet-test'
+// })
+
+// customElements.define('jet-test', JetTestElement)
+
+// import HTMLEntityConstructor from './Entity.js'
+// import JetCustomElement from './JetCustomElement.js'
+
+// const Test = new (HTMLEntityConstructor())({
+//   name: 'test',
+//   selector: 'body',
+
+//   references: {
+//     test: '> .test',
+//     hey: '.hey'
+//   },
+
+//   on: {
+//     initialize () {
+//       console.log('HEY')
+//     }
+//   }
+// })
+
+// // Test.initialize()
+
+// console.log(Test);
+
+// // const TestElement = new JetCustomElement(`{
+// //   name: 'jet-test'
+// // }`)
+
+// // customElements.define('jet-test', TestElement)
+
+// // const hello = new Entity({
+// //   // name: 'hello',
+// //   // selector: '.hello',
+
+// //   states: {
+// //     test () {
+// //       console.log('YO');
+// //     }
+// //   }
+// // })
+
+// // const test = new Entity({
+// //   // name: 'test',
+
+// //   composes: [hello],
+
+// //   states: {
+// //     test () {
+// //       console.log('wut');
+// //     }
+// //   }
+
+// //   // extends: [
+// //   //   hello,
+
+// //   //   {
+// //   //     name: 'hey',
+// //   //     extends: [hello]
+// //   //   }
+// //   // ]
+// // })
+
+// // console.log(test);
