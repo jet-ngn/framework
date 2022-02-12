@@ -1,37 +1,78 @@
-import Entity from './Entity.js'
-import { defineCustomElement } from './CustomElement.js'
+// import App from './App.js'
+// import { defineCustomElement } from './CustomElement.js'
 
-const Test = Entity({
+import { makeEntity } from './Entity.js'
+
+const Test = makeEntity({
   name: 'test',
   selector: 'body',
 
+  references: {
+    test: 'jet-test'
+  },
+
   on: {
-    '*' () {
-      console.log(this.event);
-    },
-
-    test: {
-      hey () {
-        console.log('HEY')
-      },
-
-      wut: {
-        hey () {
-          console.log('HEYYYYY');
-        }
-      }
-    },
-
     initialize () {
-      console.log(this.event)
+      console.log(this);
+      console.log('INIT')
     }
   }
 })
 
-Test.emit('initialize', 'test')
+// Test.on('test', () => console.log('TEST'))
+
+// Test.emit('test')
+
 Test.emit('initialize')
 
-Test.emit('test.hey')
+// const Root = {
+//   name: 'test',
+//   selector: 'body',
+
+//   references: {
+//     comp: 'jet-test'
+//   },
+
+//   on: {
+//     initialize () {
+//       console.log(this)
+//     }
+//   }
+// }
+
+// const TestApp = new App({
+//   name: 'Test App',
+//   version: '0.0.1',
+//   root: Root
+// })
+
+// TestApp.start()
+
+// console.log(Root);
+
+// console.log(Test.cfg);
+
+// Test.on('test', { tries: 2 }, number => console.log('FIRED ', number))
+
+// Test.on('test', console.log)
+// Test.off('test')
+
+// Test.emit('test', 1)
+// Test.emit('test', 2)
+// Test.emit('test', 3)
+// Test.emit('test', 4)
+// Test.emit('test', 5)
+// Test.emit('test', 6)
+// Test.emit('test', 7)
+// Test.emit('test', 8)
+// Test.emit('test', 9)
+// Test.emit('test', 10)
+// Test.emit('test', 11)
+
+// Test.emit('initialize', 'test')
+// Test.emit('initialize')
+
+// Test.emit('test.hey')
 // Test.emit('test.wut.hey')
 
 // Test.off('test.hey')

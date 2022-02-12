@@ -1,15 +1,15 @@
-export default class JetNode {
+const getValue = (target, value) => value ? (typeof value === 'function' ? value.bind(target) : value) : null
+
+export default class Node {
   #source = null
   #revocable
   #test
-
-  #getValue = (target, value) => value ? (typeof value === 'function' ? value.bind(target) : value) : null
 
   constructor (node) {
     this.#source = node
     
     this.#revocable = Proxy.revocable(node, {
-      get: (target, property) => this.#getValue(this, this[property]) ?? this.#getValue(target, target[property]),
+      get: (target, property) => getValue(this, this[property]) ?? getValue(target, target[property]),
       set: (target, property, value) => Reflect.set((property in target) ? target : this, property, value)
     })
 

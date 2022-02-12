@@ -1,5 +1,5 @@
 import EventManager from './EventManager.js'
-import { compose } from './utilities.js'
+import { compose } from './utilities.js.js'
 
 export function defineCustomElement (tag, cfg) {
   const { on } = cfg

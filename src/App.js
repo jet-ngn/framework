@@ -1,4 +1,4 @@
-import Entity from './Entity.js'
+import { makeEntity } from './archive/latest/Entity.js'
 
 class ContactInfo {
   #phone
@@ -77,7 +77,7 @@ export default class App {
       throw new Error(`Invalid root. Expected Entity or Entity config object, received "${type}"`)
     }
 
-    this.#root = root instanceof Entity ? root : new Entity(root)
+    this.#root = makeEntity(root)
   }
 
   get contributors () {
