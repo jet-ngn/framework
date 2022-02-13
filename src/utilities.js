@@ -10,15 +10,6 @@ export function compose (obj, ...extensions) {
   return obj
 }
 
-// export function compose (obj, ...objs) {
-//   let { length } = objs, i = 0
-
-//   while (i < length) {
-//     forEachKey(objs[i], (key, value) => obj[key] = value)
-//     i++
-//   }
-// }
-
 // export function forEach (arr = [], cb) {
 //   let { length } = arr, i = 0
 

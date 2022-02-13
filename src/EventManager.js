@@ -11,8 +11,8 @@ export function attachEventManager (obj) {
       return addHandler(this, ...arguments)
     },
 
-    off () {
-
+    off (evt, handler) {
+      NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
     }
   })
 
@@ -111,7 +111,7 @@ class EventHandler {
   //   return this.#ttl
   // }
 
-  call (context, eventName, ...args) {
+  async call (context, eventName, ...args) {
     this.#calls++
 
     if (this.#calls < this.#minCalls) {
@@ -126,10 +126,10 @@ class EventHandler {
       return true
     }
 
-    return this.#execute(...arguments)
+    return await this.#execute(...arguments)
   }
 
-  #execute = (context, evt, ...args) => {
+  #execute = async (context, evt, ...args) => {
     this.#executions++
 
     if (this.#executions > this.#maxExecutions) {
@@ -146,7 +146,7 @@ class EventHandler {
       context.event.origin = evt
     }
 
-    this.#callback.call(context, ...args)
+    await this.#callback.call(context, ...args)
     delete context.event
 
     return true

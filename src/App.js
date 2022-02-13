@@ -1,4 +1,4 @@
-import { makeEntity } from './archive/latest/Entity.js'
+import { makeEntity } from './Entity.js'
 
 class ContactInfo {
   #phone
@@ -102,6 +102,7 @@ export default class App {
     }
 
     this.#started = true
-    this.#root.initialize()
+    this.#root.emit('initialize')
+    // this.#root.initialize()
   }
 }

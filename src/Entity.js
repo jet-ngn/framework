@@ -1,5 +1,6 @@
 import { compose } from './utilities.js'
 import { attachEventManager, applyEventHandlers } from './EventManager.js'
+import ElementNode from './ElementNode.js'
 // import {makeReferenceManager} from './ReferenceManager.js'
 
 // ALL entities should have EventManager, StateManager.
@@ -14,20 +15,37 @@ class Base {
   #name
   #root
 
-  constructor ({ name, selector, on, references }) {
+  constructor (name, selector) {
     if (!name) {
       throw new Error(`Entity configuration error: "name" attribute is required`)
     }
 
     this.#name = name
+
+    // TODO: Handle cases where selector starts with '>'
+    let nodelist = selector ? document.querySelectorAll(selector) : []
+
+    if (nodelist.length === 0) {
+      throw new Error(`Entity "${name}" selector query did not return any elements.`)
+    }
+
+    if (nodelist.length > 1) {
+      console.info(nodelist)
+      throw new Error(`Entity "${name}" selector refers to more than one element. Please use a more specific selector.`)
+    }
+
+    const node = nodelist[0]
+    this.#root = node ? new ElementNode(node) : null
   }
 
   get name () {
     return this.#name
   }
-}
 
-// const root = selector ? document.querySelector(selector) : null
+  get root () {
+    return this.#root
+  }
+}
 
 export const makeEntity = cfg => {
   class Entity extends Base {}
@@ -51,10 +69,9 @@ export const makeEntity = cfg => {
 
     return result
   }, []))
-
-  const entity = new Entity(cfg)
-
+  
+  const entity = new Entity(cfg.name, cfg.selector)
   tasks.forEach(task => task(entity))
-
+  
   return entity
 }
