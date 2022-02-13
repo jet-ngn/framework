@@ -1,3 +1,46 @@
+Consider adding `init` and `render` methods to Entity config:
+
+```
+const MyEntity = {
+  name: 'my-entity',
+
+  init () {
+    this.render('My Entity')
+  },
+
+  render (title) {
+    return html`
+      <h1>${title}</h1>
+
+      ${this.observe(this.state, state => html`
+        ${state === 'idle' && html`
+          <p>This entity is in the "${state}" state.</p>
+        `}
+
+        ${state === 'other' && html`
+          <p>This entity is in the "${state}" state.</p>
+        `}
+      `)}
+    `
+  }
+}
+```
+
+`init` runs immediately when entity is initialized, and render is only run when it is called. Under the hood, it calls `render` on `this.#root`.
+
+
+Marketing ideas
+----------------
+Composable UI.
+No overhead.
+60fps.
+
+Article ideas
+----------------
+How Jet uses composition and inheritance.
+Event-based UI
+
+
 - Array interp. diffing:
 
 Instead of diffing DOM, diff the arrays themselves, and generate a list of instructions for updating the DOM.

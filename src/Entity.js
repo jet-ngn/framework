@@ -1,11 +1,8 @@
 import { compose } from './utilities.js'
 import { attachEventManager, applyEventHandlers } from './EventManager.js'
+// import { attachReferenceManager } from './ReferenceManager.js'
+// import { attachStateManager } from './StateManager.js'
 import ElementNode from './ElementNode.js'
-// import {makeReferenceManager} from './ReferenceManager.js'
-
-// ALL entities should have EventManager, StateManager.
-// Optional: References, Data, Methods, Plugins 
-// Root will not be managed by ReferenceManager
 
 const attachReferenceManager = obj => {
   return obj
@@ -54,10 +51,19 @@ export const makeEntity = cfg => {
     entity => applyEventHandlers(entity, cfg.on)
   ]
 
-  compose(Entity, attachEventManager, ...Object.keys(cfg).reduce((result, property) => {
+  compose(Entity, attachEventManager, /*attachStateManager, */...Object.keys(cfg).reduce((result, property) => {
     switch (property) {
       case 'references': result.push(attachReferenceManager)
         break
+
+      // case 'data': result.push(attachDataManager)
+      //   break
+
+      // case 'data': result.push(attachMethodManager)
+      //   break
+
+      // case 'plugins': result.push(attachPluginManager)
+      //   break
 
       case 'on':
       case 'name':
@@ -72,6 +78,6 @@ export const makeEntity = cfg => {
   
   const entity = new Entity(cfg.name, cfg.selector)
   tasks.forEach(task => task(entity))
-  
+
   return entity
 }
