@@ -1,3 +1,4 @@
+import NGN from 'NGN'
 // import App from './App.js'
 // import { defineCustomElement } from './CustomElement.js'
 
@@ -12,17 +13,39 @@ const Test = makeEntity({
   },
 
   on: {
+    '*' () {
+      console.log(this.event)
+    },
+
+    test: {
+      hey () {
+        console.log('hey')
+      }
+    },
+
     initialize () {
-      console.log(this);
+      console.log(this.event)
       console.log('INIT')
     }
   }
 })
 
+// console.log(Test)
+
 // Test.on('test', () => console.log('TEST'))
 
 // Test.emit('test')
 
+// const OID = Test.on('hey', { max: 2 }, () => console.log('hey'))
+
+// Test.emit('hey')
+// console.log(NGN.BUS.listeners())
+// Test.emit('hey')
+// console.log(NGN.BUS.listeners())
+// Test.emit('hey')
+// console.log(NGN.BUS.listeners())
+
+Test.emit('initialize')
 Test.emit('initialize')
 
 // const Root = {

@@ -1,7 +1,7 @@
 {
   "name": "jet",
   "version": "3.0.0",
-  "description": "The Jet-NGN JavaScript UI framework",
+  "description": "The Jet-NGN JavaScript UI framework development environment",
   "main": "src/index.js",
   "type": "module",
   "bin": {
