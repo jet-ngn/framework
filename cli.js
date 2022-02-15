@@ -48,6 +48,7 @@ const shell = new Shell({
               '@ngnjs/libnet-node',
               '@ngnjs/crypto',
               '@ngnjs/net',
+              'ngn-data',
               'crypto',
               'http',
               'https'
@@ -61,6 +62,9 @@ const shell = new Shell({
             // }, {
               filter: /^NGN\/libdata/,
               filepath: path.join(source, 'node_modules', '@ngnjs', 'libdata', 'index.js')
+            }, {
+              filter: /^ngn-data/,
+              filepath: path.join(source, 'node_modules', 'ngn-data', 'data.js')
             }],
 
             banner: {

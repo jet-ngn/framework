@@ -1,14 +1,53 @@
 import { compose } from './utilities.js'
 import { attachEventManager, applyEventHandlers } from './EventManager.js'
+import { attachDataManager, initializeDataManager } from './DataManager.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
 // import { attachStateManager } from './StateManager.js'
 import ElementNode from './ElementNode.js'
 
-const attachReferenceManager = obj => {
-  return obj
+export function makeEntity (cfg) {
+  class Entity extends EntityBase {}
+
+  let tasks = [
+    entity => applyEventHandlers(entity, cfg.on ?? {})
+  ]
+
+  compose(Entity, attachEventManager, /*attachStateManager, */...Object.keys(cfg).reduce((result, property) => {
+    switch (property) {
+      case 'on':
+      case 'name':
+      case 'selector': break
+      case 'initialize': result.push(obj => obj.prototype.initialize = cfg.initialize); break
+      case 'render': result.push(obj => obj.prototype.render = cfg.render); break
+
+      case 'data': 
+        result.push(attachDataManager)
+        tasks.push(entity => initializeDataManager(entity, cfg.data ?? {}))
+        break
+
+      // case 'references': 
+      //   // result.push(attachReferenceManager)
+      //   break
+
+      // case 'data': result.push(attachMethodManager)
+      //   break
+
+      // case 'plugins': result.push(attachPluginManager)
+      //   break
+    
+      default: throw new Error(`Invalid Entity configuration property "${property}"`)
+    }
+
+    return result
+  }, []))
+  
+  const entity = new Entity(cfg.name, cfg.selector)
+  tasks.forEach(task => task(entity))
+
+  return entity
 }
 
-class Base {
+class EntityBase {
   #name
   #root
 
@@ -19,8 +58,15 @@ class Base {
 
     this.#name = name
 
-    // TODO: Handle cases where selector starts with '>'
-    let nodelist = selector ? document.querySelectorAll(selector) : []
+    if (!selector) {
+      return
+    }
+    
+    Object.defineProperty(this, 'selector', {
+      get: () => selector
+    })
+
+    let nodelist = document.querySelectorAll(selector)
 
     if (nodelist.length === 0) {
       throw new Error(`Entity "${name}" selector query did not return any elements.`)
@@ -42,42 +88,4 @@ class Base {
   get root () {
     return this.#root
   }
-}
-
-export const makeEntity = cfg => {
-  class Entity extends Base {}
-
-  let tasks = [
-    entity => applyEventHandlers(entity, cfg.on)
-  ]
-
-  compose(Entity, attachEventManager, /*attachStateManager, */...Object.keys(cfg).reduce((result, property) => {
-    switch (property) {
-      case 'references': result.push(attachReferenceManager)
-        break
-
-      // case 'data': result.push(attachDataManager)
-      //   break
-
-      // case 'data': result.push(attachMethodManager)
-      //   break
-
-      // case 'plugins': result.push(attachPluginManager)
-      //   break
-
-      case 'on':
-      case 'name':
-      case 'selector':
-        break
-    
-      default: throw new Error(`Invalid Entity configuration property "${property}"`)
-    }
-
-    return result
-  }, []))
-  
-  const entity = new Entity(cfg.name, cfg.selector)
-  tasks.forEach(task => task(entity))
-
-  return entity
 }

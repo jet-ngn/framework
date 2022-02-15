@@ -20,6 +20,10 @@ export function attachEventManager (obj) {
 }
 
 export function applyEventHandlers (target, cfg) {
+  if (typeof cfg !== 'object') {
+    throw new TypeError(`Invalid ${target.constructor.name} "on" configuration. Expected "object", received "${typeof cfg}"`)
+  }
+
   forEachKey(cfg, (evt, handler) => target.on(evt, handler))
 }
 

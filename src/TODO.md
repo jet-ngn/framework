@@ -1,15 +1,8 @@
 Observables
 
 ```
-let count = new Observable(0)
+let count = this.watch(class, property[, property[, property]], cb)
 ```
-
-Observable takes primitives, objects, arrays, DataModels or DataStores.
-
-See https://stackoverflow.com/questions/1759987/listening-for-variable-changes-in-javascript
-for a way of observing primitives.
-
-Observable will add primitives to a global ObservableRegistry in which a substitute value will be created using Object.defineProperty. This will add a getter which will return the primitive value, and a setter which will fire events when set. The substitute value will be returned by `Observable` constructor. `count` will act as a reference to that value.
 
 ------
 

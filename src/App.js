@@ -102,7 +102,6 @@ export default class App {
     }
 
     this.#started = true
-    this.#root.emit('initialize')
-    // this.#root.initialize()
+    this.#root.initialize()
   }
 }
