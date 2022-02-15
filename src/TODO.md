@@ -1,3 +1,20 @@
+States
+
+```
+states: {
+  idle () {
+    console.log('IDLE')
+  },
+
+  group: {
+    state1 () {},
+    state2 () {},
+  }
+}
+```
+
+
+
 Observables
 
 ```

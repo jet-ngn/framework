@@ -10,104 +10,31 @@ const Root = {
   selector: 'body',
   // composes: [],
 
-  data: {
-    test: {
-      type: String,
-      default: 'hello'
-    },
-    
-    model: new DataModel({
-      test: {
-        type: String,
-        default: 'hello',
-      },
-    
-      test2: String
-    }),
-
-    store: new DataStore({
-      name: String,
-      age: Number
-    })
-  },
-
   // references: {
   //   test: '> jet-test'
   // },
 
-  on: {
-    data: {
-      load (data) {
-        console.log('LOAD', data)
+  states: [{
+    idle: {
+      on () {
+        console.log('IDLE')
       },
 
-      record: {
-        change ({ record, revert }) {
-          console.log(...arguments)
-        }
-      },
-
-      store: {
-        record: {
-          change ({ record, revert }) {
-            console.log(...arguments);
-            revert()
-          }
-        },
-
-        load (data) {
-          console.log('LOAD', data)
+      transitions: {
+        test: 'TEST',
+        test2: () => {
+          console.log('DO STUFF')
         }
       }
     }
-  },
-
-  // on: {
-  //   data: {
-  //     change ({ revert, from, to }) {
-  //       console.log('change', { from, to })
-  //       console.log(this.data.model.toJSON)
-  //       revert()
-  //       console.log('revert', { from: to, to: from })
-  //       console.log(this.data.model.toJSON)
-  //     },
-
-  //     // model: {
-  //     //   change () {
-  //     //     console.log(this.event, ...arguments)
-  //     //   },
-
-  //     //   test: {
-  //     //     change () {
-  //     //       console.log(this.event, ...arguments)
-  //     //     }
-  //     //   }
-  //     // }
-  //   }
-  // },
+  }, {
+    test () {
+      console.log('TEST')
+    }
+  }],
 
   initialize () {
-    // this.data.model.load({
-    //   test: 'heyyy',
-    //   test2: 'wuuuut'
-    // })
-    this.data.store.load([{
-      name: 'Graham',
-      age: 36
-    }, {
-      name: 'Allie',
-      age: 31
-    }])
-
-    this.data.store.records[1].name = 'Corey'
-
-    // console.log(this.data.model.toJSON)
-    // this.data.model.test = 'hiii'
-    // console.log(this.data.model.toJSON)
-    // this.data.test = 'hiii'
-    // console.log(this.data.test);
-    // const tag = this.render('hey')
-    // console.log(tag);
+    console.log(this);
   },
 
   render (str) {

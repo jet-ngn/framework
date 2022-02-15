@@ -1,27 +1,28 @@
 import { compose } from './utilities.js'
 import { attachEventManager, applyEventHandlers } from './EventManager.js'
-import { attachDataManager, initializeDataManager } from './DataManager.js'
+import { initializeDataManager } from './DataManager.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
-// import { attachStateManager } from './StateManager.js'
+import { initializeStateManager } from './StateManager.js'
 import ElementNode from './ElementNode.js'
 
 export function makeEntity (cfg) {
   class Entity extends EntityBase {}
 
   let tasks = [
-    entity => applyEventHandlers(entity, cfg.on ?? {})
+    entity => applyEventHandlers(entity, cfg.on ?? {}),
+    entity => initializeStateManager(entity, cfg.states ?? {})
   ]
 
-  compose(Entity, attachEventManager, /*attachStateManager, */...Object.keys(cfg).reduce((result, property) => {
+  compose(Entity, attachEventManager, ...Object.keys(cfg).reduce((result, property) => {
     switch (property) {
       case 'on':
+      case 'states':
       case 'name':
       case 'selector': break
       case 'initialize': result.push(obj => obj.prototype.initialize = cfg.initialize); break
       case 'render': result.push(obj => obj.prototype.render = cfg.render); break
 
       case 'data': 
-        result.push(attachDataManager)
         tasks.push(entity => initializeDataManager(entity, cfg.data ?? {}))
         break
 

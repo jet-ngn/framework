@@ -20,9 +20,9 @@ export default class DataStore extends NGN.EventEmitter {
 
   add (data, fireEvent = true) {
     const record = new DataModel(this.#model)
+    
     record.load(data)
     this.#records.push(record)
-
     record.on('field.change', change => this.emit('record.change', { record, ...change }))
 
     if (fireEvent) {
@@ -69,13 +69,9 @@ export default class DataStore extends NGN.EventEmitter {
 
   sort (field) {
     if (typeof field === 'function') {
-      return this.#customSort(field)
+      return this.#records.sort(field)
     }
 
     console.log('SORT BY ', field)
-  }
-
-  #customSort = cb => {
-
   }
 }

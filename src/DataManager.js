@@ -1,23 +1,16 @@
-// import NGN from 'NGN'
 import DataModel from './DataModel.js'
 import DataStore from './DataStore.js'
 import { forEachKey } from './utilities.js'
-
-let data = null
 
 export function initializeDataManager (target, cfg) {
   if (typeof cfg !== 'object') {
     throw new TypeError(`Invalid ${target.constructor.name} "data" configuration. Expected "object", received "${typeof cfg}"`)
   }
 
-  data = new DataCollection(target, cfg)
-}
+  let data = new DataCollection(target, cfg)
 
-export function attachDataManager (obj) {
-  Object.defineProperty(obj.prototype, 'data', {
-    get () {
-      return data
-    }
+  Object.defineProperty(target, 'data', {
+    get: () => data
   })
 }
 
