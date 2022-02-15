@@ -24,7 +24,12 @@ export function forEachKey (obj = {}, cb) {
 
   while (i < length) {
     const key = keys[i]
-    cb(keys[i], obj[key])
+    const continueLoop = cb(keys[i], obj[key]) ?? true
+
+    if (!continueLoop) {
+      break
+    }
+
     i++
   }
 }

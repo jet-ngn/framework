@@ -1,7 +1,7 @@
 Observables
 
 ```
-let count = this.watch(class, property[, property[, property]], cb)
+let count = this.track(class, property[, property[, property]], cb)
 ```
 
 ------

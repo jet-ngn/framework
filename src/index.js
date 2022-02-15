@@ -2,6 +2,7 @@ import NGN from 'NGN'
 import App from './App.js'
 import { html } from './Tags.js'
 import DataModel from './DataModel.js'
+import DataStore from './DataStore.js'
 // import { defineCustomElement } from './CustomElement.js'
 
 const Root = {
@@ -22,6 +23,11 @@ const Root = {
       },
     
       test2: String
+    }),
+
+    store: new DataStore({
+      name: String,
+      age: Number
     })
   },
 
@@ -31,31 +37,72 @@ const Root = {
 
   on: {
     data: {
-      change ({ revert, from, to }) {
-        console.log('change', { from, to })
-        console.log(this.data.model.toJSON)
-        revert()
-        console.log('revert', { from: to, to: from })
-        console.log(this.data.model.toJSON)
+      load (data) {
+        console.log('LOAD', data)
       },
 
-      // model: {
-      //   change () {
-      //     console.log(this.event, ...arguments)
-      //   },
+      record: {
+        change ({ record, revert }) {
+          console.log(...arguments)
+        }
+      },
 
-      //   test: {
-      //     change () {
-      //       console.log(this.event, ...arguments)
-      //     }
-      //   }
-      // }
+      store: {
+        record: {
+          change ({ record, revert }) {
+            console.log(...arguments);
+            revert()
+          }
+        },
+
+        load (data) {
+          console.log('LOAD', data)
+        }
+      }
     }
   },
 
+  // on: {
+  //   data: {
+  //     change ({ revert, from, to }) {
+  //       console.log('change', { from, to })
+  //       console.log(this.data.model.toJSON)
+  //       revert()
+  //       console.log('revert', { from: to, to: from })
+  //       console.log(this.data.model.toJSON)
+  //     },
+
+  //     // model: {
+  //     //   change () {
+  //     //     console.log(this.event, ...arguments)
+  //     //   },
+
+  //     //   test: {
+  //     //     change () {
+  //     //       console.log(this.event, ...arguments)
+  //     //     }
+  //     //   }
+  //     // }
+  //   }
+  // },
+
   initialize () {
-    console.log(this.data.model.toJSON)
-    this.data.model.test = 'hiii'
+    // this.data.model.load({
+    //   test: 'heyyy',
+    //   test2: 'wuuuut'
+    // })
+    this.data.store.load([{
+      name: 'Graham',
+      age: 36
+    }, {
+      name: 'Allie',
+      age: 31
+    }])
+
+    this.data.store.records[1].name = 'Corey'
+
+    // console.log(this.data.model.toJSON)
+    // this.data.model.test = 'hiii'
     // console.log(this.data.model.toJSON)
     // this.data.test = 'hiii'
     // console.log(this.data.test);

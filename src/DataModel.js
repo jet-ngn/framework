@@ -59,8 +59,22 @@ export default class DataModel extends NGN.EventEmitter {
     return field
   }
 
-  load () {
+  load (data) {
+    if (typeof data !== 'object') {
+      throw new TypeError(`DataModel load method expected object, received ${typeof data}`)
+    }
 
+    Object.keys(data).forEach(name => {
+      const field = this.#fields[name]
+
+      if (!field) {
+        return
+      }
+
+      field.value = data[name]
+    })
+
+    this.emit('load', this.toJSON)
   }
 }
 

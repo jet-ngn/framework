@@ -3,36 +3,65 @@ import DataModel from './DataModel.js'
 import DataStore from './DataStore.js'
 import { forEachKey } from './utilities.js'
 
+let data = null
+
+export function initializeDataManager (target, cfg) {
+  if (typeof cfg !== 'object') {
+    throw new TypeError(`Invalid ${target.constructor.name} "data" configuration. Expected "object", received "${typeof cfg}"`)
+  }
+
+  data = new DataCollection(target, cfg)
+}
+
+export function attachDataManager (obj) {
+  Object.defineProperty(obj.prototype, 'data', {
+    get () {
+      return data
+    }
+  })
+}
+
 function applyModelListeners (context, name, model) {
-  ;['change', 'revert', 'restore'].forEach(event => {
-    model.on(`field.${event}`, function ({ field, from, to, ...rest }) {
-      const payload = { from, to, ...rest }
-  
-      if (name) {
-        context.emit(`data.${event}`, {
-          model: name,
-          field,
-          ...payload
-        })
-  
-        context.emit(`data.${name}.${event}`, { field, ...payload })
-        context.emit(`data.${name}.${field}.${event}`, payload)
-      } else {
-        context.emit(`data.${event}`, { field, ...payload })
-        context.emit(`data.${field}.${event}`, payload)
-      }
-    })
+  model.on('load', function (data) {
+    context.emit(`data.load`, { model: name, data })
+    context.emit(`data.${name}.load`, data)
+  })
+
+  model.on(`field.change`, function ({ field, from, to, ...rest }) {
+    const payload = { from, to, ...rest }
+
+    if (name) {
+      context.emit(`data.change`, {
+        model: name,
+        field,
+        ...payload
+      })
+
+      context.emit(`data.${name}.change`, { field, ...payload })
+      context.emit(`data.${name}.${field}.change`, payload)
+    } else {
+      context.emit(`data.change`, { field, ...payload })
+      context.emit(`data.${field}.change`, payload)
+    }
   })
 }
 
 function applyStoreListeners (context, name, store) {
-  // ;['create', 'delete', 'update'].forEach(event => store.on(`record.${event}`, function ({ data }) {
-  //   context.emit(`data.${name}.record.${event}`, data)
-  // }))
+  store.on('load', function (records) {
+    context.emit(`data.load`, { store: name, records })
+    context.emit(`data.${name}.load`, records)
+  })
 
-  // store.on('clear', function (records) {
-  //   context.emit(`data.${name}.clear`, records)
-  // })
+  ;['create', 'delete', 'change'].forEach(event => {
+    store.on(`record.${event}`, function () {
+      context.emit(`data.record.${event}`, { store: name, ...arguments[0] })
+      context.emit(`data.${name}.record.${event}`, arguments[0])
+    })
+  })
+
+  store.on('clear', function (records) {
+    context.emit(`data.${name}.clear`, records)
+  })
 }
 
 function convertToJSON (obj) {
@@ -98,22 +127,4 @@ class DataCollection {
     this.#addCollection(name, store)
     applyStoreListeners(this.#context, name, store)
   }
-}
-
-let data = null
-
-export function initializeDataManager (target, cfg) {
-  if (typeof cfg !== 'object') {
-    throw new TypeError(`Invalid ${target.constructor.name} "data" configuration. Expected "object", received "${typeof cfg}"`)
-  }
-
-  data = new DataCollection(target, cfg)
-}
-
-export function attachDataManager (obj) {
-  Object.defineProperty(obj.prototype, 'data', {
-    get () {
-      return data
-    }
-  })
 }
