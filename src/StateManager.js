@@ -1,63 +1,85 @@
 export function initializeStateManager (target, cfg) {
-  let groups = []
-  let current = null
-
   if (!Array.isArray(cfg)) {
     cfg = [cfg]
   }
 
-  // cfg.forEach(group => {
-  //   groups.push(Object.keys(group).reduce((states, name) => {
-  //     states[name] = new State(target, group[name])
-  //     return states
-  //   }, {}))
-  // })
-
-  // const manager = new StateManager(target, groups)
-  const manager = {}
-
-  cfg.forEach((group, index) => {
-    Object.defineProperty(manager, index, {
-      value: Object.keys(group).reduce((states, state) => {
-        states[state] = new State(target, state, group[state])
-        return states
-      }, {})
+  const machines = cfg.reduce((result, group, index) => {
+    const machine = new StateMachine(target, index, group, index === 0)
+  
+    Object.defineProperty(result, index, {
+      get: () => machine,
+      set: state => machine.set(state)
     })
-  })
-  // Object.defineProperties(manager, cfg.reduce((groups, group, index) => {
-  //   // groups[index] = Object.keys(group).reduce((states, state) => {
-  //   //   states[state] = new State(target, group[state])
-  //   //   return states
-  //   // }, {})
 
-  //   groups[index] = group
-
-  //   return groups
-  // }, {}))
+    return result
+  }, {})
 
   Object.defineProperty(target, 'states', {
     get () {
-      return manager
+      return machines 
     }
   })
-
-  // states = new StateCollection(target, cfg)
-
-  // Object.defineProperty(target, 'state', {
-  //   get: () => states.currentStates,
-  //   set: name => states.set(name)
-  // })
 }
 
-// export function attachStateManager (obj) {
-//   Object.defineProperties(obj.prototype, {
-//     addState: (name, cfg) => groups.push(new State(name, cfg))
-//   })
-// }
+class StateMachine {
+  #context
+  #name
+  #states = {}
+  #currentState = null
+
+  constructor (context, name, states, isDefault = false) {
+    this.#context = context
+    this.#name = name
+
+    states = states ?? {}
+
+    if (isDefault && !states.hasOwnProperty('idle')) {
+      states.idle = () => {}
+    }
+    
+    Object.keys(states).forEach(state => {
+      if (StateMachine.prototype.hasOwnProperty(state)) {
+        throw new Error(`Cannot create state on ${context.constructor.name}${context.name ? ` "${context.name}"` : ''}: "${state}" is a reserved word.`)
+      }
+
+      this.#states[state] = new State(context, state, states[state])
+    })
+
+    this.#currentState = this.#states.idle
+    this.#currentState.on?.call(context, { previous: null })
+  }
+
+  get current () {
+    return this.#currentState.name
+  }
+
+  get names () {
+    return Object.keys(this.#states)
+  }
+
+  set (state, ...rest) {
+    if (!this.has(state)) {
+      throw new Error(`State "${state}" not found on state machine ${this.#name}`)
+    }
+
+    const previous = this.#currentState
+
+    this.#currentState?.off?.call(this.#context, { current: previous.name, next: state }, ...rest)
+    this.#currentState = this.#states[state]
+    this.#currentState?.on?.call(this.#context, { previous: previous.name }, ...rest)
+  }
+
+  has (state) {
+    return !!this[state]
+  }
+
+  transition (name, ...rest) {
+    
+  }
+}
 
 class State {
   #id = Symbol('state')
-  #context
 
   #name
   #route = null
@@ -67,48 +89,36 @@ class State {
   #off = null
 
   constructor (context, name, cfg) {
-    this.#context = context
     this.#name = name
     
     if (typeof cfg === 'function') {
-      this.#on = cfg
-      return
+      cfg = {
+        on: cfg
+      }
     }
 
     if (typeof cfg !== 'object') {
       throw new TypeError(`Invalid ${context.constructor.name} state "${name}" configuration. Expected object or function, received ${typeof cfg}`)
     }
 
-    const { on, off, route, transitions } = cfg
+    ;['on', 'off'].forEach(name => {
+      const handler = cfg[name]
 
-    this.#on = on ?? null
-    this.#off = off ?? null
-    this.#route = route ? new Route(route, name) : null
-    
+      handler && Object.defineProperty(this, name, {
+        get: () => handler
+      })
+    })
+
+    const { transitions } = cfg
+
     this.#transitions = transitions ? Object.keys(transitions).reduce((result, transition) => {
-      result[transition] = new Transition(transition, transitions[transition])
+      result[transition] = new Transition(context, transition, transitions[transition])
       return result
     }, {}) : null
   }
 
   get name () {
     return this.#name
-  }
-
-  get on () {
-    return this.#on
-  }
-
-  get off () {
-    return this.#off
-  }
-
-  get route () {
-    return this.#route
-  }
-
-  get hasRoute () {
-    return !!this.#route
   }
 
   get transitions () {
@@ -124,10 +134,16 @@ class State {
   }
 }
 
-class Route {
-
-}
-
 class Transition {
+  #context
+  #name
 
+  constructor (context, name, cfg) {
+    this.#context = context
+    this.#name = name
+  }
+
+  get name () {
+    return this.#name
+  }
 }

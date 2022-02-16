@@ -57,14 +57,8 @@ const shell = new Shell({
             format: 'esm',
 
             aliases: [{
-            //   filter: /^NGN/,
-            //   filepath: path.join(source, 'node_modules', 'ngn', 'index.js')
-            // }, {
               filter: /^NGN\/libdata/,
               filepath: path.join(source, 'node_modules', '@ngnjs', 'libdata', 'index.js')
-            }, {
-              filter: /^ngn-data/,
-              filepath: path.join(source, 'node_modules', 'ngn-data', 'data.js')
             }],
 
             banner: {
@@ -81,7 +75,8 @@ const shell = new Shell({
           next()
         })
 
-        Builder.addTask('Copy index.html', async (next) => {
+        Builder.addTask('Copy test files', async (next) => {
+          await Builder.copyFile('test.js')
           await Builder.copyFile('index.html')
           next()
         })

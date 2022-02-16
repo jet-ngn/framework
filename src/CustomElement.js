@@ -1,5 +1,5 @@
-import EventManager from './EventManager.js'
-import { compose } from './utilities.js.js'
+import { attachEventManager, applyEventHandlers } from './EventManager.js'
+import { compose } from './utilities.js'
 
 export function defineCustomElement (tag, cfg) {
   const { on } = cfg
@@ -13,7 +13,7 @@ export function defineCustomElement (tag, cfg) {
   }
 
   // TODO: Add cfg.methods here too
-  compose(CustomElement.prototype, EventManager(properties, on))
+  // compose(CustomElement.prototype, EventManager(properties, on))
 
   customElements.define(tag, CustomElement)
 }

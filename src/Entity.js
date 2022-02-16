@@ -2,6 +2,7 @@ import { compose } from './utilities.js'
 import { attachEventManager, applyEventHandlers } from './EventManager.js'
 import { initializeDataManager } from './DataManager.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
+import { initializeRouteManager } from './RouteManager.js'
 import { initializeStateManager } from './StateManager.js'
 import ElementNode from './ElementNode.js'
 
@@ -10,31 +11,26 @@ export function makeEntity (cfg) {
 
   let tasks = [
     entity => applyEventHandlers(entity, cfg.on ?? {}),
-    entity => initializeStateManager(entity, cfg.states ?? {})
+    entity => initializeStateManager(entity, cfg.states ?? null),
+    // entity => initializeDataManager(entity, cfg.data ?? {}),
+    // entity => initializeRouteManager(entity, cfg.routes ?? {})
   ]
 
   compose(Entity, attachEventManager, ...Object.keys(cfg).reduce((result, property) => {
     switch (property) {
       case 'on':
-      case 'states':
       case 'name':
-      case 'selector': break
+      case 'selector': 
+      case 'states': 
+      case 'data': 
+      case 'routes': 
+      case 'references': 
+      case 'reactions': 
+      case 'methods': 
+      case 'plugins': break
+
       case 'initialize': result.push(obj => obj.prototype.initialize = cfg.initialize); break
       case 'render': result.push(obj => obj.prototype.render = cfg.render); break
-
-      case 'data': 
-        tasks.push(entity => initializeDataManager(entity, cfg.data ?? {}))
-        break
-
-      // case 'references': 
-      //   // result.push(attachReferenceManager)
-      //   break
-
-      // case 'data': result.push(attachMethodManager)
-      //   break
-
-      // case 'plugins': result.push(attachPluginManager)
-      //   break
     
       default: throw new Error(`Invalid Entity configuration property "${property}"`)
     }
