@@ -2,7 +2,7 @@ import DataModel from './DataModel.js'
 import DataStore from './DataStore.js'
 import { forEachKey } from './utilities.js'
 
-export function initializeDataManager (target, cfg) {
+export function attachDataManager (target, cfg) {
   if (typeof cfg !== 'object') {
     throw new TypeError(`Invalid ${target.constructor.name} "data" configuration. Expected "object", received "${typeof cfg}"`)
   }

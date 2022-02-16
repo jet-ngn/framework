@@ -1,16 +1,49 @@
+Array rendering
+
+```
+${this.track(this.data.items, items => html`
+  ${items.map(item => html`
+    <li>${item.name}</li>
+  `)}
+`)}
+```
+
+Arrays returned from the track callback have special properties on each item to determine whether the element should be visible or not.
+
+For filtering, simply add the "hidden" attribute to all elements that are filtered out.
+
+For sorting, add hidden to all elements, perform the sorting operation, then remove "hidden" from the ones that should be displayed.
+
+If that doesn't work, implement a DOM-diffing algo for sorting.
+
+
+Tracking
+
+If using "var" it i possible to track global variables, because they will stored on the window object. So, you could do this:
+
+```
+var count = 0
+
+const Ent = {
+  render () {
+    return html`
+      ${this.track(window, 'count', count => html`
+        <div>${count}</div>
+      `)}
+    `
+  }
+}
+```
+
+
 States
 
 ```
-states: {
+states: [{
   idle () {
-    console.log('IDLE')
-  },
 
-  group: {
-    state1 () {},
-    state2 () {},
   }
-}
+}]
 ```
 
 
@@ -56,9 +89,9 @@ const MyEntity = {
 
 Marketing ideas
 ----------------
-Composable UI.
-No overhead.
-60fps.
+Declarative, Composable UI.
+60fps rendering with no Virtual DOM overhead.
+No compilation or build step necessary.
 
 Article ideas
 ----------------

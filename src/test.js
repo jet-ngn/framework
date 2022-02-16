@@ -1,9 +1,15 @@
-import { App } from './index.js'
+import { App, Bus } from './index.js'
 
 const Root = {
   name: 'test',
   selector: 'body',
   // composes: [],
+
+  // routes: {
+  //   name: '',
+  //   path: '/test',
+  //   state: this.states[0].idle
+  // },
 
   // references: {
   //   test: '> jet-test'
@@ -15,17 +21,21 @@ const Root = {
     },
 
     hey () {
-      console.log(this)
+      console.log(...arguments)
     }
   }, {
     idle: {
+      route: {
+
+      },
+
       on () {
-        console.log('IDLE')
+        console.log('IDLE', ...arguments)
       },
 
       transitions: {
-        test: 'TEST',
-        test2: () => {
+        TEST: 'test',
+        IDLE: () => {
           console.log('DO STUFF')
         }
       }
@@ -37,15 +47,15 @@ const Root = {
   }],
 
   initialize () {
-    console.log(this);
-    // this.states[0].set('hey')
+    this.states[0].set('hey')
+    this.states[1].set('idle')
   },
 
-  render (str) {
-    return html`
-      <div>TEST</div>
-    `
-  }
+  // render (str) {
+  //   return html`
+  //     <div>TEST</div>
+  //   `
+  // }
 }
 
 const TestApp = new App({
@@ -54,7 +64,7 @@ const TestApp = new App({
   root: Root
 })
 
-TestApp.start()
+Bus.on('ready', () => TestApp.start())
 
 // defineCustomElement('jet-test', {
 //   on: {

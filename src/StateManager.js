@@ -1,4 +1,4 @@
-export function initializeStateManager (target, cfg) {
+export function attachStateManager (target, cfg) {
   if (!Array.isArray(cfg)) {
     cfg = [cfg]
   }
@@ -15,9 +15,7 @@ export function initializeStateManager (target, cfg) {
   }, {})
 
   Object.defineProperty(target, 'states', {
-    get () {
-      return machines 
-    }
+    get: () => machines 
   })
 }
 
@@ -38,19 +36,12 @@ class StateMachine {
     }
     
     Object.keys(states).forEach(state => {
-      if (StateMachine.prototype.hasOwnProperty(state)) {
-        throw new Error(`Cannot create state on ${context.constructor.name}${context.name ? ` "${context.name}"` : ''}: "${state}" is a reserved word.`)
-      }
-
       this.#states[state] = new State(context, state, states[state])
     })
-
-    this.#currentState = this.#states.idle
-    this.#currentState.on?.call(context, { previous: null })
   }
 
   get current () {
-    return this.#currentState.name
+    return this.#currentState?.name ?? null
   }
 
   get names () {
@@ -64,13 +55,13 @@ class StateMachine {
 
     const previous = this.#currentState
 
-    this.#currentState?.off?.call(this.#context, { current: previous.name, next: state }, ...rest)
+    previous?.off?.call(this.#context, { current: previous.name, next: state }, ...rest)
     this.#currentState = this.#states[state]
-    this.#currentState?.on?.call(this.#context, { previous: previous.name }, ...rest)
+    this.#currentState?.on?.call(this.#context, { previous: previous?.name ?? null }, ...rest)
   }
 
   has (state) {
-    return !!this[state]
+    return !!this.#states.hasOwnProperty(state)
   }
 
   transition (name, ...rest) {
@@ -84,9 +75,6 @@ class State {
   #name
   #route = null
   #transitions = null
-
-  #on = null
-  #off = null
 
   constructor (context, name, cfg) {
     this.#name = name
