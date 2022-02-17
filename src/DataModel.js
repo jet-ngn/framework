@@ -149,7 +149,7 @@ class DataField {
       ...payload,
       from,
       to,
-      revert: () => this.#value = from
+      undo: () => this.#value = from
     })
   }
 

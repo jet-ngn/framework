@@ -48,24 +48,34 @@ class StateMachine {
     return Object.keys(this.#states)
   }
 
-  set (state, ...rest) {
+  async set (state, payload, route) {
     if (!this.has(state)) {
       throw new Error(`State "${state}" not found on state machine ${this.#name}`)
     }
 
     const previous = this.#currentState
 
-    previous?.off?.call(this.#context, { current: previous.name, next: state }, ...rest)
+    await previous?.off?.call(this.#context, { current: previous.name, next: state }, payload)
     this.#currentState = this.#states[state]
-    this.#currentState?.on?.call(this.#context, { previous: previous?.name ?? null }, ...rest)
+    await this.#currentState?.on?.call(this.#context, { previous: previous?.name ?? null }, payload)
   }
 
   has (state) {
     return !!this.#states.hasOwnProperty(state)
   }
 
-  transition (name, ...rest) {
-    
+  async transition (name, ...rest) {
+    const transition = this.#currentState.getTransition(name)
+
+    if (!this.#currentState.hasTransition(name)) {
+      throw new Error(`Transition "${name}" not found on "${this.#currentState.name}" state of state machine ${this.#name}`)
+    }
+
+    if (typeof transition === 'function') {
+      return transition.call(this.#context, ...rest)
+    }
+
+    this.set(transition, ...rest)
   }
 }
 
@@ -100,7 +110,11 @@ class State {
     const { transitions } = cfg
 
     this.#transitions = transitions ? Object.keys(transitions).reduce((result, transition) => {
-      result[transition] = new Transition(context, transition, transitions[transition])
+      if (!['string', 'function'].includes(typeof transition)) {
+        throw new TypeError(`Invalid "${this.#name}" state configuration. Transition "${name}" expected string or function, received ${typeof transition}`)
+      }
+
+      result[transition] = transitions[transition]
       return result
     }, {}) : null
   }
@@ -114,24 +128,47 @@ class State {
   }
 
   hasTransition (name) {
-    return Object.keys(this.#transitions).includes(name)
+    return Object.keys(this.#transitions ?? {}).includes(name)
   }
 
   getTransition (name) {
-    return this.#transitions[name]
+    return (this.#transitions ?? {})[name]
   }
 }
 
-class Transition {
-  #context
-  #name
+class Route extends URL {
+  resolvePath (map) {
+    if (!map) {
+      return this.pathname
+    }
 
-  constructor (context, name, cfg) {
-    this.#context = context
-    this.#name = name
-  }
+    const parts = this.pathname.split('/').filter(Boolean)
 
-  get name () {
-    return this.#name
+    return '/' + parts.map(part => {
+      if (!part.startsWith(':')) {
+        return part
+      }
+
+      let interp = map[part.substring(1)]
+
+      if (!interp) {
+        throw new Error(`Route config object does not contain a property called "${part.substring(1)}"`)
+      }
+
+      return interp
+    }).join('/')
   }
 }
+
+const test = new Route('jet:/test/:id')
+
+const path = test.resolvePath({ id: 'blah' })
+
+console.log(path);
+
+// class Route {
+//   #name
+//   #path = null
+//   #hash = null
+//   #query = null
+// }

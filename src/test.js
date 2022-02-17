@@ -16,39 +16,30 @@ const Root = {
   // },
 
   states: [{
-    idle () {
-      console.log('HEYYYY');
-    },
-
-    hey () {
-      console.log(...arguments)
-    }
-  }, {
     idle: {
-      route: {
-
-      },
-
       on () {
-        console.log('IDLE', ...arguments)
+        console.log('idle')
       },
 
       transitions: {
-        TEST: 'test',
-        IDLE: () => {
-          console.log('DO STUFF')
+        HEY: 'hey',
+        BLAH () {
+          console.log(...arguments);
         }
       }
     },
 
-    test () {
-      console.log('TEST')
+    hey () {
+      console.log('hey', ...arguments)
     }
   }],
 
-  initialize () {
-    this.states[0].set('hey')
-    this.states[1].set('idle')
+  async initialize () {
+    await this.states[0].set('idle')
+
+    this.states[0].transition('BLAH', 'HELLOOOO')
+
+    // await this.states[1].set('idle')
   },
 
   // render (str) {

@@ -22,7 +22,7 @@ function applyModelListeners (context, name, model) {
 
   model.on(`field.change`, function ({ field, from, to, ...rest }) {
     const payload = { from, to, ...rest }
-
+    
     if (name) {
       context.emit(`data.change`, {
         model: name,

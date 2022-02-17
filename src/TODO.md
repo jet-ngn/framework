@@ -1,3 +1,16 @@
+Get rid of "Entity" as a user-facing concept. Use "config" instead:
+
+```
+html`
+  ${this.bind({
+    config: Div
+  }, html`<div></div>`)}
+`
+```
+
+
+
+
 Array rendering
 
 ```
@@ -92,6 +105,7 @@ Marketing ideas
 Declarative, Composable UI.
 60fps rendering with no Virtual DOM overhead.
 No compilation or build step necessary.
+No non-standard HTML syntax.
 
 Article ideas
 ----------------

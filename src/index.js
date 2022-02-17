@@ -4,19 +4,26 @@ import { html, svg } from './Tags.js'
 import DataModel from './DataModel.js'
 import DataStore from './DataStore.js'
 import { defineCustomElement } from './CustomElement.js'
+import EntityRegistry from './EntityRegistry.js'
 
 const { BUS, EventEmitter, Queue } = NGN
 
-function handleDOMContentLoaded (cb) {
-  let handler = function () {
-    cb()
-    document.removeEventListener('DOMContentLoaded', handler)
-  }
+window.addEventListener('popstate', evt => {
+  console.log(evt);
+  // if (!evt.state) {
+  //   return
+  // }
 
-  document.addEventListener('DOMContentLoaded', handler)
-}
+  // let { hash, map, name, payload, query } = evt.state
 
-handleDOMContentLoaded(evt => BUS.emit('ready'))
+  // if (this.has(name)) {
+  //   return this.#execChange(this.getState(name), payload, { hash, map, query })
+  // }
+
+  // TODO: Throw Error
+})
+
+document.addEventListener('DOMContentLoaded', evt => BUS.emit('ready'))
 
 export {
   App,
