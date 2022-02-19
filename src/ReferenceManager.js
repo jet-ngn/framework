@@ -1,54 +1,21 @@
-import { forEachKey } from './utilities.js.js'
-import ElementNode from './ElementNode.js'
+import { forEachKey } from './utilities.js'
+import Node from './Node.js'
 
-// TODO: Add rendering functionality
-// class Reference extends ElementNode {
-//   #context
-//   #name
-
-//   constructor (context, name) {
-//     this.#context = context
-//     this.#name = name
-//   }
-
-//   get name () {
-//     return this.#name
-//   }
-// }
-
-// class SelectorReference {
-//   #selector
-
-//   constructor (context, name, selector) {
-//     this.#selector = selector
-//   }
-
-//   get selector () {
-//     return this.#selector
-//   }
-// }
-
-const ReferenceManager = (context, root, references = {}) => {
+export function attachReferenceManager (target, cfg) {
   const getters = {}
 
-  forEachKey(references, (name, selector) => {
+  forEachKey(cfg, (name, selector) => {
     selector = selector.trim()
 
-    if (selector.startsWith('>')) {
-      selector = `:scope ${selector}`
-    }
-
     Object.defineProperty(getters, name, {
-      get () {
-        const nodes = root.querySelectorAll(selector)
-        return (Array.isArray(nodes) ? nodes : [nodes]).map(node => new ElementNode(node))
+      get: () => {
+        const refs = [...target.root.querySelectorAll(selector.startsWith('>') ? `:scope ${selector}` : selector)].map(node => new Node(node))
+        return refs.length === 1 ? refs[0] : refs
       }
     })
   })
 
-  return {
-    references: getters
-  }
+  Object.defineProperty(target, 'references', {
+    get: () => getters
+  })
 }
-
-export { ReferenceManager as default }

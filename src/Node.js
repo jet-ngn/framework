@@ -3,7 +3,6 @@ const getValue = (target, value) => value ? (typeof value === 'function' ? value
 export default class Node {
   #source = null
   #revocable
-  #test
 
   constructor (node) {
     this.#source = node
@@ -16,9 +15,31 @@ export default class Node {
     return this.#revocable.proxy
   }
 
-  get source () {
-    return this.#source
+  get length () {
+    return 1
   }
+
+  // addEventListener () {
+  //   return this.on(...arguments)
+  // }
+
+  // removeEventListener () {
+  //   return this.off(...arguments)
+  // }
+
+  // on (event, callback, options) {
+  //   const listener = BrowserEventManager.add(this, ...arguments)
+  //   this.#eventListeners.push(listener.id)
+  //   return listener
+  // }
+
+  // off (event, callback, options) {
+  //   switch (typeof event) {
+  //     case 'symbol': return BrowserEventManager.removeById(event)
+  //     case 'string': return event === 'all' ? BrowserEventManager.removeByElement(this) : BrowserEventManager.removeByEvent(this, event, callback)
+  //     default: throw new TypeError(`off() method: Invalid arguments. Expected "symbol" or "string," received "${typeof event}"`)
+  //   }
+  // }
 
   remove () {
     // NGN.INTERNAL(`${this.constructor.name}.remove`, this)

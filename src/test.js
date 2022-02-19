@@ -1,52 +1,94 @@
-import { App, Bus } from './index.js'
+import { App, Bus, html } from './index.js'
+
+const data = {
+  name: 'Allie',
+  age: '31',
+  isAdult: true
+}
 
 const Root = {
   name: 'test',
   selector: 'body',
   // composes: [],
 
-  // routes: {
-  //   name: '',
-  //   path: '/test',
-  //   state: this.states[0].idle
-  // },
-
   // references: {
   //   test: '> jet-test'
   // },
 
-  states: [{
-    idle: {
-      on () {
-        console.log('idle')
-      },
+  // states: [{
+  //   idle: {
+  //     on () {
+  //       console.log('idle')
+  //     },
 
-      transitions: {
-        HEY: 'hey',
-        BLAH () {
-          console.log(...arguments);
-        }
-      }
-    },
+  //     transitions: {
+  //       HEY: 'hey',
+  //       BLAH () {
+  //         console.log(...arguments);
+  //       }
+  //     }
+  //   },
 
-    hey () {
-      console.log('hey', ...arguments)
-    }
-  }],
+  //   hey () {
+  //     console.log('hey', ...arguments)
+  //   }
+  // }],
 
   async initialize () {
-    await this.states[0].set('idle')
-
-    this.states[0].transition('BLAH', 'HELLOOOO')
-
-    // await this.states[1].set('idle')
+    setTimeout(() => {
+      data.name = 'Graham'
+      data.age = '36'
+    }, 1500)
+    
   },
 
-  // render (str) {
-  //   return html`
-  //     <div>TEST</div>
-  //   `
-  // }
+  async render () {
+    return html`
+      <div>
+        ${this.track(data, 'name')}, ${this.track(data, 'age', age => age > 33)}
+      </div>
+
+      <div>${this.track(data, 'name')}</div>
+    `
+
+// ${this.track(data, 'isAdult', isAdult => isAdult ? html`YEP` : html`NOPE`)}
+
+// ${test ? html`<div>TRUE</div>` : html`<aside>FALSE</aside>`}
+
+    // return html`
+    //   <div>
+    //     ${this.track(data, 'name')}, ${this.track(data, 'age', age => `${age}`)}
+    //   </div>
+
+    //   <div>HELLO</div>
+
+    //   <div>${this.track(data, 'name')}</div>
+    // `
+
+    // const test = [{
+    //   label: 'Graham'
+    // }, {
+    //   label: 'Allie'
+    // }, {
+    //   label: 'Corey'
+    // }]
+
+    // return html`
+    //   <header>
+    //     <h1>Page Title</h1>
+    //   </header>
+
+    //   <main>
+    //     <ol>
+    //     ${test.map(({ label }) => html`<li>${label}</li>`)}
+    //     </ol>
+    //   </main>
+
+    //   <footer>
+    //     Copyright &copy; 2022 GDB
+    //   </footer>
+    // `
+  }
 }
 
 const TestApp = new App({

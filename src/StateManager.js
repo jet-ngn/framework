@@ -160,11 +160,11 @@ class Route extends URL {
   }
 }
 
-const test = new Route('jet:/test/:id')
+// const test = new Route('jet:/test/:id')
 
-const path = test.resolvePath({ id: 'blah' })
+// const path = test.resolvePath({ id: 'blah' })
 
-console.log(path);
+// console.log(path);
 
 // class Route {
 //   #name
