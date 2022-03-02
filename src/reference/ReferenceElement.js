@@ -11,7 +11,7 @@ export default class ReferenceElement extends ReferenceElementProxy {
   #renderer
   #managedNode
 
-  constructor (context, name, element) {
+  constructor (context, name, element, collection) {
     let managedNode
 
     if (element instanceof ParsedNode) {
@@ -19,7 +19,7 @@ export default class ReferenceElement extends ReferenceElementProxy {
       element = element.source
     }
 
-    super(element)
+    super(element, collection)
 
     this.#context = context
     this.#name = name
@@ -40,12 +40,11 @@ export default class ReferenceElement extends ReferenceElementProxy {
 
   destroy () {
     this.offAll()
+    
+    if (!!this.collection) {
+      this.collection.remove(this.#name)
+    }
 
-    // if (this.#managedNode || this.#context.managedNodes.includes(this.element)) {
-    //   return console.error(`Reference "${this.#name}" refers to a dynamically rendered node. These cannot be manually destroyed.`)
-    // }
-    //
-    // this.#context.removeReference(this.#name)
     this.element.remove()
   }
 

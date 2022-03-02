@@ -1,8 +1,10 @@
 export default class ReferenceElementProxy {
   #element
+  #collection
 
-  constructor (element) {
+  constructor (element, collection) {
     this.#element = element ?? null
+    this.#collection = collection ?? null
 
     if (!this.#element) {
       return
@@ -32,6 +34,10 @@ export default class ReferenceElementProxy {
         return Reflect.set((property in target.element) ? target.element : target, property, value)
       }
     })
+  }
+  
+  get collection () {
+    return this.#collection
   }
 
   get element () {

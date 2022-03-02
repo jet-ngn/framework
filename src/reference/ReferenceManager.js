@@ -74,8 +74,23 @@ export default class ReferenceManager {
     switch (elements.length) {
       case 0: return null
       case 1: return new ReferenceElement(this.#context, name, elements[0])
-      default: return new ReferenceCollection([...elements].map((element, index) => new ReferenceElement(this.#context, index, element)))
+      default:
+        const collection = new ReferenceCollection(this.#context)
+        ;[...elements].map((element, index) => collection.add(element))
+        return collection
     }
+  }
+
+  #registerReference = (name, ref, manager) => {
+    const newRef = this.createReference(name, ref, manager)
+
+    this.#references[name] = newRef
+
+    newRef.forEach(ref => {
+      console.log(ref);
+    })
+
+    return ref
   }
 
   getReference (name, manager = null) {
@@ -83,9 +98,9 @@ export default class ReferenceManager {
       return this.#root
     }
 
-    if (this.#references.hasOwnProperty(name)) {
-      const ref = this.#references[name]
+    const ref = this.#references[name]
 
+    if (ref) {
       if (!this.#selectors.hasOwnProperty(name)) {
         return ref  
       }
@@ -95,13 +110,11 @@ export default class ReferenceManager {
     }
 
     if (this.#selectors.hasOwnProperty(name)) {
-      this.#references[name] = this.createReference(name, this.#selectors[name], manager)
-      return this.#references[name]
+      return this.#registerReference(name, this.#selectors[name], manager)
     }
 
     if (this.#nodes.hasOwnProperty(name)) {
-      this.#references[name] = this.createReference(name, this.#nodes[name], manager)
-      return this.#references[name]
+      return this.#registerReference(name, this.#nodes[name], manager)
     }
 
     console.error(`Reference "${name}" not found`)

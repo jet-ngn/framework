@@ -1,28 +1,31 @@
+import ReferenceElement from './ReferenceElement.js'
+
 export default class ReferenceCollection {
-  #references
+  #context
+  #count = 0
 
-  constructor (references = null) {
-    if (NGN.typeof(references) !== 'array') {
-      return console.error(`Invalid argument type "${NGN.typeof(references)}". ReferenceCollection expects an array.`)
-    }
-
-    this.#references = references
-
-    this.#references.forEach((reference, index) => {
-      this[index] = reference
-
-      if (reference.id) {
-        this[reference.id] = reference
-      }
-    })
+  constructor (context) {
+    this.#context = context
   }
 
   get length () {
-    return this.#references.length
+    return this.#count
+  }
+
+  add (element) {
+    const ref = new ReferenceElement(this.#context, this.#count, element, this)
+    this[this.#count] = ref
+    this.#count++
+
+    if (ref.id) {
+      this[ref.id] = ref
+    }
   }
 
   forEach (cb) {
-    this.#references.forEach(cb)
+    for (let i = 0, length = this.#count; i < length; i++) {
+      cb(this[i])
+    }
   }
 
   item (index) {
@@ -30,8 +33,27 @@ export default class ReferenceCollection {
   }
 
   namedItem (name) {
-    let matches = this.#references.filter(reference => reference.id === name || reference.name === name)
+    const matches = []
+
+    for (let i = 0, length = this.#count; i < length; i++) {
+      const ref = this[i]
+
+      if (ref && (ref.id === name || ref.name === name)) {
+        matches.push(ref)
+      }
+    }
+
     return matches.length > 0 ? matches[0] : null
+  }
+
+  remove (index) {
+    const ref = this[index]
+
+    if (ref.id) {
+      delete this[ref.id]
+    }
+
+    delete this[index]
   }
 
   [Symbol.iterator] () {
