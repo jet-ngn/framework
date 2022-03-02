@@ -1,6 +1,5 @@
 import ParsedNode from '../parser/ParsedNode.js'
 import ReferenceElement from './ReferenceElement.js'
-import ReferenceCollection from './ReferenceCollection.js'
 import ReferenceList from './ReferenceList.js'
 import Constants from '../Constants.js'
 
@@ -74,22 +73,13 @@ export default class ReferenceManager {
     switch (elements.length) {
       case 0: return null
       case 1: return new ReferenceElement(this.#context, name, elements[0])
-      default:
-        const collection = new ReferenceCollection(this.#context)
-        ;[...elements].map((element, index) => collection.add(element))
-        return collection
+      default: return [...elements].map((element, index) => new ReferenceElement(this.#context, index, element))
     }
   }
 
   #registerReference = (name, ref, manager) => {
     const newRef = this.createReference(name, ref, manager)
-
     this.#references[name] = newRef
-
-    newRef.forEach(ref => {
-      console.log(ref);
-    })
-
     return ref
   }
 

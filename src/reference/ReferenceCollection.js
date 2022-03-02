@@ -54,6 +54,7 @@ export default class ReferenceCollection {
     }
 
     delete this[index]
+    this.#count--
   }
 
   [Symbol.iterator] () {

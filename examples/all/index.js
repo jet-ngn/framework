@@ -111,6 +111,17 @@ const Demo = {
         this.emit('add', 'Jaimie')
 
         this.emit('add', 'Jose')
+
+        setTimeout(() => {
+          for (let i = 0; i < this.refs.items.length; i++) {
+            this.refs.items[i].destroy()
+          }
+          
+          this.emit('add', 'Jake')
+          this.emit('add', 'Tigerlily')
+  
+          this.emit('add', 'Tinkerbell')
+        }, 1500)
       }, 1500)
     },
 
