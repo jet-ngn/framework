@@ -1,5 +1,5 @@
 import NGN from 'NGN'
-import { forEachKey } from './utilities.js'
+import { forEachKey } from '../utilities/IteratorUtils.js'
 
 // TODO: Consider adding Typed Arrays and other standard lib types
 

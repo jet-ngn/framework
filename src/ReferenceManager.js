@@ -1,4 +1,4 @@
-import { forEachKey } from './utilities.js'
+import { forEachKey } from './utilities/IteratorUtils.js'
 import Node from './Node.js'
 
 export function attachReferenceManager (target, cfg) {

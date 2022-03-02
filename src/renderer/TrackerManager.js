@@ -1,5 +1,8 @@
 import Interpolation from './Interpolation.js'
-import { sanitizeString } from './StringUtils.js'
+import DataCollection from '../data/DataCollection.js'
+import DataModel from '../data/DataModel.js'
+import DataStore from '../data/DataStore.js'
+import { sanitizeString } from '../utilities/StringUtils.js'
 
 export function attachTrackerManager (obj) {
   Object.assign(obj.prototype, {
@@ -26,6 +29,18 @@ export class TrackerRegistry {
   }
 
   #trackProperty (target, property, transform, retainFormatting) {
+    if (target instanceof DataCollection) {
+      return console.log('HANDLE DATA COLLECTION')
+    }
+
+    if (target instanceof DataModel) {
+      return console.log('HANDLE DATA MODEL')
+    }
+
+    if (target instanceof DataStore) {
+      return console.log('HANDLE DATA STORE')
+    }
+
     let value = target[property]
     delete target[property]
 

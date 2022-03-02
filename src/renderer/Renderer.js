@@ -1,6 +1,6 @@
 import { typeOf } from 'NGN/libdata'
 import { Tag } from './Tags.js'
-import { sanitizeString } from './StringUtils.js'
+import { sanitizeString } from '../utilities/StringUtils.js'
 
 export function parseTag ({ strings, interpolations }, retainFormatting = false, trackers) {
   return interpolations.length > 0
@@ -19,20 +19,6 @@ function parseInterpolations ({ strings, interpolations }, retainFormatting, tra
     }
 
     string += parseInterpolation(interpolations[i], retainFormatting, trackers) ?? ''
-
-    // if (typeof parsed !== 'object') {
-    //   string += parsed
-    //   continue
-    // }
-
-    // if (tracker) {
-    //   const { id, tracker } = parsed
-    //   trackers[id] = tracker
-    //   string += `<template id="${id}"></template>`
-    //   continue
-    // }
-
-    // string += value
   }
 
   return string

@@ -1,12 +1,12 @@
-import { compose } from './utilities.js'
-import { attachEventManager, applyEventHandlers } from './EventManager.js'
-import { attachDataManager } from './DataManager.js'
-import { attachStateManager } from './StateManager.js'
-import { attachReferenceManager } from './ReferenceManager.js'
-import { attachTrackerManager, TrackerRegistry } from './TrackerManager.js'
-import Node from './Node.js'
-import { Tag } from './Tags.js'
-import { parseTag, getDOMFragment } from './Renderer.js'
+import { compose } from '../utilities/CompositionUtils.js'
+import { attachEventManager, applyEventHandlers } from '../events/EventManager.js'
+import { attachDataManager } from '../data/DataManager.js'
+import { attachStateManager } from '../StateManager.js'
+import { attachReferenceManager } from '../ReferenceManager.js'
+import { attachTrackerManager, TrackerRegistry } from '../renderer/TrackerManager.js'
+import Node from '../Node.js'
+import { Tag } from '../renderer/Tags.js'
+import { parseTag, getDOMFragment } from '../renderer/Renderer.js'
 
 function getRootNode (entity, selector) {
   if (!selector) {

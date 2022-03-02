@@ -1,10 +1,9 @@
 import NGN from 'NGN'
-import App from './App.js'
-import { html, svg } from './Tags.js'
-import DataModel from './DataModel.js'
-import DataStore from './DataStore.js'
-import { defineCustomElement } from './CustomElement.js'
-import EntityRegistry from './EntityRegistry.js'
+import App from './API/App.js'
+import { html, svg } from './renderer/Tags.js'
+import DataModel from './data/DataModel.js'
+import DataStore from './data/DataStore.js'
+import { defineCustomElement } from './API/CustomElement.js'
 
 const { BUS, EventEmitter, Queue } = NGN
 
