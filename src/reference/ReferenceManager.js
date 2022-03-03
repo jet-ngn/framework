@@ -1,5 +1,6 @@
 import ParsedNode from '../parser/ParsedNode.js'
 import ReferenceElement from './ReferenceElement.js'
+import ReferenceCollection from './ReferenceCollection.js'
 import ReferenceList from './ReferenceList.js'
 import Constants from '../Constants.js'
 
@@ -74,13 +75,8 @@ export default class ReferenceManager {
       case 0: return null
       case 1: return new ReferenceElement(this.#context, name, elements[0])
       default: return [...elements].map((element, index) => new ReferenceElement(this.#context, index, element))
+      // default: return new ReferenceCollection([...elements].map((element, index) => new ReferenceElement(this.#context, index, element)))
     }
-  }
-
-  #registerReference = (name, ref, manager) => {
-    const newRef = this.createReference(name, ref, manager)
-    this.#references[name] = newRef
-    return ref
   }
 
   getReference (name, manager = null) {
@@ -88,9 +84,9 @@ export default class ReferenceManager {
       return this.#root
     }
 
-    const ref = this.#references[name]
+    if (this.#references.hasOwnProperty(name)) {
+      const ref = this.#references[name]
 
-    if (ref) {
       if (!this.#selectors.hasOwnProperty(name)) {
         return ref  
       }
@@ -134,6 +130,12 @@ export default class ReferenceManager {
     }
 
     delete collection[name]
+  }
+
+  #registerReference = (name, source, manager) => {
+    const ref = this.createReference(name, source, manager)
+    this.#references[name] = ref
+    return ref
   }
 
   #getElements = selector => ((this.#context.type === 'custom-element' ? this.#context.shadowRoot : this.#root) ?? document).querySelectorAll(selector)
