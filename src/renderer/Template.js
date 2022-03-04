@@ -89,6 +89,17 @@ export default class Template {
     return update
   }
 
+  removeNode (element) {
+    const node = this.#nodes.find(node => node.source === element)
+
+    if (!node) {
+      return
+    }
+
+    this.#nodes.splice(this.#nodes.indexOf(node), 1)
+    element.remove()
+  }
+
   toString () {
     const div = document.createElement('div')
     div.append(...this.#nodes.map(node => node.render()))

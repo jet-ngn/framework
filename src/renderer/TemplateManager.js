@@ -60,4 +60,8 @@ export default class TemplateManager {
 
     return this.#template
   }
+
+  removeNode (element) {
+    return this.#template.removeNode(element)
+  }
 }

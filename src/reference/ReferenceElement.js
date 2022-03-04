@@ -85,6 +85,14 @@ export default class ReferenceElement extends ReferenceElementProxy {
     this.#render('append', tag)
   }
 
+  removeChildElement (element) {
+    if (!this.#renderer) {
+      return element.remove()
+    }
+
+    this.#renderer.removeElement(element)
+  }
+
   render (tag) {
     this.#render('render', tag)
   }

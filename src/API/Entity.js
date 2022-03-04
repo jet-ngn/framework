@@ -73,6 +73,12 @@ export default class Entity extends Driver() {
     super.initialize({ selector: this.selector, ...cfg })
   }
 
+  // Monkey Patch: remove a child DOM element manually, and also remove it's Virtual Node
+  // on the Renderer
+  removeChildElement (element) {
+    return this.root.removeChildElement(element)
+  }
+
   render (tag) {
     // TODO: Add NGN.Ledger Event
     return this.root.render(...arguments)

@@ -90,6 +90,8 @@ import { App, Bus, Diagnostics, html } from '../../src/index.js'
 //   }
 // }
 
+let count = 0
+
 const Demo = {
   name: 'demo',
   selector: 'body',
@@ -126,7 +128,23 @@ const Demo = {
     },
 
     add (name) {
-      this.append(html`<div>${name}</div>`)
+      count++
+      const id = count
+
+      this.append(html`
+        <div data-id="${id}">
+          ${name}
+          
+          ${this.bind({
+            on: {
+              click: evt => {
+                const el = this.root.querySelector(`[data-id="${id}"]`)
+                this.removeChildElement(el)
+              }
+            }
+          }, html`<button>Remove</button>`)}
+        </div>
+      `)
     }
   }
 }

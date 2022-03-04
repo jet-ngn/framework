@@ -67,6 +67,10 @@ export default class Renderer {
     return this.#render('replace', tag)
   }
 
+  removeElement (element) {
+    return this.#templateManager.removeNode(element)
+  }
+
   #render = (type, tag) => {
     if (!(tag instanceof Tag)) {
       throw new TypeError(`${this.#context.type} ${this.#context.name}: : ${type}() expected tagged template literal, received "${NGN.typeof(tag)}"`)
