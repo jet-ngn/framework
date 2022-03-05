@@ -85,7 +85,10 @@ const BaseElement = superClass => class extends Driver(superClass) {
 
     const tags = {
       style: Reflect.get(this.config, 'style', this) ?? null,
-      template: Reflect.get(this.config, 'template', this) ?? html`<slot></slot>`
+      template: Reflect.get(this.config, 'template', this) ?? html`
+        <style></style>
+        <slot></slot>
+      `
     }
 
     const template = document.createElement('template')
