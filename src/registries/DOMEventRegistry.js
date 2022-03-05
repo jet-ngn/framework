@@ -1,5 +1,6 @@
 import EventHandler from '../events/EventHandler.js'
 import ReferenceElement from '../reference/ReferenceElement.js'
+import ElementNode from '../parser/ElementNode.js'
 
 export class DOMEventRegistry {
   #root
@@ -118,6 +119,14 @@ export class DOMEventRegistry {
   removeElement (element) {
     Object.keys(this.#handlers).forEach(evt => {
       const elements = this.#registry[evt]
+
+      if (element.hasChildren) {
+        element.nodes.forEach(node => {
+          if (node instanceof ElementNode) {
+            this.removeElement(node)
+          }
+        })
+      }
 
       if (elements.has(element)) {
         this.deregister(element, 'all')

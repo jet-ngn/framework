@@ -4,6 +4,8 @@ import HTMLParser from '../parser/HTMLParser.js'
 import InterpolationManager from '../interpolation/InterpolationManager.js'
 import PerformanceMonitor from '../diagnostics/PerformanceMonitor.js'
 import ElementNode from '../parser/ElementNode.js'
+import DOMEventRegistry from '../registries/DOMEventRegistry.js'
+import Interpolation from '../interpolation/Interpolation.js'
 
 export default class Template {
   #context
@@ -90,14 +92,30 @@ export default class Template {
   }
 
   removeNode (element) {
-    const node = this.#nodes.find(node => node.source === element)
+    const node = this.#nodes.find(node => node.source === element || node.rendered === element)
 
     if (!node) {
-      return
+      console.info(element)
+      throw new Error(`Element is not a child of this ${this.#context.constructor.name}`)
     }
 
+    this.#removeNode(node)
     this.#nodes.splice(this.#nodes.indexOf(node), 1)
-    element.remove()
+  }
+
+  #removeNode = node => {
+    if (node instanceof ElementNode) {
+      if (node.hasChildren) {
+        node.nodes.forEach(node => this.#removeNode(node))
+      }
+
+      DOMEventRegistry.removeElement(node)
+    } else if (node instanceof Interpolation) {
+      node.template.nodes.forEach(node => this.#removeNode(node))
+      this.#interpolationManager.removeInterpolation(node.id)
+    }
+    
+    node.remove()
   }
 
   toString () {

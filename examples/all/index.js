@@ -102,29 +102,7 @@ const Demo = {
 
   on: {
     initialize () {
-      ['Graham', 'Corey', 'Allie'].forEach(name => this.emit('add', name))
-
-      setTimeout(() => {
-        for (let i = 0; i < this.refs.items.length; i++) {
-          this.refs.items[i].destroy()
-        }
-        
-        this.emit('add', 'Tina')
-        this.emit('add', 'Jaimie')
-
-        this.emit('add', 'Jose')
-
-        setTimeout(() => {
-          for (let i = 0; i < this.refs.items.length; i++) {
-            this.refs.items[i].destroy()
-          }
-          
-          this.emit('add', 'Jake')
-          this.emit('add', 'Tigerlily')
-  
-          this.emit('add', 'Tinkerbell')
-        }, 1500)
-      }, 1500)
+      ['Graham'].forEach(name => this.emit('add', name))
     },
 
     add (name) {
@@ -132,18 +110,14 @@ const Demo = {
       const id = count
 
       this.append(html`
-        <div data-id="${id}">
-          ${name}
-          
-          ${this.bind({
+        ${this.bind({
             on: {
               click: evt => {
                 const el = this.root.querySelector(`[data-id="${id}"]`)
                 this.removeChildElement(el)
               }
             }
-          }, html`<button>Remove</button>`)}
-        </div>
+          }, html`<button data-id="${id}">Remove</button>`)}
       `)
     }
   }

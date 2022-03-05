@@ -86,4 +86,8 @@ export default class InterpolationManager {
   hasInterpolation (id) {
     return this.#interpolations.hasOwnProperty(id)
   }
+
+  removeInterpolation (id) {
+    delete this.#interpolations[id]
+  }
 }
