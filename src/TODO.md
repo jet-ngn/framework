@@ -1,3 +1,6 @@
+Instead of a global DOM event registry, store events per-entity. This means that they can be more easily cleaned up when the entity is not in use.
+
+
 Get rid of "Entity" as a user-facing concept. Use "config" instead:
 
 ```
