@@ -5,25 +5,6 @@ const data = {
   names: ['Graham', 'Corey', 'Mom', 'Dad']
 }
 
-// const ArrayProxy = new Proxy(data.names, {
-//   get: function(target, property) {
-//     switch (property) {
-//       case 'push': console.log(...arguments)
-//       case 'splice': console.log(property)
-    
-//       default: return target[property]
-//     }
-//   }//,
-//   // set: function(target, property, value, receiver) {
-//   //   console.log('setting ' + property + ' for ' + target + ' with value ' + value)
-//   //   target[property] = value
-//   //   return true;
-//   // }
-// })
-
-// ArrayProxy.push('test')
-// // ArrayProxy.splice(0, 1)
-
 const Root = {
   name: 'root',
   selector: '#app1',
@@ -49,12 +30,7 @@ const Root = {
       // data.names.pop()
       // data.names.fill('tinkerbell', 1)
       // data.names.reverse()
-      data.names.copyWithin(1, 2, 3)
-
-      // setTimeout(() => {
-      //   // console.log(data.names);
-      //   data.names.splice(0, 1)
-      // }, 1500)
+      // data.names.copyWithin(1, 2, 3)
     }, 1500)
   },
 

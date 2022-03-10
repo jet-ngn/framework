@@ -3,7 +3,7 @@ import { attachEventManager, applyEventHandlers } from './events/EventManager.js
 import { attachDataManager } from './data/DataManager.js'
 import { attachStateManager } from './StateManager.js'
 import { attachReferenceManager } from './ReferenceManager.js'
-import { attachTrackerManager, TrackerRegistry } from './renderer/TrackerManager.js'
+import { attachTrackerManager, TrackerRegistry } from './renderer/trackers/TrackerManager.js'
 import Node from './Node.js'
 import { Tag } from './renderer/Tags.js'
 import { parseTag, getDOMFragment } from './renderer/Renderer.js'
@@ -38,8 +38,6 @@ export function makeEntity ({ name, selector, on, states, data, references, init
     render
   )
 
-  // const interpolations = {}
-
   return {
     entity,
 
@@ -65,8 +63,6 @@ export function makeEntity ({ name, selector, on, states, data, references, init
         })
 
         root.replaceChildren(getDOMFragment(tag.type, string, { trackers }))
-
-        // initializeTrackerManager(entity)
       }
 
       initialize && await initialize.call(entity) // TODO: Maybe pass parent, state, etc data into this function
