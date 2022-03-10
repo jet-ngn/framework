@@ -1,4 +1,4 @@
-import { makeEntity } from './Entity.js'
+import { makeEntity } from '../Entity.js'
 
 class ContactInfo {
   #phone

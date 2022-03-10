@@ -1,12 +1,12 @@
-import { compose } from '../utilities/CompositionUtils.js'
-import { attachEventManager, applyEventHandlers } from '../events/EventManager.js'
-import { attachDataManager } from '../data/DataManager.js'
-import { attachStateManager } from '../StateManager.js'
-import { attachReferenceManager } from '../ReferenceManager.js'
-import { attachTrackerManager, TrackerRegistry } from '../renderer/TrackerManager.js'
-import Node from '../Node.js'
-import { Tag } from '../renderer/Tags.js'
-import { parseTag, getDOMFragment } from '../renderer/Renderer.js'
+import { compose } from './utilities/CompositionUtils.js'
+import { attachEventManager, applyEventHandlers } from './events/EventManager.js'
+import { attachDataManager } from './data/DataManager.js'
+import { attachStateManager } from './StateManager.js'
+import { attachReferenceManager } from './ReferenceManager.js'
+import { attachTrackerManager, TrackerRegistry } from './renderer/TrackerManager.js'
+import Node from './Node.js'
+import { Tag } from './renderer/Tags.js'
+import { parseTag, getDOMFragment } from './renderer/Renderer.js'
 
 function getRootNode (entity, selector) {
   if (!selector) {
@@ -38,7 +38,7 @@ export function makeEntity ({ name, selector, on, states, data, references, init
     render
   )
 
-  const interpolations = {}
+  // const interpolations = {}
 
   return {
     entity,
@@ -58,9 +58,14 @@ export function makeEntity ({ name, selector, on, states, data, references, init
 
         const trackers = new TrackerRegistry(entity)
         const { root } = entity
-        const string = parseTag(tag, root.tagName === 'PRE', trackers)
+        
+        const string = parseTag(tag, {
+          retainFormatting: root.tagName === 'PRE',
+          trackers
+        })
 
-        root.replaceChildren(getDOMFragment(tag.type, string, trackers))
+        root.replaceChildren(getDOMFragment(tag.type, string, { trackers }))
+
         // initializeTrackerManager(entity)
       }
 

@@ -22,7 +22,12 @@ window.addEventListener('popstate', evt => {
   // TODO: Throw Error
 })
 
-document.addEventListener('DOMContentLoaded', evt => BUS.emit('ready'))
+const handleDOMContentLoaded = function () {
+  BUS.emit('ready')
+  document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded)
+}
+
+document.addEventListener('DOMContentLoaded', handleDOMContentLoaded)
 
 export {
   App,

@@ -1,8 +1,32 @@
 import { App, Bus, html } from './index.js'
 
+const data = {
+  name: 'Graham',
+  names: ['Graham', 'Corey', 'Mom', 'Dad']
+}
+
+// const ArrayProxy = new Proxy(data.names, {
+//   get: function(target, property) {
+//     switch (property) {
+//       case 'push': console.log(...arguments)
+//       case 'splice': console.log(property)
+    
+//       default: return target[property]
+//     }
+//   }//,
+//   // set: function(target, property, value, receiver) {
+//   //   console.log('setting ' + property + ' for ' + target + ' with value ' + value)
+//   //   target[property] = value
+//   //   return true;
+//   // }
+// })
+
+// ArrayProxy.push('test')
+// // ArrayProxy.splice(0, 1)
+
 const Root = {
   name: 'root',
-  selector: 'body',
+  selector: '#app1',
 
   data: {
     name: {
@@ -12,22 +36,72 @@ const Root = {
   },
 
   initialize () {
-    setTimeout(() => this.data.name = 'Felicia', 3000)
+    setTimeout(() => {
+      data.name = 'Felicia'
+
+      // For this use case, if I store a Data Model and add "data.names" as a field there,
+      // I can respond to the events fired by the model.
+      // data.names = ['Corey', 'Mom', 'Dad', 'Allie']
+      // data.names.push('Allie')
+      // data.names.splice(1, 2, 'Hey')
+      // data.names.unshift('Hey')
+      // data.names.shift()
+      // data.names.pop()
+      // data.names.fill('tinkerbell', 1)
+      // data.names.reverse()
+      data.names.copyWithin(1, 2, 3)
+
+      // setTimeout(() => {
+      //   // console.log(data.names);
+      //   data.names.splice(0, 1)
+      // }, 1500)
+    }, 1500)
   },
+
+  // <!-- ${this.track(test, test => html`WORKS`)} -->
 
   render () {
     return html`
-      <h1>Hello, ${this.track(this.data, 'name')}!</h1>
+      <h1>Hello, ${this.track(data, 'name')}!</h1>
+
+      <p>
+        Here are some other names:
+
+        <ul>
+          ${this.track(data, 'names')}
+        </ul>
+      </p>
     `
   }
 }
+
+// const Root2 = {
+//   ...Root,
+//   name: 'root2',
+//   selector: '#app2',
+
+//   data: {
+//     name: {
+//       type: String,
+//       default: 'Allie'
+//     }
+//   },
+// }
 
 const MyApp = new App({
   name: 'My App',
   root: Root
 })
 
-Bus.on('ready', () => MyApp.start())
+// const MyApp2 = new App({
+//   name: 'My App 2',
+//   root: Root2
+// })
+
+Bus.on('ready', () => {
+  MyApp.start()
+  // MyApp2.start()
+})
 
 // const data = {
 //   name: 'Allie',

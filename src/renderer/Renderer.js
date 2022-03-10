@@ -2,13 +2,13 @@ import { typeOf } from 'NGN/libdata'
 import { Tag } from './Tags.js'
 import { sanitizeString } from '../utilities/StringUtils.js'
 
-export function parseTag ({ strings, interpolations }, retainFormatting = false, trackers) {
+export function parseTag ({ strings, interpolations }, cfg) {
   return interpolations.length > 0
-    ? parseInterpolations(arguments[0], retainFormatting, trackers)
+    ? parseInterpolations(arguments[0], cfg)
     : strings.join('')
 }
 
-function parseInterpolations ({ strings, interpolations }, retainFormatting, trackers) {
+function parseInterpolations ({ strings, interpolations }, cfg) {
   let string = ''
 
   for (let i = 0, length = strings.length; i < length; i++) {
@@ -18,26 +18,26 @@ function parseInterpolations ({ strings, interpolations }, retainFormatting, tra
       continue
     }
 
-    string += parseInterpolation(interpolations[i], retainFormatting, trackers) ?? ''
+    string += parseInterpolation(interpolations[i], cfg) ?? ''
   }
 
   return string
 }
 
-function parseInterpolation (interpolation, retainFormatting, trackers) {
+function parseInterpolation (interpolation, cfg) {
   const type = typeOf(interpolation)
 
   switch (type) {
     case 'string':
-    case 'number': return sanitizeString(interpolation, retainFormatting)
+    case 'number': return sanitizeString(interpolation, cfg)
     case 'boolean': return interpolation ? 'true' : null
-    case 'array': return parseArray(interpolation, retainFormatting, trackers)
-    case 'object': return parseObject(interpolation, retainFormatting, trackers)
+    case 'array': return parseArray(interpolation, cfg)
+    case 'object': return parseObject(interpolation, cfg)
     default: return null
   }
 }
 
-function parseObject (obj, retainFormatting, trackers) {
+function parseObject (obj, { retainFormatting, trackers }) {
   if (obj instanceof Tag) {
     return parseTag(...arguments)
   }
@@ -46,8 +46,8 @@ function parseObject (obj, retainFormatting, trackers) {
 
   switch (type) {
     case 'tracker':
-      const tracker = trackers.register(obj.target, obj.property, obj.transform, retainFormatting)
-      return `<template id="${tracker.id}"></template>`
+      const tracker = trackers.register(obj, { retainFormatting })
+      return `<template class="${tracker.type} tracker" id="${tracker.id}"></template>`
   
     default: 
       console.warn(obj)
@@ -60,16 +60,17 @@ function attachTrackers (trackers, ...nodes) {
     const node = nodes[i]
 
     if (node.tagName === 'TEMPLATE') {
-      const tracker = trackers.get(node.id)
-      tracker.node = document.createTextNode(tracker.value)
-      node.replaceWith(tracker.node)
+      const fragment = document.createDocumentFragment()
+      trackers.generateNodes(node.id).forEach(node => fragment.append(node))
+
+      node.replaceWith(fragment)
     } else {
       attachTrackers(trackers, ...node.children)
     }
   }
 }
 
-export function getDOMFragment (type, string, trackers) {
+export function getDOMFragment (type, string, { trackers }) {
   let template = type === 'svg'
     ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     : document.createElement('template')
@@ -83,9 +84,33 @@ export function getDOMFragment (type, string, trackers) {
   return template.content
 }
 
-function parseArray (arr, retainFormatting) {
+function parseArray (arr, { retainFormatting }) {
   return arr.reduce((string, part) => {
-    string += parseInterpolation(part, retainFormatting)
+    string += parseInterpolation(part, { retainFormatting })
     return string
   }, '')
+}
+
+export function reconcileNodes (original, update) {
+  const types = {
+    original: original.constructor.name,
+    update: update.constructor.name
+  }
+
+  if (types.original !== types.update) {
+    return original.replaceWith(update)
+  }
+
+  switch (types.original) {
+    case 'Text': return reconcileTextNodes(original, update)
+    case 'Element': return console.log('REC ELEMENT NODES')
+  
+    default: throw new Error(`Cannot reconcile node type "${types.original}"`)
+  }
+}
+
+function reconcileTextNodes (original, update) {
+  if (update.data !== original.data) {
+    original.data = update.data
+  }
 }

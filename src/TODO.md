@@ -1,3 +1,25 @@
+Could composed configs be accessed within the final enitity?
+
+```
+const Thingie = {
+  name: 'thingie',
+
+  composes: [
+    OtherThingie
+  ],
+
+  initialize () {
+    OtherThingie.initialize.bind(this)
+
+    // or
+
+    this.composed[0].initialize()
+
+    ... do other stuff
+  }
+}
+```
+
 Instead of a global DOM event registry, store events per-entity. This means that they can be more easily cleaned up when the entity is not in use.
 
 
