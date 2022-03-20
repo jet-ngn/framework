@@ -63,8 +63,7 @@ const shell = new Shell({
 
             banner: {
               js: `/**
- * Jet v${version}
- * ${description}
+ * Jet v${version} ${description}
  * Copyright ${new Date().getFullYear()} Ecor Ventures, LLC
  * Documentation: ${homepage}
  * Submit bug reports to: ${bugsURL}

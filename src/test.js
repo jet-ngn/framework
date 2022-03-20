@@ -1,187 +1,126 @@
-import { App, Bus, html } from './index.js'
+import { App, html, track } from './index.js'
 
-const data = {
-  name: 'Graham',
-  names: ['Graham', 'Corey', 'Mom', 'Dad']
-}
+const View1 = {
+  name: 'view.1',
 
-const Root = {
-  name: 'root',
-  selector: '#app1',
-
-  data: {
-    name: {
-      type: String,
-      default: 'Graham'
-    }
-  },
-
-  initialize () {
-    setTimeout(() => {
-      data.name = 'Felicia'
-
-      // For this use case, if I store a Data Model and add "data.names" as a field there,
-      // I can respond to the events fired by the model.
-      // data.names = ['Corey', 'Mom', 'Dad', 'Allie']
-      // data.names.push('Allie')
-      // data.names.splice(1, 2, 'Hey')
-      // data.names.unshift('Hey')
-      // data.names.shift()
-      // data.names.pop()
-      // data.names.fill('tinkerbell', 1)
-      // data.names.reverse()
-      // data.names.copyWithin(1, 2, 3)
-    }, 1500)
-  },
-
-  // <!-- ${this.track(test, test => html`WORKS`)} -->
-
-  render () {
+  get template () {
     return html`
-      <h1>Hello, ${this.track(data, 'name')}!</h1>
-
-      <p>
-        Here are some other names:
-
-        <ul>
-          ${this.track(data, 'names')}
-        </ul>
-      </p>
+      <h2>View 1</h2>
+      <p>lorem ipsum</p>
     `
+  },
+
+  on: {
+    unmount () {
+      console.log('UNMOUNTING VIEW 1')
+    }
   }
 }
 
-// const Root2 = {
-//   ...Root,
-//   name: 'root2',
-//   selector: '#app2',
+const View2 = {
+  name: 'view.2',
 
-//   data: {
-//     name: {
-//       type: String,
-//       default: 'Allie'
-//     }
-//   },
-// }
+  get template () {
+    return html`
+      <h2>View 2</h2>
+      <p>lorem ipsum</p>
+    `
+  },
+
+  on: {
+    mount () {
+      console.log('MOUNTING VIEW 2')
+    }
+  }
+}
+
+const data = {
+  view: View1,
+  str: 'hey'
+}
+
+const Demo = {
+  name: 'root',
+
+  get template () {
+    return html`
+      <h1>My App</h1>
+      ${html`<div class="view"></div>`.bind(track(data, 'view'))}
+    `
+  },
+
+  on: {
+    mount () {
+      setTimeout(() => data.view = View2, 1500)
+    }
+  }
+}
+
+// ${track(data, 'str')}
+
+// ${html`<div>CLICK ME</div>`.on({
+//   click: console.log
+// })}
+
+// ${html`<div></div>`.bind(Test)}
 
 const MyApp = new App({
   name: 'My App',
-  root: Root
-})
-
-// const MyApp2 = new App({
-//   name: 'My App 2',
-//   root: Root2
-// })
-
-Bus.on('ready', () => {
-  MyApp.start()
-  // MyApp2.start()
+  version: '0.0.1',
+  root: 'body',
+  config: Demo
 })
 
 // const data = {
-//   name: 'Allie',
-//   age: '31',
-//   isAdult: true
+//   test: 42,
+//   hey: false,
+//   content: 'HEYYYY'
 // }
 
-// const Root = {
-//   name: 'test',
-//   selector: 'body',
-//   // composes: [],
-
-//   // references: {
-//   //   test: '> jet-test'
-//   // },
-
-//   // states: [{
-//   //   idle: {
-//   //     on () {
-//   //       console.log('idle')
-//   //     },
-
-//   //     transitions: {
-//   //       HEY: 'hey',
-//   //       BLAH () {
-//   //         console.log(...arguments);
-//   //       }
-//   //     }
-//   //   },
-
-//   //   hey () {
-//   //     console.log('hey', ...arguments)
-//   //   }
-//   // }],
-
-//   async initialize () {
-//     setTimeout(() => {
-//       data.name = 'Graham'
-//       data.age = '36'
-//     }, 1500)
-    
-//   },
-
-//   async render () {
-//     return html`
-//       <div>
-//         ${this.track(data, 'name')}, ${this.track(data, 'age', age => age > 33)}
-//       </div>
-
-//       <div>${this.track(data, 'name')}</div>
-//     `
-
-// // ${this.track(data, 'isAdult', isAdult => isAdult ? html`YEP` : html`NOPE`)}
-
-// // ${test ? html`<div>TRUE</div>` : html`<aside>FALSE</aside>`}
-
-//     // return html`
-//     //   <div>
-//     //     ${this.track(data, 'name')}, ${this.track(data, 'age', age => `${age}`)}
-//     //   </div>
-
-//     //   <div>HELLO</div>
-
-//     //   <div>${this.track(data, 'name')}</div>
-//     // `
-
-//     // const test = [{
-//     //   label: 'Graham'
-//     // }, {
-//     //   label: 'Allie'
-//     // }, {
-//     //   label: 'Corey'
-//     // }]
-
-//     // return html`
-//     //   <header>
-//     //     <h1>Page Title</h1>
-//     //   </header>
-
-//     //   <main>
-//     //     <ol>
-//     //     ${test.map(({ label }) => html`<li>${label}</li>`)}
-//     //     </ol>
-//     //   </main>
-
-//     //   <footer>
-//     //     Copyright &copy; 2022 GDB
-//     //   </footer>
-//     // `
-//   }
-// }
-
-// const TestApp = new App({
-//   name: 'Test App',
+// const Demo = new App({
+//   name: 'Demo',
 //   version: '0.0.1',
-//   root: Root
+//   // contributors: []
+//   root: 'body',
+  
+//   config: {
+//     name: 'demo',
+
+//     get style () {
+//       return css`
+//         .test {
+//           background: red;
+//         }
+//       `
+//     },
+
+//     get template () {
+//       return html`
+//         ${track(data, 'content')}
+
+//         ${html`<div>Embedded</div>`.bind({
+//           attributes: {
+//             test: track(data, 'test'),
+//             hey: track(data, 'hey')
+//           },
+
+//           on: {
+//             click: console.log
+//           }
+//         })}
+//       `.bind({
+//         attributes: {
+//           test: false
+//         }
+//       })
+//     },
+
+//     init () {
+//       setTimeout(() => {
+//         data.test = 'heyyyy'
+//         data.hey = true
+//         data.content = 'HELOOOOO'
+//       }, 1500)
+//     }
+//   }
 // })
-
-// Bus.on('ready', () => TestApp.start())
-
-// // defineCustomElement('jet-test', {
-// //   on: {
-// //     initialize () {
-// //       console.log('jet-test INIT')
-// //     }
-// //   }
-// // })

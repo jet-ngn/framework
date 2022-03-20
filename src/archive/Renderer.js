@@ -1,43 +1,53 @@
-import { typeOf } from 'NGN/libdata'
 import { Tag } from './Tags.js'
 import { sanitizeString } from '../utilities/StringUtils.js'
+import { Interpolations } from '../Constants.js'
 
-export function parseTag ({ strings, interpolations }, cfg) {
-  return interpolations.length > 0
-    ? parseInterpolations(arguments[0], cfg)
-    : strings.join('')
+export function parseTag ({ strings, interpolations, bindings }, cfg) {
+  
 }
 
-function parseInterpolations ({ strings, interpolations }, cfg) {
-  let string = ''
+// export function parseTag ({ strings, interpolations, bindings }, cfg) {
+//   let html
+  
+//   if (interpolations.length === 0) {
+//     html = strings.join('')
+//   } else {
+//     for (let i = 0, length = strings.length; i < length; i++) {
+//       html += strings[i]
 
-  for (let i = 0, length = strings.length; i < length; i++) {
-    string += strings[i]
+//       if (i >= interpolations.length) {
+//         continue
+//       }
 
-    if (i >= interpolations.length) {
-      continue
-    }
+//       html += parseInterpolation(interpolations[i], cfg) ?? ''
+//     }
+//   }
 
-    string += parseInterpolation(interpolations[i], cfg) ?? ''
-  }
+//   // console.log(bindings);
 
-  return string
-}
+//   return html
+// }
 
 function parseInterpolation (interpolation, cfg) {
-  const type = typeOf(interpolation)
+  if (Array.isArray(interpolation)) {
+    return parseArray(interpolation, cfg)
+  }
 
-  switch (type) {
+  switch (typeof interpolation) {
     case 'string':
     case 'number': return sanitizeString(interpolation, cfg)
     case 'boolean': return interpolation ? 'true' : null
-    case 'array': return parseArray(interpolation, cfg)
     case 'object': return parseObject(interpolation, cfg)
+    case 'function': return parseFunction(interpolation, cfg)
     default: return null
   }
 }
 
-function parseObject (obj, { retainFormatting, trackers }) {
+function parseFunction (func, { entity }) {
+  return parseTag(func.call(entity), arguments[1])
+}
+
+function parseObject (obj, { entity, retainFormatting, trackers }) {
   if (obj instanceof Tag) {
     return parseTag(...arguments)
   }
@@ -45,9 +55,12 @@ function parseObject (obj, { retainFormatting, trackers }) {
   const { type } = obj
 
   switch (type) {
-    case 'tracker':
-      const tracker = trackers.register(obj, { retainFormatting })
+    case Interpolations.Tracker:
+      const tracker = trackers.register(obj)
       return `<template class="${tracker.type} tracker" id="${tracker.id}"></template>`
+
+    case Interpolations.Partial: 
+      return parseTag(obj.render(entity), arguments[1])
   
     default: 
       console.warn(obj)
@@ -61,8 +74,7 @@ function attachTrackers (trackers, ...nodes) {
 
     if (node.tagName === 'TEMPLATE') {
       const fragment = document.createDocumentFragment()
-      trackers.generateNodes(node.id).forEach(node => fragment.append(node))
-
+      trackers.getNodes(node.id).forEach(node => fragment.append(node))
       node.replaceWith(fragment)
     } else {
       attachTrackers(trackers, ...node.children)
@@ -89,28 +101,4 @@ function parseArray (arr, { retainFormatting }) {
     string += parseInterpolation(part, { retainFormatting })
     return string
   }, '')
-}
-
-export function reconcileNodes (original, update) {
-  const types = {
-    original: original.constructor.name,
-    update: update.constructor.name
-  }
-
-  if (types.original !== types.update) {
-    return original.replaceWith(update)
-  }
-
-  switch (types.original) {
-    case 'Text': return reconcileTextNodes(original, update)
-    case 'Element': return console.log('REC ELEMENT NODES')
-  
-    default: throw new Error(`Cannot reconcile node type "${types.original}"`)
-  }
-}
-
-function reconcileTextNodes (original, update) {
-  if (update.data !== original.data) {
-    original.data = update.data
-  }
 }

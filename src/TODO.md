@@ -1,6 +1,30 @@
+what if Jet bound tags to the global scope?
+
+
+what about this:
+
+```js
+render () {
+  return html`
+    ${html`
+      <div>
+        Here is a div with stuff bound to it
+      </div>
+    `.bind({
+      config: {...},
+
+      on: {
+        click: evt => console.log('CLICKED')
+      }
+    })}
+  `
+}
+```
+
+
 Could composed configs be accessed within the final enitity?
 
-```
+```js
 const Thingie = {
   name: 'thingie',
 

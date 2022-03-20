@@ -1,4 +1,6 @@
+import AppRegistry from '../registries/AppRegistry.js'
 import { makeEntity } from '../Entity.js'
+import Node from '../Node.js'
 
 class ContactInfo {
   #phone
@@ -54,14 +56,36 @@ function validateVersion (version) {
   return version
 }
 
+function getRootNode (app, selector) {
+  if (!selector) {
+    return null
+  }
+
+  let nodelist = document.querySelectorAll(selector)
+
+  if (nodelist.length === 0) {
+    throw new Error(`App "${app}" root node selector "${selector}" did not return any elements.`)
+  }
+
+  if (nodelist.length > 1) {
+    console.info(nodelist)
+    throw new Error(`App "${app}" root node selector refers to more than one element. Please use a more specific selector.`)
+  }
+
+  const node = nodelist[0]
+  return node ? new Node(node) : null
+}
+
 export default class App {
   #name
   #version
   #contributors
-  #root
+  #entity
+  #mountFn
   #started = false
+  #autostart = true
 
-  constructor ({ name, version, contributors, root }) {
+  constructor ({ autostart, name, root, version, contributors, config }) {
     this.#name = name ?? 'Unnamed App'
     this.#version = validateVersion(version ?? '0.0.1-alpha.1')
     
@@ -71,13 +95,23 @@ export default class App {
         : [contributors]).map(contributor => new Contributor(contributor)) 
       : null
 
-    const type = typeof root
+    const type = typeof config
 
     if (type !== 'object') {
-      throw new Error(`Invalid root. Expected Entity or Entity config object, received "${type}"`)
+      throw new Error(`Invalid config. Expected object, received "${type}"`)
     }
 
-    this.#root = makeEntity(root)
+    const { entity, mount } = makeEntity(getRootNode(this.#name, root), config)
+
+    this.#entity = entity
+    this.#mountFn = mount
+    this.#autostart = typeof autostart === 'boolean' ? autostart : this.#autostart
+
+    AppRegistry.register(this)
+  }
+
+  get autostart () {
+    return this.#autostart
   }
 
   get contributors () {
@@ -86,6 +120,10 @@ export default class App {
 
   get name () {
     return this.#name
+  }
+
+  get started () {
+    return this.#started
   }
 
   get version () {
@@ -97,11 +135,11 @@ export default class App {
       throw new Error(`App "${this.#name}" has already been started.`)
     }
 
-    if (!this.#root) {
-      throw new Error(`No "root" Entity has been specified. Aborting...`)
+    if (!this.#entity) {
+      throw new Error(`No config has been specified. Aborting...`)
     }
 
     this.#started = true
-    this.#root.initialize()
+    this.#mountFn()
   }
 }

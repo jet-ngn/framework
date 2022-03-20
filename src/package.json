@@ -14,7 +14,7 @@
   "author": "Graham Butler",
   "license": "ISC",
   "dependencies": {
-    "@ngnjs/libdata": "^1.0.0-alpha.2",
+    "@ngnjs/libdata": "^1.0.0-alpha.3",
     "ngn": "^2.0.0-alpha.11",
     "ngn-data": "^0.1.11"
   }

@@ -1,86 +1,30 @@
-import { compose } from './utilities/CompositionUtils.js'
-import { attachEventManager, applyEventHandlers } from './events/EventManager.js'
-import { attachDataManager } from './data/DataManager.js'
-import { attachStateManager } from './StateManager.js'
-import { attachReferenceManager } from './ReferenceManager.js'
-import { attachTrackerManager, TrackerRegistry } from './renderer/trackers/TrackerManager.js'
-import Node from './Node.js'
-import { Tag } from './renderer/Tags.js'
-import { parseTag, getDOMFragment } from './renderer/Renderer.js'
+import { NANOID } from '@ngnjs/libdata'
+import { addHandler, /*applyEventHandlers,*/ getNamespacedEvent } from './utilities/EventUtils.js'
+// import { attachDataManager } from './data/DataManager.js'
+// import { attachStateManager } from './StateManager.js'
+// import { attachReferenceManager } from './ReferenceManager.js'
+import DOMEventRegistry from './registries/DOMEventRegistry.js'
+import TrackerRegistry from './registries/TrackerRegistry.js'
+import Tag from './Tag.js'
 
-function getRootNode (entity, selector) {
-  if (!selector) {
-    return null
-  }
-
-  let nodelist = document.querySelectorAll(selector)
-
-  if (nodelist.length === 0) {
-    throw new Error(`"${entity}" selector query did not return any elements.`)
-  }
-
-  if (nodelist.length > 1) {
-    console.info(nodelist)
-    throw new Error(`"${entity}" selector refers to more than one element. Please use a more specific selector.`)
-  }
-
-  const node = nodelist[0]
-  return node ? new Node(node) : null
-}
-
-export function makeEntity ({ name, selector, on, states, data, references, initialize, render }, element, manager) {
-  class Entity extends EntityBase {}
-  compose(Entity, attachEventManager, attachTrackerManager)
-
-  const entity = new Entity(
-    name, 
-    new Node(element ?? getRootNode(name, selector)),
-    render
-  )
-
-  return {
-    entity,
-
-    async initialize () {
-      attachReferenceManager(entity, references ?? {})
-      attachDataManager(entity, data ?? {})
-      attachStateManager(entity, states ?? null),
-      applyEventHandlers(entity, on ?? {})
-
-      if (render) {
-        const tag = await render.call(entity, ...arguments)
-
-        if (!(tag instanceof Tag) && typeof tag !== 'string') {
-          throw new TypeError(`"${entity.name}" render function must return a tagged template literal or a plain string`)
-        }
-
-        const trackers = new TrackerRegistry(entity)
-        const { root } = entity
-        
-        const string = parseTag(tag, {
-          retainFormatting: root.tagName === 'PRE',
-          trackers
-        })
-
-        root.replaceChildren(getDOMFragment(tag.type, string, { trackers }))
-      }
-
-      initialize && await initialize.call(entity) // TODO: Maybe pass parent, state, etc data into this function
-    }
-  }
-}
-
-class EntityBase {
+class Entity {
+  #id = NANOID()
   #name
   #root
+  #parent
 
-  constructor (name, root) {
-    if (!name) {
-      throw new Error(`Configuration error: "name" attribute is required`)
-    }
-
+  constructor (name, root, parent) {
     this.#name = name
     this.#root = root
+    this.#parent = parent ?? null
+  }
+
+  get id () {
+    return this.#id
+  }
+
+  get parent () {
+    return this.#parent
   }
 
   get name () {
@@ -90,13 +34,59 @@ class EntityBase {
   get root () {
     return this.#root
   }
+
+  emit (evt, ...args) {
+    NGN.BUS.emit(getNamespacedEvent(this.name, evt), ...args)
+  }
+
+  on (evt, cfg, cb) {
+    return addHandler(this, ...arguments)
+  }
+
+  off (evt, handler) {
+    NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
+  }
+}
+
+export function makeEntity (element, cfg, parent) {
+  const entity = new Entity(cfg.name, element, parent)
+  const tag = Reflect.get(cfg, 'template', entity)
+
+  return {
+    entity,
+
+    async mount () {
+      // attachReferenceManager(entity, cfg.references ?? {})
+      // attachDataManager(entity, cfg.data ?? {})
+      // attachStateManager(entity, cfg.states ?? null),
+      // applyEventHandlers(entity, cfg.on ?? {})
+
+      if (tag) {
+        const retainFormatting = entity.root.tagName === 'PRE'
+        const trackers = new TrackerRegistry(entity, { retainFormatting })
+
+        if (!(tag instanceof Tag)) {
+          throw new TypeError(`"${entity.name}" render function must return a tagged template literal`)
+        }
+
+        const fragment = await tag.render({ entity, retainFormatting, trackers })
+        entity.root.replaceChildren(fragment)
+      }
+
+      await cfg.on?.mount?.call(entity)
+    },
+
+    async unmount () {
+      console.log('UNMOUNT', tag)
+      await cfg.on?.unmount?.call(entity)
+    }
+  }
 }
 
 // , ...Object.keys(cfg).reduce((result, property) => {
 //   switch (property) {
 //     case 'on':
 //     case 'name':
-//     case 'selector': 
 //     case 'states': 
 //     case 'data': 
 //     case 'routes': 

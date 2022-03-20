@@ -1,7 +1,10 @@
+const textarea = document.createElement('textarea')
+
 export function escapeString (string) {
-  const textarea = document.createElement('textarea')
   textarea.textContent = string
-  return textarea.innerHTML
+  const output = textarea.innerHTML
+  textarea.innerHTML = ''
+  return output
 }
 
 export function normalizeString (string) {

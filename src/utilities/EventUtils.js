@@ -1,24 +1,6 @@
 import NGN from 'NGN'
-import EventHandler from './EventHandler.js'
-import { forEachKey } from '../utilities/IteratorUtils.js'
-
-export function attachEventManager (obj) {
-  Object.assign(obj.prototype, {
-    emit (evt, ...args) {
-      NGN.BUS.emit(getNamespacedEvent(this.name, evt), ...args)
-    },
-
-    on (evt, cfg, cb) {
-      return addHandler(this, ...arguments)
-    },
-
-    off (evt, handler) {
-      NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
-    }
-  })
-
-  return obj
-}
+import EventHandler from '../EventHandler.js'
+import { forEachKey } from './IteratorUtils.js'
 
 export function applyEventHandlers (target, cfg) {
   if (typeof cfg !== 'object') {
@@ -28,7 +10,7 @@ export function applyEventHandlers (target, cfg) {
   forEachKey(cfg, (evt, handler) => target.on(evt, handler))
 }
 
-function addHandler (context, evt, cfg, cb) {
+export function addHandler (context, evt, cfg, cb) {
   if (typeof evt !== 'string') {
     throw new TypeError(`Event name must be of type "string". Received "${typeof evt}"`)
   }
@@ -40,7 +22,7 @@ function addHandler (context, evt, cfg, cb) {
   return cb ? registerHandler(...arguments) : pool(context, evt, cfg)
 }
 
-function getNamespacedEvent (namespace, evt) {
+export function getNamespacedEvent (namespace, evt) {
   return `${namespace}.${evt}`
 }
 
