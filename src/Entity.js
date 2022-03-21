@@ -1,11 +1,12 @@
 import { NANOID } from '@ngnjs/libdata'
-import { addHandler, /*applyEventHandlers,*/ getNamespacedEvent } from './utilities/EventUtils.js'
+import { forEachKey } from './utilities/IteratorUtils.js'
+import { addHandler, getNamespacedEvent } from './utilities/EventUtils.js'
 // import { attachDataManager } from './data/DataManager.js'
 // import { attachStateManager } from './StateManager.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
-import DOMEventRegistry from './registries/DOMEventRegistry.js'
 import TrackerRegistry from './registries/TrackerRegistry.js'
 import Tag from './Tag.js'
+import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
 
 class Entity {
   #id = NANOID()
@@ -35,17 +36,17 @@ class Entity {
     return this.#root
   }
 
-  emit (evt, ...args) {
-    NGN.BUS.emit(getNamespacedEvent(this.name, evt), ...args)
-  }
+  // emit (evt, ...args) {
+  //   NGN.BUS.emit(getNamespacedEvent(this.name, evt), ...args)
+  // }
 
-  on (evt, cfg, cb) {
-    return addHandler(this, ...arguments)
-  }
+  // on (evt, cb, cfg) {
+  //   return addHandler(this, ...arguments)
+  // }
 
-  off (evt, handler) {
-    NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
-  }
+  // off (evt, handler) {
+  //   NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
+  // }
 }
 
 export function makeEntity (element, cfg, parent) {
@@ -59,17 +60,17 @@ export function makeEntity (element, cfg, parent) {
       // attachReferenceManager(entity, cfg.references ?? {})
       // attachDataManager(entity, cfg.data ?? {})
       // attachStateManager(entity, cfg.states ?? null),
-      // applyEventHandlers(entity, cfg.on ?? {})
+      applyEventHandlers(entity, cfg.on ?? {})
 
       if (tag) {
         const retainFormatting = entity.root.tagName === 'PRE'
-        const trackers = new TrackerRegistry(entity, { retainFormatting })
+        const trackerRegistry = new TrackerRegistry(entity, { retainFormatting })
 
         if (!(tag instanceof Tag)) {
           throw new TypeError(`"${entity.name}" render function must return a tagged template literal`)
         }
 
-        const fragment = await tag.render({ entity, retainFormatting, trackers })
+        const fragment = await tag.render({ entity, retainFormatting, trackerRegistry })
         entity.root.replaceChildren(fragment)
       }
 
@@ -77,10 +78,24 @@ export function makeEntity (element, cfg, parent) {
     },
 
     async unmount () {
-      console.log('UNMOUNT', tag)
+      BrowserEventRegistry.removeByEntity(entity)
       await cfg.on?.unmount?.call(entity)
     }
   }
+}
+
+function applyEventHandlers (entity, cfg) {
+  if (typeof cfg !== 'object') {
+    throw new TypeError(`Invalid entity "on" configuration. Expected "object", received "${typeof cfg}"`)
+  }
+
+  forEachKey(cfg, (evt, handler) => {
+    if (['mount', 'unmount'].some(eventName => eventName === evt)) {
+      return
+    }
+
+    addHandler(target, evt, handler)
+  })
 }
 
 // , ...Object.keys(cfg).reduce((result, property) => {

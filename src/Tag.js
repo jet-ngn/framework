@@ -2,7 +2,7 @@ import { typeOf, NANOID } from '@ngnjs/libdata'
 import Constants from './Constants.js'
 import Node from './Node.js'
 import { makeEntity } from './Entity.js'
-import { Tracker } from './registries/TrackerRegistry.js'
+import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
 
 export default class Tag {
   #id = NANOID()
@@ -13,7 +13,7 @@ export default class Tag {
   #attributes = null
   #listeners = null
   #children = {}
-  #bindingTracker = null
+  #entityTracker = null
 
   constructor ({ type, strings, interpolations }) {
     this.#type = type
@@ -36,7 +36,7 @@ export default class Tag {
 
   bind (entity) {
     if (entity.type === Constants.Tracker) {
-      this.#bindingTracker = entity
+      this.#entityTracker = entity
       return this
     }
 
@@ -44,8 +44,17 @@ export default class Tag {
     return this
   }
 
-  on (cfg) {
-    this.#listeners = cfg
+  on (evt, handler, cfg = null) {
+    if (!this.#listeners) {
+      this.#listeners = {}
+    }
+
+    if (this.#listeners.hasOwnProperty(evt)) {
+      this.#listeners[evt].push({ handler, cfg })
+    } else {
+      this.#listeners[evt] = [{ handler, cfg }]
+    }
+
     return this
   }
 
@@ -59,16 +68,16 @@ export default class Tag {
     const parent = cfg.entity
     const { children } = template.content
     const node = children[0]
-    const { trackers } = cfg
+    const { trackerRegistry } = cfg
 
     if (this.#entity) {
       await this.#bindEntity(parent, node)
-    } else if (this.#bindingTracker) {
-      await this.#bindEntityTracker(parent, node, trackers)
+    } else if (this.#entityTracker) {
+      await this.#bindEntityTracker(node, trackerRegistry)
     }
 
     if (this.#attributes) {
-      this.#bindAttributes(parent, node, trackers)
+      this.#bindAttributes(parent, node, trackerRegistry)
     }
 
     if (this.#listeners) {
@@ -81,7 +90,7 @@ export default class Tag {
   }
 
   // TODO: Handle data attributes and class bindings
-  #bindAttributes (context, node, trackers) {
+  #bindAttributes (context, node, trackerRegistry) {
     const attributes = this.#attributes
 
     for (let name in attributes) {
@@ -109,7 +118,7 @@ export default class Tag {
           continue
   
         case Constants.Tracker: 
-          const tracker = trackers.registerAttributeTracker(node, name, value)
+          const tracker = trackerRegistry.registerAttributeTracker(node, name, value)
           tracker.update()
           continue
   
@@ -123,15 +132,14 @@ export default class Tag {
     await mount()
   }
 
-  async #bindEntityTracker (context, node, trackers) {
-    const tracker = trackers.registerEntityTracker(node, this.#bindingTracker)
+  async #bindEntityTracker (node, trackerRegistry) {
+    const tracker = trackerRegistry.registerEntityTracker(node, this.#entityTracker)
     await tracker.update()
   }
 
   #bindListeners (context, node) {
-    // console.log(DOMEventRegistry);
     for (let evt in this.#listeners) {
-      listeners.register(node, evt, this.#listeners[evt])
+      this.#listeners[evt].forEach(({ handler, cfg }) => BrowserEventRegistry.add(context, node, evt, handler, cfg))
     }
   }
 
@@ -200,7 +208,7 @@ export default class Tag {
   
     switch (obj.type) {
       case Constants.Tracker:
-        const tracker = cfg.trackers.registerContentTracker(obj)
+        const tracker = cfg.trackerRegistry.registerContentTracker(obj)
         return `<template class="${tracker.type} tracker" id="${tracker.id}"></template>`
     
       default: 
@@ -222,7 +230,7 @@ export default class Tag {
   
       if (classList.contains('tracker')) {
         const fragment = document.createDocumentFragment()
-        cfg.trackers.getNodes(node.id).forEach(node => fragment.append(node))
+        cfg.trackerRegistry.getNodes(node.id).forEach(node => fragment.append(node))
         node.replaceWith(fragment)
         continue
       }

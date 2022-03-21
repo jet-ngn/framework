@@ -7,7 +7,7 @@ const View1 = {
     return html`
       <h2>View 1</h2>
       <p>lorem ipsum</p>
-    `
+    `.on('click', console.log)
   },
 
   on: {
@@ -44,8 +44,7 @@ const Demo = {
 
   get template () {
     return html`
-      <h1>My App</h1>
-      ${html`<div class="view"></div>`.bind(track(data, 'view'))}
+      ${html`<div></div>`.bind(track(data, 'view'))}
     `
   },
 

@@ -1,8 +1,11 @@
+import { getNamespacedEvent } from './utilities/EventUtils.js'
+
 // This class adds functionality to the NGN Event Handler.
 // Some of it should be considered for integration into NGN.
 export default class EventHandler {
   #id = Symbol()
   
+  #context
   #event
   #callback
 
@@ -15,9 +18,12 @@ export default class EventHandler {
   #calls = 0
   #executions = 0
 
-  constructor (event, { min, max, tries, interval, ttl }, callback) {
+  constructor (context, event, callback, cfg, id = 'EventHandler') {
+    this.#context = context
     this.#event = event
     this.#callback = callback
+
+    const { min, max, tries, interval, ttl } = cfg ?? {}
 
     this.#minCalls = min ?? 0
     this.#maxCalls = tries ?? Infinity
@@ -46,7 +52,7 @@ export default class EventHandler {
   //   return this.#ttl
   // }
 
-  async call (context, eventName, ...args) {
+  async call (evt, ...args) {
     this.#calls++
 
     if (this.#calls < this.#minCalls) {
@@ -64,25 +70,25 @@ export default class EventHandler {
     return await this.#execute(...arguments)
   }
 
-  async #execute (context, evt, ...args) {
+  async #execute (evt, ...args) {
     this.#executions++
 
     if (this.#executions > this.#maxExecutions) {
       return false
     }
 
-    context.event = {
-      name: getNamespacedEvent(context.name, this.#event),
+    this.#context.event = {
+      name: getNamespacedEvent(this.#context.name, this.#event),
       calls: this.#calls,
       executions: this.#executions
     }
 
     if (this.#event.includes('*')) {
-      context.event.origin = evt
+      this.#context.event.origin = evt
     }
 
-    await this.#callback.call(context, ...args)
-    delete context.event
+    await this.#callback.call(this.#context, ...args)
+    delete this.#context.event
 
     return true
   }
