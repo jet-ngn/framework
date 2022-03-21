@@ -1,8 +1,8 @@
 import NGN from 'NGN'
 import App from './API/App.js'
 import Tag from './Tag.js'
-// import DataModel from './data/DataModel.js'
-// import DataStore from './data/DataStore.js'
+import DataModel from './data/DataModel.js'
+import DataStore from './data/DataStore.js'
 import Node from './Node.js'
 import Constants from './Constants.js'
 // import { defineCustomElement } from './API/CustomElement.js'
@@ -70,8 +70,8 @@ function track (target, property, transformFn) {
 export {
   App,
   BUS as Bus,
-  // DataModel,
-  // DataStore,
+  DataModel,
+  DataStore,
   // defineCustomElement,
   EventEmitter,
   Queue,

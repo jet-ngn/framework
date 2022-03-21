@@ -1,4 +1,4 @@
-import { Tag } from './Tags.js'
+import { Tag } from '../Tag.js'
 import { sanitizeString } from '../utilities/StringUtils.js'
 import { Interpolations } from '../Constants.js'
 

@@ -63,11 +63,9 @@ const Demo = {
 
 // ${html`<div></div>`.bind(Test)}
 
-const MyApp = new App({
+const MyApp = new App('body', Demo, {
   name: 'My App',
-  version: '0.0.1',
-  root: 'body',
-  config: Demo
+  version: '0.0.1'
 })
 
 // const data = {

@@ -1,5 +1,5 @@
-import { forEachKey } from './utilities/IteratorUtils.js'
-import Node from './Node.js'
+import { forEachKey } from '../utilities/IteratorUtils.js'
+import Node from '../Node.js'
 
 export function attachReferenceManager (target, cfg) {
   const getters = {}

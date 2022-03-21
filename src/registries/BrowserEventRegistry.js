@@ -1,5 +1,5 @@
 import NGN from 'NGN'
-import EventHandler from '../EventHandler.js'
+import EventHandler from '../events/EventHandler.js'
 
 class BrowserEventHandler extends EventHandler {
   constructor (context, event, callback, cfg) {

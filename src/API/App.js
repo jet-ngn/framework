@@ -85,7 +85,7 @@ export default class App {
   #started = false
   #autostart = true
 
-  constructor ({ autostart, name, root, version, contributors, config }) {
+  constructor (selector, config, { autostart, name, version, contributors }) {
     this.#name = name ?? 'Unnamed App'
     this.#version = validateVersion(version ?? '0.0.1-alpha.1')
     
@@ -98,10 +98,10 @@ export default class App {
     const type = typeof config
 
     if (type !== 'object') {
-      throw new Error(`Invalid config. Expected object, received "${type}"`)
+      throw new Error(`Invalid root node configuration. Expected object, received "${type}"`)
     }
 
-    const { entity, mount } = makeEntity(getRootNode(this.#name, root), config)
+    const { entity, mount } = makeEntity(getRootNode(this.#name, selector), config)
 
     this.#entity = entity
     this.#mountFn = mount
@@ -136,7 +136,7 @@ export default class App {
     }
 
     if (!this.#entity) {
-      throw new Error(`No config has been specified. Aborting...`)
+      throw new Error(`No root entity has been specified. Aborting...`)
     }
 
     this.#started = true
