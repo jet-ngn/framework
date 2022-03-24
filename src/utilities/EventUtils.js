@@ -2,16 +2,16 @@ import NGN from 'NGN'
 import EventHandler from '../events/EventHandler.js'
 import { forEachKey } from './IteratorUtils.js'
 
-export function addHandler (context, evt, cb, cfg) {
+export function addHandler (context, evt, cb, cfg = {}) {
   if (typeof evt !== 'string') {
     throw new TypeError(`Event name must be of type "string". Received "${typeof evt}"`)
   }
 
-  if (typeof cfg === 'function') {
-    return registerHandler(context, evt, {}, cfg)
+  if (typeof cb === 'object') {
+    return pool(context, evt, cb)
   }
 
-  return cb ? registerHandler(...arguments) : pool(context, evt, cfg)
+  return registerHandler(...arguments)
 }
 
 export function getNamespacedEvent (namespace, evt) {
@@ -19,10 +19,12 @@ export function getNamespacedEvent (namespace, evt) {
 }
 
 function pool (context, namespace, cfg) {
-  forEachKey(cfg, (evt, handler) => addHandler(context, getNamespacedEvent(namespace, evt), handler))
+  forEachKey(cfg, (evt, handler) => {
+    addHandler(context, getNamespacedEvent(namespace, evt), handler)
+  })
 }
 
-function registerHandler (context, evt, cb, cfg) {
+function registerHandler (context, evt, cb, cfg = {}) {
   if (typeof cb !== 'function') {
     throw new TypeError(`Event handler callback must be a "function". Received "${typeof cb}"`)
   }
@@ -34,7 +36,7 @@ function registerHandler (context, evt, cb, cfg) {
   const handler = new EventHandler(context, evt, cb, cfg)
 
   return NGN.BUS.on(getNamespacedEvent(context.name, evt), function () {
-    const valid = handler.call(context, this.event, ...arguments)
+    const valid = handler.call(this.event, ...arguments)
 
     if (!valid) {
       this.remove() // Remove listener from NGN.BUS

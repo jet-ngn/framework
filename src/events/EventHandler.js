@@ -78,7 +78,7 @@ export default class EventHandler {
     }
 
     this.#context.event = {
-      name: getNamespacedEvent(this.#context.name, this.#event),
+      name: evt,
       calls: this.#calls,
       executions: this.#executions
     }

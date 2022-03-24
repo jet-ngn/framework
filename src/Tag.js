@@ -3,6 +3,8 @@ import Constants from './Constants.js'
 import Node from './Node.js'
 import { makeEntity } from './Entity.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
+import { sanitizeString } from './utilities/StringUtils.js'
+import { processList } from './utilities/ListUtils.js'
 
 export default class Tag {
   #id = NANOID()
@@ -77,7 +79,7 @@ export default class Tag {
     }
 
     if (this.#attributes) {
-      this.#bindAttributes(parent, node, trackerRegistry)
+      this.#bindAttributes(parent, node, { trackerRegistry })
     }
 
     if (this.#listeners) {
@@ -90,11 +92,22 @@ export default class Tag {
   }
 
   // TODO: Handle data attributes and class bindings
-  #bindAttributes (context, node, trackerRegistry) {
+  #bindAttributes (context, node, { trackerRegistry }) {
     const attributes = this.#attributes
 
     for (let name in attributes) {
       const value = attributes[name]
+
+      if (Array.isArray(value)) {
+        const list = processList(value)
+        
+        if (list.some(item => typeof item === 'object' && item.type === Constants.Tracker)) {
+          const tracker = trackerRegistry.registerAttributeListWithTrackers(node, name, list)
+          return tracker.update()
+        }
+
+        return node.setAttribute(name, list.join(' '))
+      }
   
       // if (name === 'data') {
       //   processDataAttributes()
@@ -173,10 +186,13 @@ export default class Tag {
   }
 
   async #parseArray (arr, cfg) {
-    return arr.reduce(async (string, part) => {
-      string += await parseInterpolation(part, cfg)
-      return string
-    }, '')
+    let result = ''
+
+    for (let i = 0, { length } = arr; i < length; i++) {
+      result += await this.#parseInterpolation(arr[i], cfg)
+    }
+
+    return result
   }
 
   async #parseFunction (func, { entity }) {
@@ -192,7 +208,7 @@ export default class Tag {
   
     switch (typeof interpolation) {
       case 'string':
-      case 'number': return sanitizeString(interpolation, cfg)
+      case 'number': return sanitizeString(`${interpolation}`, cfg)
       case 'boolean': return interpolation ? 'true' : null
       case 'object': return await this.#parseObject(interpolation, cfg)
       case 'function': return await this.#parseFunction(interpolation, cfg)

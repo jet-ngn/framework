@@ -129,8 +129,8 @@ export class AttributeTracker extends Tracker {
   #node
   #name
 
-  constructor (context, node, name, { target, property, transformFn }) {
-    super(context, target, property, transformFn)
+  constructor (context, node, name, cfg) {
+    super(context, cfg)
     this.#node = node
     this.#name = name
   }
@@ -153,6 +153,106 @@ export class AttributeTracker extends Tracker {
     this.#node.setAttribute(this.#name, value)
   }
 }
+
+class AttributeListItemTracker extends Tracker {
+  #parent
+
+  constructor (context, parent, cfg) {
+    super(context, cfg)
+    this.#parent = parent
+  }
+
+  update () {
+    this.#parent.update()
+  }
+}
+
+class AttributeListTracker {
+  #node
+  #attribute
+  #list
+  #trackers = new Map
+
+  constructor (context, node, attribute, list) {
+    this.#node = node
+    this.#attribute = attribute
+    this.#list = list.map(item => {
+      const type = typeOf(item)
+
+      switch (type) {
+        case 'string':
+        case 'number': return `${item}`
+        case 'object': 
+          const tracker = new AttributeListItemTracker(context, this, item)
+          this.#trackers.set(tracker, item.value)
+          return tracker
+
+        default: throw new TypeError(`Invalid list item type "${type}"`)
+      }
+    })
+  }
+
+  get trackers () {
+    return [...this.#trackers.keys()]
+  }
+
+  update () {
+    this.#node.setAttribute(this.#attribute, this.#list.reduce((list, item) => {
+      if (item instanceof Tracker) {
+        if (typeof item.value === 'boolean') {
+          if (item.value === true) {
+            list.push(this.#trackers.get(item))
+          }
+        } else {
+          list.push(item.value)
+        }
+      } else {
+        list.push(item)
+      }
+
+      return list
+    }, []).join(' '))
+  }
+}
+
+// export class AttributeListItemTracker extends Tracker {
+//   #node
+//   #item
+//   #list
+//   #attribute
+
+//   constructor (context, node, attribute, list, item, cfg) {
+//     console.log(attribute);
+//     super(context, cfg)
+//     this.#node = node
+//     this.#attribute = attribute
+//     this.#list = list
+//     this.#item = item
+//   }
+
+//   get item () {
+//     return this.#item
+//   }
+
+//   get node () {
+//     return this.#node
+//   }
+
+//   update () {
+//     const { value } = this
+//     console.log(value)
+
+//     // if (typeof value === 'boolean') {
+//     //   return value ? this.#node.setAttribute(this.#item, '') : this.#node.removeAttribute(this.#name)
+//     // }
+
+//     // this.#node.setAttribute(this.#item, value)
+//   }
+
+//   #renderList () {
+
+//   }
+// }
 
 export class EntityTracker extends Tracker {
   #node
@@ -258,7 +358,13 @@ export default class TrackerRegistry {
   }
 
   registerAttributeTracker (node, name, cfg) {
-    return this.#register(new AttributeTracker(this.#context, ...arguments, this.#retainFormatting))
+    return this.#register(new AttributeTracker(this.#context, ...arguments))
+  }
+
+  registerAttributeListWithTrackers (node, attribute, list) {
+    const listTracker = new AttributeListTracker(this.#context, ...arguments)
+    listTracker.trackers.forEach(this.#register.bind(this))
+    return listTracker
   }
 
   registerEntityTracker (node, cfg) {
@@ -296,9 +402,10 @@ export default class TrackerRegistry {
       this.#targets.set(target, {
         [property]: [tracker]
       })
+
+      this.#track(tracker, this.#targets.get(target))
     }
 
-    this.#track(tracker, this.#targets.get(target))
     return tracker
   }
 
@@ -308,13 +415,14 @@ export default class TrackerRegistry {
     }
 
     let { target, property, value } = tracker
+    let result = target[property]
     delete target[property]
 
     Object.defineProperty(target, property, {
-      get: () => value,
+      get: () => result,
 
       set: val => {
-        value = val
+        result = val
         registeredTarget[property].forEach(tracker => tracker.update())
       }
     })

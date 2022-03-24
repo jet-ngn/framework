@@ -13,6 +13,11 @@ const View1 = {
   on: {
     unmount () {
       console.log('UNMOUNTING VIEW 1')
+    },
+
+    test (thing) {
+      console.log(this.event)
+      console.log(thing)
     }
   }
 }
@@ -39,21 +44,36 @@ const data = {
   str: 'hey'
 }
 
+const arr = [1,2,3]
+
+// return html`${arr.map(num => html`<div>${num}</div>`)}`
 const Demo = {
   name: 'root',
 
   get template () {
-    return html`
-      ${html`<div></div>`.bind(track(data, 'view'))}
-    `
+    return html`<div></div>`.attr({
+      class: ['hello', track(data, 'str'), {
+        test: track(data, 'str', str => str === 'hey')
+      }]
+    })
   },
 
   on: {
     mount () {
-      setTimeout(() => data.view = View2, 1500)
+      setTimeout(() => {
+        // console.log('FIRING');
+        // this.emit('view.1.test', 'test')
+        // this.emit('test.hey')
+        data.str = 'blah'
+        // console.log(data)
+      }, 1500)
     }
   }
 }
+
+// ${html`<div></div>`.attr({
+//   hidden: track(data, 'str', str => str === 'hey')
+// })}
 
 // ${track(data, 'str')}
 

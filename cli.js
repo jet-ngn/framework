@@ -37,9 +37,11 @@ const shell = new Shell({
         })
 
         Builder.addTask('Creating bundle', async (next) => {
+          const filename = dev ? 'test' : 'index'
+
           await Builder.bundle({
-            entryPoints: [path.join(source, 'index.js')],
-            outfile: path.join(output, 'index.js'),
+            entryPoints: [path.join(source, `${filename}.js`)],
+            outfile: path.join(output, `${filename}.js`),
             minify: !dev,
             sourcemap: true,
             bundle: true,
@@ -74,10 +76,12 @@ const shell = new Shell({
           next()
         })
 
-        // Builder.addTask('Copy test files', async (next) => {
-        //   await Builder.copyFile('index.html')
-        //   next()
-        // })
+        if (dev) {
+          Builder.addTask('Copy test files', async (next) => {
+            await Builder.copyFile('index.html')
+            next()
+          })
+        }
 
         if (flag('watch')) {
           Builder.once('complete', () => {

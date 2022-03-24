@@ -1,3 +1,4 @@
+import { Bus, html } from './index.js'
 import { NANOID } from '@ngnjs/libdata'
 import { forEachKey } from './utilities/IteratorUtils.js'
 import { addHandler, getNamespacedEvent } from './utilities/EventUtils.js'
@@ -29,16 +30,16 @@ class Entity {
   }
 
   get name () {
-    return this.#name
+    return `${this.#parent ? `${this.#parent.name}.` : ''}${this.#name}`
   }
 
   get root () {
     return this.#root
   }
 
-  // emit (evt, ...args) {
-  //   NGN.BUS.emit(getNamespacedEvent(this.name, evt), ...args)
-  // }
+  emit (evt, ...args) {
+    Bus.emit(getNamespacedEvent(this.name, evt), ...args)
+  }
 
   // on (evt, cb, cfg) {
   //   return addHandler(this, ...arguments)
@@ -51,34 +52,33 @@ class Entity {
 
 export function makeEntity (element, cfg, parent) {
   const entity = new Entity(cfg.name, element, parent)
-  const tag = Reflect.get(cfg, 'template', entity)
+  const tag = Reflect.get(cfg, 'template', entity) ?? html``
+  const retainFormatting = entity.root.tagName === 'PRE'
+  const trackerRegistry = new TrackerRegistry(entity, { retainFormatting })
+
+  if (!(tag instanceof Tag)) {
+    throw new TypeError(`"${entity.name}" template must return a tagged template literal`)
+  }
 
   return {
     entity,
 
     async mount () {
+      // TODO: Check for any plugins and apply them here
+
       // attachReferenceManager(entity, cfg.references ?? {})
       // attachDataManager(entity, cfg.data ?? {})
       // attachStateManager(entity, cfg.states ?? null),
       applyEventHandlers(entity, cfg.on ?? {})
 
-      if (tag) {
-        const retainFormatting = entity.root.tagName === 'PRE'
-        const trackerRegistry = new TrackerRegistry(entity, { retainFormatting })
-
-        if (!(tag instanceof Tag)) {
-          throw new TypeError(`"${entity.name}" render function must return a tagged template literal`)
-        }
-
-        const fragment = await tag.render({ entity, retainFormatting, trackerRegistry })
-        entity.root.replaceChildren(fragment)
-      }
-
+      const fragment = await tag.render({ entity, retainFormatting, trackerRegistry })
+      entity.root.replaceChildren(fragment)
       await cfg.on?.mount?.call(entity)
     },
 
     async unmount () {
       BrowserEventRegistry.removeByEntity(entity)
+      // TrackerRegistry.removeTrackersByEntity(entity)
       await cfg.on?.unmount?.call(entity)
     }
   }
@@ -94,7 +94,7 @@ function applyEventHandlers (entity, cfg) {
       return
     }
 
-    addHandler(target, evt, handler)
+    addHandler(entity, evt, handler)
   })
 }
 

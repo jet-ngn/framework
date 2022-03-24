@@ -67,6 +67,10 @@ function track (target, property, transformFn) {
   }
 }
 
+// BUS.on('*', function () {
+//   console.log(this.event);
+// })
+
 export {
   App,
   BUS as Bus,
