@@ -7,6 +7,7 @@ const View1 = {
     return html`
       <h2>View 1</h2>
       <p>lorem ipsum</p>
+      ${html`<div></div>`.bind(Kid)}
     `.on('click', console.log)
   },
 
@@ -18,6 +19,20 @@ const View1 = {
     test (thing) {
       console.log(this.event)
       console.log(thing)
+    }
+  }
+}
+
+const Kid = {
+  name: 'kid',
+
+  get template () {
+    return html`<div>KID</div>`
+  },
+
+  on: {
+    unmount () {
+      console.log('UNMOUNTING KID')
     }
   }
 }
@@ -41,21 +56,16 @@ const View2 = {
 
 const data = {
   view: View1,
-  str: 'hey'
+  str: 'hey',
+  arr: [1,2,3]
 }
-
-const arr = [1,2,3]
 
 // return html`${arr.map(num => html`<div>${num}</div>`)}`
 const Demo = {
   name: 'root',
 
   get template () {
-    return html`<div></div>`.attr({
-      class: ['hello', track(data, 'str'), {
-        test: track(data, 'str', str => str === 'hey')
-      }]
-    })
+    return html`<div></div>`.bind(track(data, 'view'))
   },
 
   on: {
@@ -64,8 +74,17 @@ const Demo = {
         // console.log('FIRING');
         // this.emit('view.1.test', 'test')
         // this.emit('test.hey')
-        data.str = 'blah'
+        data.view = View2
+        // data.str = 'blah'
         // console.log(data)
+
+        setTimeout(() => {
+          data.view = View1
+
+          setTimeout(() => {
+            data.view = View2
+          }, 1500)
+        }, 1500)
       }, 1500)
     }
   }

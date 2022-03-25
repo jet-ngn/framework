@@ -8,7 +8,7 @@ import { reconcileNodes } from '../Reconciler.js'
 // import DataModel from '../../data/DataModel.js'
 // import DataStore from '../../data/DataStore.js'
 
-export class Tracker {
+class Tracker {
   #id = NANOID()
   #context
   #target
@@ -16,12 +16,12 @@ export class Tracker {
   #transformFn
   #retainFormatting
 
-  constructor (context, { target, property, transformFn }, retainFormatting) {
+  constructor (context, { target, property, transformFn }, options) {
     this.#context = context
     this.#target = target
     this.#property = property
     this.#transformFn = transformFn ?? null
-    this.#retainFormatting = retainFormatting === true
+    this.#retainFormatting = options?.retainFormatting === true
   }
 
   get context () {
@@ -58,7 +58,7 @@ export class ArrayTracker extends Tracker {
   #nodes
   #placeholder
 
-  constructor (context, cfg) {
+  constructor (context, cfg, options) {
     super(...arguments)
     this.#placeholder = document.createComment(this.id)
     this.#nodes = this.value.length === 0 ? [this.#placeholder] : this.value.map(node => this.#render(node))
@@ -110,47 +110,18 @@ export class ArrayTracker extends Tracker {
   }
 
   #render (item) {
-    const { retainFormatting } = this
+    // const { retainFormatting } = this
 
-    if (typeof item === 'string') {
-      return document.createTextNode(sanitizeString(item, { retainFormatting }))
-    }
+    // if (typeof item === 'string') {
+    //   return document.createTextNode(sanitizeString(item, { retainFormatting }))
+    // }
 
-    const string = parseTag(item, {
-      retainFormatting,
-      trackers: this.context
-    })
+    // const string = parseTag(item, {
+    //   retainFormatting,
+    //   trackers: this.context
+    // })
 
-    return getDOMFragment(item.type, string, { trackers: this.context }).childNodes[0]
-  }
-}
-
-export class AttributeTracker extends Tracker {
-  #node
-  #name
-
-  constructor (context, node, name, cfg) {
-    super(context, cfg)
-    this.#node = node
-    this.#name = name
-  }
-
-  get name () {
-    return this.#name
-  }
-
-  get node () {
-    return this.#node
-  }
-
-  update () {
-    const { value } = this
-
-    if (typeof value === 'boolean') {
-      return value ? this.#node.setAttribute(this.#name, '') : this.#node.removeAttribute(this.#name)
-    }
-
-    this.#node.setAttribute(this.#name, value)
+    // return getDOMFragment(item.type, string, { trackers: this.context }).childNodes[0]
   }
 }
 
@@ -168,12 +139,14 @@ class AttributeListItemTracker extends Tracker {
 }
 
 class AttributeListTracker {
+  #context
   #node
   #attribute
   #list
   #trackers = new Map
 
   constructor (context, node, attribute, list) {
+    this.#context = context
     this.#node = node
     this.#attribute = attribute
     this.#list = list.map(item => {
@@ -215,52 +188,44 @@ class AttributeListTracker {
   }
 }
 
-// export class AttributeListItemTracker extends Tracker {
-//   #node
-//   #item
-//   #list
-//   #attribute
+export class AttributeTracker extends Tracker {
+  #node
+  #name
 
-//   constructor (context, node, attribute, list, item, cfg) {
-//     console.log(attribute);
-//     super(context, cfg)
-//     this.#node = node
-//     this.#attribute = attribute
-//     this.#list = list
-//     this.#item = item
-//   }
+  constructor (context, node, name, cfg) {
+    super(context, cfg)
+    this.#node = node
+    this.#name = name
+  }
 
-//   get item () {
-//     return this.#item
-//   }
+  get name () {
+    return this.#name
+  }
 
-//   get node () {
-//     return this.#node
-//   }
+  get node () {
+    return this.#node
+  }
 
-//   update () {
-//     const { value } = this
-//     console.log(value)
+  update () {
+    const { value } = this
 
-//     // if (typeof value === 'boolean') {
-//     //   return value ? this.#node.setAttribute(this.#item, '') : this.#node.removeAttribute(this.#name)
-//     // }
+    if (typeof value === 'boolean') {
+      return value ? this.#node.setAttribute(this.#name, '') : this.#node.removeAttribute(this.#name)
+    }
 
-//     // this.#node.setAttribute(this.#item, value)
-//   }
-
-//   #renderList () {
-
-//   }
-// }
+    this.#node.setAttribute(this.#name, value)
+  }
+}
 
 export class EntityTracker extends Tracker {
   #node
   #current = null
+  #collection = null
 
-  constructor (context, node, cfg, retainFormatting) {
-    super(context, cfg, retainFormatting)
+  constructor (context, node, cfg, options, collection) {
+    super(context, cfg, options)
     this.#node = node
+    this.#collection = collection
   }
 
   get type () {
@@ -269,6 +234,8 @@ export class EntityTracker extends Tracker {
 
   async update () {
     const update = makeEntity(new Node(this.#node), this.value, this.context)
+
+    this.#collection.splice(this.#collection.indexOf(this.#current), 1, update)
 
     if (this.#current) {
       this.#current.unmount()
@@ -279,7 +246,7 @@ export class EntityTracker extends Tracker {
   }
 }
 
-export class StringTracker extends Tracker {
+class StringTracker extends Tracker {
   #nodes
 
   constructor () {
@@ -328,20 +295,10 @@ export class StringTracker extends Tracker {
   }
 }
 
-export default class TrackerRegistry {
-  #context
-  #targets = new Map
+class TrackerRegistry {
+  #contexts = new Map
   #trackers = {}
-  #retainFormatting = false
-
-  constructor (context, cfg) {
-    this.#context = context
-    this.#retainFormatting = cfg.retainFormatting === true
-  }
-
-  get hasTrackers () {
-    return this.#targets.size > 0
-  }
+  #targets = new Map
 
   getNodes (id) {
     const tracker = this.#trackers[id]
@@ -353,35 +310,33 @@ export default class TrackerRegistry {
     return tracker.nodes
   }
 
-  get (id) {
-    return this.#targets[id]
-  }
-
-  registerAttributeTracker (node, name, cfg) {
-    return this.#register(new AttributeTracker(this.#context, ...arguments))
-  }
-
-  registerAttributeListWithTrackers (node, attribute, list) {
-    const listTracker = new AttributeListTracker(this.#context, ...arguments)
+  registerAttributeListWithTrackers (context, node, attribute, list) {
+    const listTracker = new AttributeListTracker(...arguments)
     listTracker.trackers.forEach(this.#register.bind(this))
     return listTracker
   }
 
-  registerEntityTracker (node, cfg) {
-    return this.#register(new EntityTracker(this.#context, ...arguments, this.#retainFormatting))
+  registerAttributeTracker (context, node, name, cfg) {
+    return this.#register(new AttributeTracker(...arguments))
   }
 
-  registerContentTracker (cfg) {
+  registerContentTracker (context, cfg, options) {
     return this.#register(this.#getContentTracker(...arguments))
   }
 
-  #getContentTracker ({ target, property, transformFn }) {
+  registerEntityTracker (context, node, cfg, options, collection) {
+    return this.#register(new EntityTracker(...arguments))
+  }
+
+  #getContentTracker (context, cfg, options) {
+    const { target, property } = cfg
+
     const type = typeOf(target[property])
 
     switch (type) {
       case 'string':
-      case 'number': return new StringTracker(this.#context, arguments[0], this.#retainFormatting) 
-      case 'array': return new ArrayTracker(this.#context, arguments[0], this.#retainFormatting)
+      case 'number': return new StringTracker(...arguments) 
+      case 'array': return new ArrayTracker(...arguments)
     
       default: throw new TypeError(`Unsupported tracker type "${type}"`)
     }
@@ -390,29 +345,38 @@ export default class TrackerRegistry {
   #register (tracker) {
     const { id, target, property } = tracker
     this.#trackers[id] = tracker
-    let registered = this.#targets.get(target)
+    let registeredTarget = this.#targets.get(target)
 
-    if (!!registered) {
-      if (registered.hasOwnProperty(property)) {
-        registered[property].push(tracker)
+    if (!!registeredTarget) {
+      if (registeredTarget.hasOwnProperty(property)) {
+        registeredTarget[property].push(tracker)
       } else {
-        registered[property] = [tracker]
+        registeredTarget[property] = [tracker]
       }
     } else {
       this.#targets.set(target, {
         [property]: [tracker]
       })
 
+      registeredTarget = this.#targets.get(target)
       this.#track(tracker, this.#targets.get(target))
+    }
+
+    const registeredContext = this.#contexts.get(tracker.context)
+
+    if (!registeredContext) {
+      this.#contexts.set(tracker.context, [registeredTarget])      
+    } else {
+      registeredContext.push(registeredTarget)
     }
 
     return tracker
   }
 
   #track (tracker, registeredTarget) {
-    if (tracker instanceof ArrayTracker) {
-      return this.#trackArray(...arguments)
-    }
+    // if (tracker instanceof ArrayTracker) {
+    //   return this.#trackArray(...arguments)
+    // }
 
     let { target, property, value } = tracker
     let result = target[property]
@@ -427,35 +391,145 @@ export default class TrackerRegistry {
       }
     })
   }
-
-  #trackArray (tracker, registeredTarget) {
-    let { target, property } = tracker
-    
-    target[property] = new Proxy(target[property], {
-      get: (target, property) => {
-        const original = target[property]
-
-        switch (property) {
-          case 'pop':
-          case 'push':
-          case 'shift':
-          case 'unshift': return (...args) => {
-            original.apply(target, args)
-            registeredTarget[tracker.property].forEach(tracker => tracker[property]())
-          }
-
-          case 'copyWithin':
-          case 'fill':
-          case 'reverse':
-          case 'sort':
-          case 'splice': return (...args) => {
-            original.apply(target, args)
-            registeredTarget[tracker.property].forEach(tracker => tracker.reconcile())
-          }
-        
-          default: return original
-        }
-      }
-    })
-  }
 }
+
+export default new TrackerRegistry
+
+// export default class TrackerRegistry {
+//   #context
+//   #targets = new Map
+//   #trackers = {}
+//   #retainFormatting = false
+
+//   constructor (context, cfg) {
+//     this.#context = context
+//     this.#retainFormatting = cfg.retainFormatting === true
+//   }
+
+//   get hasTrackers () {
+//     return this.#targets.size > 0
+//   }
+
+//   getNodes (id) {
+//     const tracker = this.#trackers[id]
+
+//     if (!tracker) {
+//       throw new ReferenceError(`Tracker "${id}" not found`)
+//     }
+
+//     return tracker.nodes
+//   }
+
+//   get (id) {
+//     return this.#targets[id]
+//   }
+
+//   registerAttributeTracker (node, name, cfg) {
+//     return this.#register(new AttributeTracker(this.#context, ...arguments))
+//   }
+
+//   registerAttributeListWithTrackers (node, attribute, list) {
+//     const listTracker = new AttributeListTracker(this.#context, ...arguments)
+//     listTracker.trackers.forEach(this.#register.bind(this))
+//     return listTracker
+//   }
+
+//   registerEntityTracker (node, cfg) {
+//     return this.#register(new EntityTracker(this.#context, ...arguments, this.#retainFormatting))
+//   }
+
+//   registerContentTracker (cfg) {
+//     return this.#register(this.#getContentTracker(...arguments))
+//   }
+
+//   #getContentTracker ({ target, property, transformFn }) {
+//     const type = typeOf(target[property])
+
+//     switch (type) {
+//       case 'string':
+//       case 'number': return new StringTracker(this.#context, arguments[0], this.#retainFormatting) 
+//       case 'array': return new ArrayTracker(this.#context, arguments[0], this.#retainFormatting)
+    
+//       default: throw new TypeError(`Unsupported tracker type "${type}"`)
+//     }
+//   }
+
+//   #register (tracker) {
+//     const { id, target, property } = tracker
+//     this.#trackers[id] = tracker
+//     let registered = this.#targets.get(target)
+
+//     if (!!registered) {
+//       if (registered.hasOwnProperty(property)) {
+//         registered[property].push(tracker)
+//       } else {
+//         registered[property] = [tracker]
+//       }
+//     } else {
+//       this.#targets.set(target, {
+//         [property]: [tracker]
+//       })
+
+//       this.#track(tracker, this.#targets.get(target))
+//     }
+
+//     return tracker
+//   }
+
+//   #track (tracker, registeredTarget) {
+//     if (tracker instanceof ArrayTracker) {
+//       return this.#trackArray(...arguments)
+//     }
+
+//     let { target, property, value } = tracker
+//     let result = target[property]
+//     delete target[property]
+
+//     Object.defineProperty(target, property, {
+//       get: () => result,
+
+//       set: val => {
+//         result = val
+//         registeredTarget[property].forEach(tracker => tracker.update())
+//       }
+//     })
+//   }
+
+//   #trackArray (tracker, registeredTarget) {
+//     let { target, property } = tracker
+    
+//     target[property] = new Proxy(target[property], {
+//       get: (target, property) => {
+//         const original = target[property]
+
+//         switch (property) {
+//           case 'pop':
+//           case 'push':
+//           case 'shift':
+//           case 'unshift': return (...args) => {
+//             original.apply(target, args)
+//             registeredTarget[tracker.property].forEach(tracker => tracker[property]())
+//           }
+
+//           case 'copyWithin':
+//           case 'fill':
+//           case 'reverse':
+//           case 'sort':
+//           case 'splice': return (...args) => {
+//             original.apply(target, args)
+//             registeredTarget[tracker.property].forEach(tracker => tracker.reconcile())
+//           }
+        
+//           default: return original
+//         }
+//       }
+//     })
+//   }
+// }
+
+
+
+
+
+
+

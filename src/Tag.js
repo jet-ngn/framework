@@ -3,6 +3,7 @@ import Constants from './Constants.js'
 import Node from './Node.js'
 import { makeEntity } from './Entity.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
+import TrackerRegistry from './registries/TrackerRegistry.js'
 import { sanitizeString } from './utilities/StringUtils.js'
 import { processList } from './utilities/ListUtils.js'
 
@@ -60,39 +61,36 @@ export default class Tag {
     return this
   }
 
-  async render (cfg) {
+  async render (context, cfg, childEntities) {
     const template = this.#type === 'svg'
       ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       : document.createElement('template')
 
-    template.innerHTML = await this.#parse(cfg)
+    template.innerHTML = await this.#parse(...arguments)
 
-    const parent = cfg.entity
     const { children } = template.content
     const node = children[0]
-    const { trackerRegistry } = cfg
 
     if (this.#entity) {
-      await this.#bindEntity(parent, node)
+      await this.#bindEntity(context, node, cfg, childEntities)
     } else if (this.#entityTracker) {
-      await this.#bindEntityTracker(node, trackerRegistry)
+      await this.#bindEntityTracker(context, node, cfg, childEntities)
     }
 
     if (this.#attributes) {
-      this.#bindAttributes(parent, node, { trackerRegistry })
+      this.#bindAttributes(context, node)
     }
 
     if (this.#listeners) {
-      this.#bindListeners(parent, node)
+      this.#bindListeners(context, node)
     }
     
-    await this.#processChildTemplates([...children], cfg)
-
+    await this.#processChildTemplates(context, [...children], cfg, childEntities)
     return template.content
   }
 
   // TODO: Handle data attributes and class bindings
-  #bindAttributes (context, node, { trackerRegistry }) {
+  #bindAttributes (context, node) {
     const attributes = this.#attributes
 
     for (let name in attributes) {
@@ -102,7 +100,7 @@ export default class Tag {
         const list = processList(value)
         
         if (list.some(item => typeof item === 'object' && item.type === Constants.Tracker)) {
-          const tracker = trackerRegistry.registerAttributeListWithTrackers(node, name, list)
+          const tracker = TrackerRegistry.registerAttributeListWithTrackers(context, node, name, list)
           return tracker.update()
         }
 
@@ -130,8 +128,8 @@ export default class Tag {
           value && node.setAttribute(name, '')
           continue
   
-        case Constants.Tracker: 
-          const tracker = trackerRegistry.registerAttributeTracker(node, name, value)
+        case Constants.Tracker:
+          const tracker = TrackerRegistry.registerAttributeTracker(context, node, name, value)
           tracker.update()
           continue
   
@@ -140,13 +138,14 @@ export default class Tag {
     }
   }
 
-  async #bindEntity (context, node) {
-    const { mount } = makeEntity(new Node(node), this.#entity, context)
-    await mount()
+  async #bindEntity (context, node, cfg, collection) {
+    const result = makeEntity(new Node(node), this.#entity, context, cfg)
+    collection.push(result)
+    await result.mount()
   }
 
-  async #bindEntityTracker (node, trackerRegistry) {
-    const tracker = trackerRegistry.registerEntityTracker(node, this.#entityTracker)
+  async #bindEntityTracker (context, node, cfg, collection) {
+    const tracker = TrackerRegistry.registerEntityTracker(context, node, this.#entityTracker, cfg, collection)
     await tracker.update()
   }
 
@@ -164,7 +163,7 @@ export default class Tag {
     return this.#children[id] ?? null
   }
 
-  async #parse (cfg) {
+  async #parse (context, cfg) {
     let string = ''
     const interpolations = this.#interpolations
 
@@ -178,18 +177,18 @@ export default class Tag {
           continue
         }
 
-        string += await this.#parseInterpolation(interpolations[i], cfg) ?? ''
+        string += await this.#parseInterpolation(interpolations[i], ...arguments) ?? ''
       }
     }
 
     return string
   }
 
-  async #parseArray (arr, cfg) {
+  async #parseArray (arr, context, cfg) {
     let result = ''
 
     for (let i = 0, { length } = arr; i < length; i++) {
-      result += await this.#parseInterpolation(arr[i], cfg)
+      result += await this.#parseInterpolation(arr[i], context, cfg)
     }
 
     return result
@@ -201,22 +200,22 @@ export default class Tag {
     return await this.#parse(result, arguments[2])
   }
 
-  async #parseInterpolation (interpolation, cfg) {
+  async #parseInterpolation (interpolation, context, cfg) {
     if (Array.isArray(interpolation)) {
-      return await this.#parseArray(interpolation, cfg)
+      return await this.#parseArray(...arguments)
     }
   
     switch (typeof interpolation) {
       case 'string':
       case 'number': return sanitizeString(`${interpolation}`, cfg)
       case 'boolean': return interpolation ? 'true' : null
-      case 'object': return await this.#parseObject(interpolation, cfg)
-      case 'function': return await this.#parseFunction(interpolation, cfg)
+      case 'object': return await this.#parseObject(...arguments)
+      case 'function': return await this.#parseFunction(...arguments)
       default: return null
     }
   }
 
-  async #parseObject (obj, cfg) {
+  async #parseObject (obj, context, cfg) {
     if (obj instanceof Tag) {
       this.#addChild(obj)
       return `<template class="${obj.type} tag" id="${obj.id}"></template>`
@@ -224,7 +223,7 @@ export default class Tag {
   
     switch (obj.type) {
       case Constants.Tracker:
-        const tracker = cfg.trackerRegistry.registerContentTracker(obj)
+        const tracker = TrackerRegistry.registerContentTracker(context, obj, cfg)
         return `<template class="${tracker.type} tracker" id="${tracker.id}"></template>`
     
       default: 
@@ -233,12 +232,12 @@ export default class Tag {
     }
   }
 
-  async #processChildTemplates (nodes, cfg) {
+  async #processChildTemplates (context, nodes, cfg, collection) {
     for (let i = 0, { length } = nodes; i < length; i++) {
       const node = nodes[i]
       
       if (node.tagName !== 'TEMPLATE') {
-        await this.#processChildTemplates([...node.children], cfg)
+        await this.#processChildTemplates(context, [...node.children], cfg, collection)
         continue
       }
   
@@ -246,14 +245,14 @@ export default class Tag {
   
       if (classList.contains('tracker')) {
         const fragment = document.createDocumentFragment()
-        cfg.trackerRegistry.getNodes(node.id).forEach(node => fragment.append(node))
+        TrackerRegistry.getNodes(node.id).forEach(node => fragment.append(node))
         node.replaceWith(fragment)
         continue
       }
   
       if (classList.contains('tag')) {
         const tag = this.#getChild(node.id)
-        node.replaceWith(await tag.render(arguments[1]))
+        node.replaceWith(await tag.render(context, cfg, collection))
         continue
       }
   

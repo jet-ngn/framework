@@ -5,7 +5,6 @@ import { addHandler, getNamespacedEvent } from './utilities/EventUtils.js'
 // import { attachDataManager } from './data/DataManager.js'
 // import { attachStateManager } from './StateManager.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
-import TrackerRegistry from './registries/TrackerRegistry.js'
 import Tag from './Tag.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
 
@@ -50,11 +49,11 @@ class Entity {
   // }
 }
 
-export function makeEntity (element, cfg, parent) {
+export function makeEntity (element, cfg, parent, options) {
   const entity = new Entity(cfg.name, element, parent)
   const tag = Reflect.get(cfg, 'template', entity) ?? html``
-  const retainFormatting = entity.root.tagName === 'PRE'
-  const trackerRegistry = new TrackerRegistry(entity, { retainFormatting })
+  const retainFormatting = options?.retainFormatting ?? entity.root.tagName === 'PRE'
+  const children = []
 
   if (!(tag instanceof Tag)) {
     throw new TypeError(`"${entity.name}" template must return a tagged template literal`)
@@ -71,12 +70,15 @@ export function makeEntity (element, cfg, parent) {
       // attachStateManager(entity, cfg.states ?? null),
       applyEventHandlers(entity, cfg.on ?? {})
 
-      const fragment = await tag.render({ entity, retainFormatting, trackerRegistry })
+      const fragment = await tag.render(entity, { retainFormatting }, children)
       entity.root.replaceChildren(fragment)
+    
       await cfg.on?.mount?.call(entity)
     },
 
     async unmount () {
+      children.forEach(child => child.unmount())
+      
       BrowserEventRegistry.removeByEntity(entity)
       // TrackerRegistry.removeTrackersByEntity(entity)
       await cfg.on?.unmount?.call(entity)
