@@ -1,12 +1,3 @@
-import { typeOf, NANOID } from '@ngnjs/libdata'
-import Constants from './Constants.js'
-import Node from './Node.js'
-import { makeEntity } from './Entity.js'
-import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
-import TrackerRegistry from './registries/TrackerRegistry.js'
-import { sanitizeString } from './utilities/StringUtils.js'
-import { processList } from './utilities/ListUtils.js'
-
 export default class Tag {
   #id = NANOID()
   #type
@@ -61,7 +52,7 @@ export default class Tag {
     return this
   }
 
-  async render (context, cfg, childEntities) {
+  async render (context, options, collection) {
     const template = this.#type === 'svg'
       ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       : document.createElement('template')
@@ -72,25 +63,25 @@ export default class Tag {
     const node = children[0]
 
     if (this.#entity) {
-      await this.#bindEntity(context, node, cfg, childEntities)
+      await this.#bindEntity(context, node, options, collection)
     } else if (this.#entityTracker) {
-      await this.#bindEntityTracker(context, node, cfg, childEntities)
+      await this.#bindEntityTracker(context, node, options, collection)
     }
 
     if (this.#attributes) {
-      this.#bindAttributes(context, node)
+      await this.#bindAttributes(context, node)
     }
 
     if (this.#listeners) {
       this.#bindListeners(context, node)
     }
     
-    await this.#processChildTemplates(context, [...children], cfg, childEntities)
+    await this.#processChildTemplates(context, [...children], options, collection)
     return template.content
   }
 
   // TODO: Handle data attributes and class bindings
-  #bindAttributes (context, node) {
+  async #bindAttributes (context, node) {
     const attributes = this.#attributes
 
     for (let name in attributes) {
@@ -101,7 +92,7 @@ export default class Tag {
         
         if (list.some(item => typeof item === 'object' && item.type === Constants.Tracker)) {
           const tracker = TrackerRegistry.registerAttributeListWithTrackers(context, node, name, list)
-          return tracker.update()
+          return await tracker.update()
         }
 
         return node.setAttribute(name, list.join(' '))
@@ -130,7 +121,7 @@ export default class Tag {
   
         case Constants.Tracker:
           const tracker = TrackerRegistry.registerAttributeTracker(context, node, name, value)
-          tracker.update()
+          await tracker.update()
           continue
   
         default: throw new TypeError(`Entity "${context.name}" rendering error: Invalid attribute value type "${type ?? typeof value}"`)
@@ -138,14 +129,14 @@ export default class Tag {
     }
   }
 
-  async #bindEntity (context, node, cfg, collection) {
-    const result = makeEntity(new Node(node), this.#entity, context, cfg)
+  async #bindEntity (context, node, options, collection) {
+    const result = makeEntity(new Node(node), this.#entity, context, options)
     collection.push(result)
     await result.mount()
   }
 
-  async #bindEntityTracker (context, node, cfg, collection) {
-    const tracker = TrackerRegistry.registerEntityTracker(context, node, this.#entityTracker, cfg, collection)
+  async #bindEntityTracker (context, node, options, collection) {
+    const tracker = TrackerRegistry.registerEntityTracker(context, node, this.#entityTracker, options, collection)
     await tracker.update()
   }
 
@@ -163,7 +154,7 @@ export default class Tag {
     return this.#children[id] ?? null
   }
 
-  async #parse (context, cfg) {
+  async #parse (context, options) {
     let string = ''
     const interpolations = this.#interpolations
 
@@ -184,11 +175,11 @@ export default class Tag {
     return string
   }
 
-  async #parseArray (arr, context, cfg) {
+  async #parseArray (arr, context, options) {
     let result = ''
 
     for (let i = 0, { length } = arr; i < length; i++) {
-      result += await this.#parseInterpolation(arr[i], context, cfg)
+      result += await this.#parseInterpolation(arr[i], context, options)
     }
 
     return result
@@ -200,14 +191,14 @@ export default class Tag {
     return await this.#parse(result, arguments[2])
   }
 
-  async #parseInterpolation (interpolation, context, cfg) {
+  async #parseInterpolation (interpolation, context, options) {
     if (Array.isArray(interpolation)) {
       return await this.#parseArray(...arguments)
     }
   
     switch (typeof interpolation) {
       case 'string':
-      case 'number': return sanitizeString(`${interpolation}`, cfg)
+      case 'number': return sanitizeString(`${interpolation}`, options)
       case 'boolean': return interpolation ? 'true' : null
       case 'object': return await this.#parseObject(...arguments)
       case 'function': return await this.#parseFunction(...arguments)
@@ -215,7 +206,7 @@ export default class Tag {
     }
   }
 
-  async #parseObject (obj, context, cfg) {
+  async #parseObject (obj, context, options) {
     if (obj instanceof Tag) {
       this.#addChild(obj)
       return `<template class="${obj.type} tag" id="${obj.id}"></template>`
@@ -223,7 +214,7 @@ export default class Tag {
   
     switch (obj.type) {
       case Constants.Tracker:
-        const tracker = TrackerRegistry.registerContentTracker(context, obj, cfg)
+        const tracker = TrackerRegistry.registerContentTracker(context, obj, options)
         return `<template class="${tracker.type} tracker" id="${tracker.id}"></template>`
     
       default: 
@@ -232,12 +223,12 @@ export default class Tag {
     }
   }
 
-  async #processChildTemplates (context, nodes, cfg, collection) {
+  async #processChildTemplates (context, nodes, options, collection) {
     for (let i = 0, { length } = nodes; i < length; i++) {
       const node = nodes[i]
       
       if (node.tagName !== 'TEMPLATE') {
-        await this.#processChildTemplates(context, [...node.children], cfg, collection)
+        await this.#processChildTemplates(context, [...node.children], options, collection)
         continue
       }
   
@@ -245,14 +236,23 @@ export default class Tag {
   
       if (classList.contains('tracker')) {
         const fragment = document.createDocumentFragment()
-        TrackerRegistry.getNodes(node.id).forEach(node => fragment.append(node))
+
+        for (let trackedNode of TrackerRegistry.getNodes(node.id)) {
+          if (trackedNode instanceof Tag) {
+            fragment.append(await trackedNode.render(context, options, collection))
+            continue
+          }
+
+          fragment.append(trackedNode)
+        }
+
         node.replaceWith(fragment)
         continue
       }
   
       if (classList.contains('tag')) {
         const tag = this.#getChild(node.id)
-        node.replaceWith(await tag.render(context, cfg, collection))
+        node.replaceWith(await tag.render(context, options, collection))
         continue
       }
   

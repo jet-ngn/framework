@@ -1,11 +1,12 @@
-export function reconcileNode (original, update, listeners) {
+export function reconcileNode (original, update) {
   const types = {
     original: original.constructor.name,
     update: update.constructor.name
   }
 
   if (types.original !== types.update) {
-    return original.replaceWith(update)
+    original.replaceWith(update)
+    return update
   }
 
   switch (types.original) {
@@ -17,7 +18,7 @@ export function reconcileNode (original, update, listeners) {
     }, {
       type: types.update,
       node: update
-    }, listeners)
+    })
   }
 }
 
@@ -33,10 +34,11 @@ function removeAllAttributes (node) {
   }
 }
 
-function reconcileElementNode (original, update, listeners) {
+function reconcileElementNode (original, update) {
   if (original.type !== update.type) {
     // TODO: Cleanup event listeners
-    return original.replaceWith(update)
+    original.replaceWith(update)
+    return update
   }
 
   if (update.node.attributes.length > 0) {
@@ -50,17 +52,23 @@ function reconcileElementNode (original, update, listeners) {
   const { childNodes } = original.node
 
   if (childNodes.length > 0) {
-    reconcileNodes(childNodes, update.node.childNodes, listeners)
+    reconcileNodes(childNodes, update.node.childNodes)
   }
+
+  return original
 }
 
 function reconcileTextNode (original, update) {
   if (update.data !== original.data) {
     original.data = update.data
   }
+
+  return original
 }
 
-export function reconcileNodes (original, update, listeners) {
+export function reconcileNodes (original, update) {
+  const result = []
+
   for (let i = 0, length = Math.max(original.length, update.length); i < length; i++) {
     const existingNode = original[i]
     const newNode = update[i]
@@ -71,18 +79,23 @@ export function reconcileNodes (original, update, listeners) {
       }
 
       // TODO: Add event listeners
-      original.at(-1).after(newNode)
-      original.push(newNode)
+      // TODO: Add task: insert after original.at(-1)
+      // original.at(-1).after(newNode)
+      // original.push(newNode)
+      // result.push(newNode)
       continue
     }
 
     if (!newNode) {
       // TODO: Cleanup event listeners
-      existingNode.remove()
-      original.splice(i, 1)
+      // TODO: Add task: remove existingNode
+      // existingNode.remove()
+      // original.splice(i, 1)
       continue
     }
 
-    reconcileNode(existingNode, newNode, listeners)
+    result.push(reconcileNode(existingNode,  newNode))
   }
+
+  return result
 }

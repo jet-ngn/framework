@@ -1,62 +1,49 @@
 import { Bus, html } from './index.js'
-import { NANOID } from '@ngnjs/libdata'
 import { forEachKey } from './utilities/IteratorUtils.js'
 import { addHandler, getNamespacedEvent } from './utilities/EventUtils.js'
 // import { attachDataManager } from './data/DataManager.js'
 // import { attachStateManager } from './StateManager.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
-import Tag from './Tag.js'
+import Template from './Template.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
+import Fragment from './Fragment.js'
+import Node from './Node.js'
 
-class Entity {
-  #id = NANOID()
-  #name
-  #root
+const reservedEventNames = ['mount', 'unmount']
+
+class Entity extends Node {
+  #scope
   #parent
 
-  constructor (name, root, parent) {
-    this.#name = name
-    this.#root = root
+  constructor (scope, root, parent) {
+    super(root)
+    this.#scope = scope
     this.#parent = parent ?? null
   }
 
-  get id () {
-    return this.#id
-  }
-
-  get parent () {
-    return this.#parent
-  }
-
-  get name () {
-    return `${this.#parent ? `${this.#parent.name}.` : ''}${this.#name}`
-  }
-
-  get root () {
-    return this.#root
+  get scope () {
+    return `${this.#parent ? `${this.#parent.scope}.` : ''}${this.#scope}`
   }
 
   emit (evt, ...args) {
-    Bus.emit(getNamespacedEvent(this.name, evt), ...args)
+    if (!!reservedEventNames.includes(evt)) {
+      throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
+    }
+
+    Bus.emit(getNamespacedEvent(this.scope, evt), ...args)
   }
 
-  // on (evt, cb, cfg) {
-  //   return addHandler(this, ...arguments)
-  // }
-
-  // off (evt, handler) {
-  //   NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
-  // }
+  remove () {
+    throw new Error(`Cannot remove node tied to entity`)
+  }
 }
 
 export function makeEntity (element, cfg, parent, options) {
-  const entity = new Entity(cfg.name, element, parent)
-  const tag = Reflect.get(cfg, 'template', entity) ?? html``
-  const retainFormatting = options?.retainFormatting ?? entity.root.tagName === 'PRE'
-  const children = []
+  const entity = new Entity(cfg.scope, element, parent)
+  const template = Reflect.get(cfg, 'template', entity) ?? html``
 
-  if (!(tag instanceof Tag)) {
-    throw new TypeError(`"${entity.name}" template must return a tagged template literal`)
+  if (!(template instanceof Template)) {
+    throw new TypeError(`Entity "${entity.scope}" template must return a tagged template literal`)
   }
 
   return {
@@ -70,9 +57,11 @@ export function makeEntity (element, cfg, parent, options) {
       // attachStateManager(entity, cfg.states ?? null),
       applyEventHandlers(entity, cfg.on ?? {})
 
-      const fragment = await tag.render(entity, { retainFormatting }, children)
-      entity.root.replaceChildren(fragment)
-    
+      const fragment = new Fragment(entity, template, {
+        retainFormatting: options?.retainFormatting ?? entity.tagName === 'PRE'
+      })
+      
+      entity.replaceChildren(await fragment.render())
       await cfg.on?.mount?.call(entity)
     },
 
@@ -91,14 +80,16 @@ function applyEventHandlers (entity, cfg) {
     throw new TypeError(`Invalid entity "on" configuration. Expected "object", received "${typeof cfg}"`)
   }
 
-  forEachKey(cfg, (evt, handler) => {
-    if (['mount', 'unmount'].some(eventName => eventName === evt)) {
-      return
-    }
-
-    addHandler(entity, evt, handler)
-  })
+  forEachKey(cfg, (evt, handler) => !reservedEventNames.includes(evt) && addHandler(entity, evt, handler))
 }
+
+// on (evt, cb, cfg) {
+  //   return addHandler(this, ...arguments)
+  // }
+
+  // off (evt, handler) {
+  //   NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
+  // }
 
 // , ...Object.keys(cfg).reduce((result, property) => {
 //   switch (property) {

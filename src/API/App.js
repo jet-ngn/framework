@@ -1,6 +1,5 @@
 import AppRegistry from '../registries/AppRegistry.js'
 import { makeEntity } from '../Entity.js'
-import Node from '../Node.js'
 
 class ContactInfo {
   #phone
@@ -56,26 +55,6 @@ function validateVersion (version) {
   return version
 }
 
-function getRootNode (app, selector) {
-  if (!selector) {
-    return null
-  }
-
-  let nodelist = document.querySelectorAll(selector)
-
-  if (nodelist.length === 0) {
-    throw new Error(`App "${app}" root node selector "${selector}" did not return any elements.`)
-  }
-
-  if (nodelist.length > 1) {
-    console.info(nodelist)
-    throw new Error(`App "${app}" root node selector refers to more than one element. Please use a more specific selector.`)
-  }
-
-  const node = nodelist[0]
-  return node ? new Node(node) : null
-}
-
 export default class App {
   #name
   #version
@@ -85,7 +64,9 @@ export default class App {
   #started = false
   #autostart = true
 
-  constructor (selector, config, { autostart, name, version, contributors }) {
+  constructor (node, config) {
+    const { autostart, name, version, contributors } = config
+
     this.#name = name ?? 'Unnamed App'
     this.#version = validateVersion(version ?? '0.0.1-alpha.1')
     
@@ -101,7 +82,7 @@ export default class App {
       throw new Error(`Invalid root node configuration. Expected object, received "${type}"`)
     }
 
-    const { entity, mount } = makeEntity(getRootNode(this.#name, selector), config)
+    const { entity, mount } = makeEntity(node, config)
 
     this.#entity = entity
     this.#mountFn = mount
