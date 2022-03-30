@@ -1,4 +1,5 @@
-import Constants from '../Constants.js'
+import { typeOf } from '@ngnjs/libdata'
+import { Tracker } from '../registries/ObservableRegistry.js'
 
 export function processList (items) {
   return items.reduce((result, item) => {
@@ -8,7 +9,9 @@ export function processList (items) {
 }
 
 function processListItem (item) {
-  switch (typeof item) {
+  const type = typeOf(item)
+
+  switch (type) {
     case 'string':
     case 'number': return [`${item}`]
     case 'object': return processObject(item)
@@ -17,12 +20,8 @@ function processListItem (item) {
 }
 
 function processObject (obj) {
-  if (Array.isArray(obj)) {
-    throw new TypeError(`Invalid list() argument type "array"`)
-  }
-
-  if (obj.type === Constants.Tracker) {
-    return [obj]
+  if (obj instanceof Tracker) {
+    return getTrackedValue(obj)
   }
 
   return Object.keys(obj).reduce((result, name) => {
@@ -32,10 +31,27 @@ function processObject (obj) {
       result.push(name)
     }
 
-    if (value.type === Constants.Tracker) {
-      result.push({ ...value, value: name })
+    if (value instanceof Tracker) {
+      const output = getTrackedValue(value, name)
+      result.push(...output)
     }
 
     return result
   }, [])
+}
+
+function getTrackedValue (tracker, booleanOutput) {
+  const { output } = tracker
+  const type = typeOf(output)
+
+  switch (type) {
+    case 'string':
+    case 'number': return [output]
+
+    case 'array': return [...output]
+
+    case 'boolean': return Array.isArray(booleanOutput) ? [...booleanOutput] : [booleanOutput]
+  
+    default: throw new TypeError(`Invalid tracked value type "${type}"`)
+  }
 }

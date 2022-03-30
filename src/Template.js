@@ -3,14 +3,25 @@ export default class Template {
   #strings
   #interpolations
 
+  #attributes = null
+  #listeners = null
+
   constructor ({ type, strings, interpolations }) {
     this.#type = type
     this.#strings = strings
     this.#interpolations = interpolations
   }
 
+  get attributes () {
+    return this.#attributes
+  }
+
   get interpolations () {
     return this.#interpolations
+  }
+
+  get listeners () {
+    return this.#listeners
   }
 
   get strings () {
@@ -22,7 +33,7 @@ export default class Template {
   }
 
   attr (cfg) {
-    console.log(cfg)
+    this.#attributes = { ...(this.#attributes ?? {}), ...cfg }
     return this
   }
 
@@ -32,11 +43,20 @@ export default class Template {
   }
 
   on (evt, handler, cfg) {
+    if (!this.#listeners) {
+      this.#listeners = {}
+    }
+
     if (typeof evt === 'object') {
       return this.#pool(evt)
     }
 
-    console.log(evt, handler, cfg)
+    if (this.#listeners.hasOwnProperty(evt)) {
+      this.#listeners[evt].push({ handler, cfg })
+    } else {
+      this.#listeners[evt] = [{ handler, cfg }]
+    }
+
     return this
   }
 

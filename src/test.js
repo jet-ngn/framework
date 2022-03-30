@@ -3,7 +3,8 @@ import { App, html, observe, track } from './index.js'
 const dataFromElsewhere = {
   name: 'Graham',
   age: 37,
-  arr: [1,2,3]
+  arr: [1,2,3],
+  bool: true
 }
 
 const data = observe(dataFromElsewhere)
@@ -16,22 +17,11 @@ const app = new App(document.body, {
   get template () {
     return html`
       <div>${track(data, 'arr')}</div>
-      <div>${track(data, 'arr')}</div>
-    `
-  },
-
-  on: {
-    mount () {
-      setTimeout(() => {
-        data.arr.push(4)
-
-        console.log(JSON.stringify(data));
-
-        // setTimeout(() => {
-        //   data.name = 'Allie'
-        // }, 1500)
-      }, 1500)
-    }
+    `.attr({
+      class: [{
+        hello: track(data, 'bool')
+      }, track(data, 'name'), 'hey']
+    })
   }
 })
 

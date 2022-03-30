@@ -13,7 +13,8 @@ export class Tracker {
   #transform
   #parent
   #nodes
-  #options = null
+  #placeholder
+  #options
 
   constructor (target, property, transform) {
     this.#target = target
@@ -31,46 +32,43 @@ export class Tracker {
 
   render (parent, node, options) {
     this.#parent = parent
+    this.#placeholder = node
     this.#nodes = [node]
     this.#options = options
     this.update()
   }
 
-  #pop () {
+  pop () {
     this.#nodes.at(-1).remove()
     this.#nodes.pop()
   }
 
   push (...args) {
     const nodes = args.map(arg => this.#getNodes(arg))
-    this.#nodes.at(-1).after(...nodes)
-    this.#nodes.push(...nodes)
-    console.log(this.#nodes);
+    const last = this.#nodes.at(-1)
   
-    // if (last === this.#placeholder) {
-    //   last.replaceWith(node)
-    // } else {
-    //   last.after(node)
-    // }
-  
-    // this.#nodes.push(node)
+    if (last === this.#placeholder) {
+      last.replaceWith(...nodes)
+      this.#nodes = nodes
+    } else {
+      last.after(...nodes)
+      this.#nodes.push(...nodes)
+    }
   }
 
-  #getNodes (value) {
-    if (Array.isArray(value)) {
-      return console.log('HANDLE NESTED ARRAY')
-    }
+  reconcile () {
+    reconcileNodes(this.#nodes, this.output.map(node => this.#getNodes(node)))
+  }
 
-    if (value instanceof Template) {
-      return [...Renderer.render(this.#parent, output, this.#options).childNodes]
-    }
+  shift () {
+    this.#nodes[0].remove()
+    this.#nodes.shift()
+  }
 
-    switch (typeof value) {
-      case 'string':
-      case 'number': return document.createTextNode(sanitizeString(`${value}`, this.#options))
-    
-      default: return console.log('HANDLE ', typeof value)
-    }
+  unshift (...args) {
+    const nodes = args.map(arg => this.#getNodes(arg))
+    this.#nodes.at(0).before(...nodes)
+    this.#nodes.unshift(...nodes)
   }
 
   update () {
@@ -97,6 +95,23 @@ export class Tracker {
         break
       
       default: throw new TypeError(`Unsupported tracked content type "${typeof output}"`)
+    }
+  }
+
+  #getNodes (value) {
+    if (Array.isArray(value)) {
+      return console.log('HANDLE NESTED ARRAY')
+    }
+
+    if (value instanceof Template) {
+      return [...Renderer.render(this.#parent, output, this.#options).childNodes]
+    }
+
+    switch (typeof value) {
+      case 'string':
+      case 'number': return document.createTextNode(sanitizeString(`${value}`, this.#options))
+    
+      default: return console.log('HANDLE ', typeof value)
     }
   }
 }
@@ -159,23 +174,26 @@ export default class ObservableRegistry {
       get: (target, property) => {
         const original = target[property]
         const { trackers } = this.getTarget(parent) ?? {}
+        
+        const callback = (reconcile = false) => (...args) => {
+          original.apply(target, args)
+
+          for (let tracker of trackers) {
+            reconcile ? tracker.reconcile() : tracker[property](...args)
+          }
+        }
 
         switch (property) {
           case 'pop':
           case 'push':
           case 'shift':
-          case 'unshift':
+          case 'unshift': return callback()
+
           case 'copyWithin':
           case 'fill':
           case 'reverse':
           case 'sort':
-          case 'splice': return (...args) => {
-            original.apply(target, args)
-
-            for (let tracker of trackers) {
-              tracker[property](...args)
-            }
-          }
+          case 'splice': return callback(true)
         
           default: return original
         }
