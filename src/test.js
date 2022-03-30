@@ -2,7 +2,8 @@ import { App, html, observe, track } from './index.js'
 
 const dataFromElsewhere = {
   name: 'Graham',
-  age: 37
+  age: 37,
+  arr: [1,2,3]
 }
 
 const data = observe(dataFromElsewhere)
@@ -13,13 +14,23 @@ const app = new App(document.body, {
   scope: 'root',
 
   get template () {
-    return html`<div>${track(data, 'name')}</div>`
-    // return html`<div>${track(data, 'str')}</div>`    // return html`<div>${track(data, 'bool', bool => bool ? html`TRUE` : html`FALSE`)}</div>`
+    return html`
+      <div>${track(data, 'arr')}</div>
+      <div>${track(data, 'arr')}</div>
+    `
   },
 
   on: {
     mount () {
-      console.log('Entity Mounted')
+      setTimeout(() => {
+        data.arr.push(4)
+
+        console.log(JSON.stringify(data));
+
+        // setTimeout(() => {
+        //   data.name = 'Allie'
+        // }, 1500)
+      }, 1500)
     }
   }
 })

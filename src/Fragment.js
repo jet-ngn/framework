@@ -22,20 +22,20 @@ export default class Fragment {
     return this.#options
   }
 
-  async render () {
+  render () {
     const template = this.#template.type === 'svg'
       ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       : document.createElement('template')
 
-    template.innerHTML = await this.#parse()
+    template.innerHTML = this.#parse()
 
     // TODO: Handle bindings, attributes, listeners
 
-    await this.#processChildren(template.content)
+    this.#processChildren(template.content)
     return template.content
   }
 
-  async #parse () {
+  #parse () {
     const { interpolations, strings } = this.#template
 
     if (interpolations.length === 0) {
@@ -51,13 +51,13 @@ export default class Fragment {
         continue
       }
 
-      string += await this.#parseInterpolation(interpolations[i])
+      string += this.#parseInterpolation(interpolations[i])
     }
 
     return string
   }
 
-  async #parseInterpolation (interpolation) {
+  #parseInterpolation (interpolation) {
     if (Array.isArray(interpolation)) {
       return console.log('HANDLE PLAIN ARRAY')
     }
@@ -81,18 +81,18 @@ export default class Fragment {
     // }
   }
 
-  async #processChildren (content) {
+  #processChildren (content) {
     const { trackers, templates, entities } = this.#children
 
     trackers.forEach(tracker => {
-      tracker.render(content.getElementById(tracker.id), this.#options)
+      tracker.render(this.#parent, content.getElementById(tracker.id), this.#options)
     })
 
     // for (let i = 0, { length } = children; i < length; i++) {
     //   const node = children[i]
       
     //   if (node.tagName !== 'TEMPLATE') {
-    //     await this.#processChildren([...node.children])
+    //     this.#processChildren([...node.children])
     //     continue
     //   }
 

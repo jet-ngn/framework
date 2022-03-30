@@ -6,7 +6,7 @@ import { addHandler, getNamespacedEvent } from './utilities/EventUtils.js'
 // import { attachReferenceManager } from './ReferenceManager.js'
 import Template from './Template.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
-import Fragment from './Fragment.js'
+import Renderer from './Renderer.js'
 import Node from './Node.js'
 
 const reservedEventNames = ['mount', 'unmount']
@@ -34,7 +34,7 @@ class Entity extends Node {
   }
 
   remove () {
-    throw new Error(`Cannot remove node tied to entity`)
+    throw new Error(`Cannot manually remove node tied to entity`)
   }
 }
 
@@ -56,12 +56,11 @@ export function makeEntity (element, cfg, parent, options) {
       // attachDataManager(entity, cfg.data ?? {})
       // attachStateManager(entity, cfg.states ?? null),
       applyEventHandlers(entity, cfg.on ?? {})
-
-      const fragment = new Fragment(entity, template, {
-        retainFormatting: options?.retainFormatting ?? entity.tagName === 'PRE'
-      })
       
-      entity.replaceChildren(await fragment.render())
+      entity.replaceChildren(Renderer.render(entity, template, {
+        retainFormatting: options?.retainFormatting ?? entity.tagName === 'PRE'
+      }))
+
       await cfg.on?.mount?.call(entity)
     },
 

@@ -1,3 +1,15 @@
+export function shiftArray (nodes) {
+  nodes.at(-1).remove()
+  nodes.pop()
+  return nodes
+}
+
+export function unshiftArray (nodes) {
+  nodes.at(-1).remove()
+  nodes.pop()
+  return nodes
+}
+
 export function reconcileNode (original, update) {
   const types = {
     original: original.constructor.name,
@@ -5,6 +17,8 @@ export function reconcileNode (original, update) {
   }
 
   if (types.original !== types.update) {
+    // TODO: Clean up event listeners
+    // TODO: Reapply event listeners
     original.replaceWith(update)
     return update
   }
@@ -79,10 +93,8 @@ export function reconcileNodes (original, update) {
       }
 
       // TODO: Add event listeners
-      // TODO: Add task: insert after original.at(-1)
-      // original.at(-1).after(newNode)
-      // original.push(newNode)
-      // result.push(newNode)
+      result.at(-1).after(newNode)
+      result.push(newNode)
       continue
     }
 
@@ -91,6 +103,7 @@ export function reconcileNodes (original, update) {
       // TODO: Add task: remove existingNode
       // existingNode.remove()
       // original.splice(i, 1)
+      console.log('REMOVE EXISTING NODE')
       continue
     }
 
