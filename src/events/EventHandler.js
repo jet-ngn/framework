@@ -1,5 +1,3 @@
-import { getNamespacedEvent } from '../utilities/EventUtils.js'
-
 // This class adds functionality to the NGN Event Handler.
 // Some of it should be considered for integration into NGN.
 export default class EventHandler {

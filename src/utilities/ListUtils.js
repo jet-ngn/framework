@@ -1,5 +1,5 @@
 import { typeOf } from '@ngnjs/libdata'
-import { Tracker } from '../registries/ObservableRegistry.js'
+import { TrackingInterpolation } from '../registries/TrackableRegistry.js'
 
 export function processList (items) {
   return items.reduce((result, item) => {
@@ -20,8 +20,10 @@ function processListItem (item) {
 }
 
 function processObject (obj) {
-  if (obj instanceof Tracker) {
-    return getTrackedValue(obj)
+  if (obj instanceof TrackingInterpolation) {
+    return console.log('HANDLE TRACKER')
+    // obj.type = 'list'
+    // return getTrackedValue(obj)
   }
 
   return Object.keys(obj).reduce((result, name) => {
@@ -31,9 +33,11 @@ function processObject (obj) {
       result.push(name)
     }
 
-    if (value instanceof Tracker) {
-      const output = getTrackedValue(value, name)
-      result.push(...output)
+    if (value instanceof TrackingInterpolation) {
+      console.log('HANDLE TRACKER')
+      // value.type = 'list'
+      // const output = getTrackedValue(value, name)
+      // result.push(...output)
     }
 
     return result

@@ -1,9 +1,9 @@
 import NGN from 'NGN'
 import App from './API/App.js'
 import Template from './Template.js'
-import DataModel from './data/DataModel.js'
-import DataStore from './data/DataStore.js'
-import ObservableRegistry from './registries/ObservableRegistry.js'
+import TrackableRegistry, { createTrackable } from './registries/TrackableRegistry.js'
+// import DataModel from './data/DataModel.js'
+// import DataStore from './data/DataStore.js'
 // import { defineCustomElement } from './API/CustomElement.js'
 
 const { BUS, EventEmitter, Queue } = NGN
@@ -41,19 +41,19 @@ function svg (strings, ...interpolations) {
 //   console.log(this.event);
 // })
 
-function observe (target) {
-  return ObservableRegistry.getTarget(target) ?? ObservableRegistry.register(target)
+function getChanges (trackable) {
+  return TrackableRegistry.getChanges(trackable)
 }
 
 function track (target, property, transform) {
-  return ObservableRegistry.track(...arguments)
+  return TrackableRegistry.track(...arguments)
 }
 
 export {
   App,
   BUS as Bus,
-  DataModel,
-  DataStore,
+  // DataModel,
+  // DataStore,
   // defineCustomElement,
   EventEmitter,
   Queue,
@@ -61,6 +61,7 @@ export {
   svg,
   // css,
   // md,
-  observe,
-  track
+  createTrackable,
+  track,
+  getChanges
 }

@@ -1,8 +1,38 @@
-import { typeOf } from '@ngnjs/libdata'
+import { NANOID, typeOf } from '@ngnjs/libdata'
 import Template from './Template.js'
-import ObservableRegistry, { Tracker } from './registries/ObservableRegistry.js'
+import TrackableRegistry, { TrackingInterpolation } from './registries/TrackableRegistry.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
 import { processList } from './utilities/ListUtils.js'
+import { sanitizeString } from './utilities/StringUtils.js'
+
+class Interpolation {
+  #id = NANOID()
+  #interpolation
+
+  constructor (interpolation) {
+    this.#interpolation = interpolation
+  }
+
+  get id () {
+    return this.#id
+  }
+
+  get interpolation () {
+    return this.#interpolation
+  }
+}
+
+class StringInterpolation extends Interpolation {
+  render (options) {
+    return sanitizeString(`${this.interpolation}`, options)
+  }
+}
+
+class BooleanInterpolation extends Interpolation {
+  render (options) {
+    return !!this.interpolation ? 'true' : ''
+  }
+}
 
 export default class Fragment {
   #parent
@@ -11,6 +41,7 @@ export default class Fragment {
 
   #children = {
     entities: [],
+    interpolations: [],
     templates: [],
     trackers: []
   }
@@ -33,20 +64,18 @@ export default class Fragment {
       : document.createElement('template')
 
     template.innerHTML = this.#parse()
-    const children = [...template.content.children]
 
-    if (!!attributes) {
-      this.#bindAttributes(children, attributes)
-    }
+    // const children = [...template.content.children]
 
-    // if (this.#attributes) {
-    //   this.#bindAttributes(context, node)
+    // if (!!attributes) {
+    //   this.#bindAttributes(children, attributes)
     // }
 
-    // TODO: Handle bindings, attributes, listeners
-    if (!!listeners) {
-      this.#bindListeners(children, listeners)
-    }
+    // TODO: Handle Bindings
+
+    // if (!!listeners) {
+    //   this.#bindListeners(children, listeners)
+    // }
 
     this.#processChildren(template.content)
     return template.content
@@ -71,11 +100,12 @@ export default class Fragment {
       //   continue
       // }
 
-      let type = typeOf(value)
-  
-      if (type === 'object') {
-        type = value.type
+      if (value instanceof Tracker) {
+        value.type = 'attribute'
+        return value.output
       }
+
+      let type = typeOf(value)
 
       switch (type) {
         case 'string':
@@ -86,11 +116,6 @@ export default class Fragment {
         case 'boolean':
           value && node.setAttribute(name, '')
           continue
-  
-        // case Constants.Tracker:
-        //   const tracker = TrackerRegistry.registerAttributeTracker(context, node, name, value)
-        //   await tracker.update()
-        //   continue
   
         default: throw new TypeError(`"${this.#parent.name}" rendering error: Invalid attribute value type "${type ?? typeof value}"`)
       }
@@ -133,52 +158,62 @@ export default class Fragment {
 
   #parseInterpolation (interpolation) {
     if (Array.isArray(interpolation)) {
-      return console.log('HANDLE PLAIN ARRAY')
+      return interpolation.reduce((result, item) => {
+        result += this.#parseInterpolation(item)
+        return result
+      }, '')
     }
 
     if (interpolation instanceof Template) {
       this.#children.templates.push(interpolation)
-      return `<template class="template" id="${template.id}"></template>`
+      return `<template class="template" id="${interpolation.id}"></template>`
     }
 
-    if (interpolation instanceof Tracker) {
-      this.#children.trackers.push(interpolation)
-      return `<template class="tracker" id="${interpolation.id}"></template>`
+    if (interpolation instanceof TrackingInterpolation) {
+      const tracker = TrackableRegistry.registerContentTracker(interpolation)
+      this.#children.trackers.push(tracker)
+      return `<template class="tracker" id="${tracker.id}"></template>`
     }
 
-    // switch (typeof interpolation) {
-    //   case 'string':
-    //   case 'number': return console.log('HANDLE PLAIN STRING/NUMBER')
-    //   case 'boolean': return !!interpolation ? 'true' : null
+    switch (typeof interpolation) {
+      case 'string':
+      case 'number':
+        interpolation = new StringInterpolation(interpolation)
+        this.#children.interpolations.push(interpolation)
+        return `<template class="string interpolation" id="${interpolation.id}"></template>`
+
+      case 'boolean': 
+        interpolation = new BooleanInterpolation(interpolation)
+        this.#children.interpolations.push(interpolation)
+        return `<template class="boolean interpolation" id="${interpolation.id}"></template>`
     
-    //   default: throw new TypeError(`Invalid template string interpolation type "${typeof interpolation}"`)
-    // }
+      default: throw new TypeError(`Invalid template string interpolation type "${typeof interpolation}"`)
+    }
   }
 
   #processChildren (content) {
-    const { trackers, templates, entities } = this.#children
+    const { interpolations, trackers, templates, entities } = this.#children
 
-    trackers.forEach(tracker => {
-      tracker.render(this.#parent, content.getElementById(tracker.id), this.#options)
+    interpolations.forEach(interpolation => {
+      const placeholder = content.getElementById(interpolation.id)
+      placeholder.replaceWith(interpolation.render(this.#getOptions(placeholder)))
     })
 
-    // for (let i = 0, { length } = children; i < length; i++) {
-    //   const node = children[i]
-      
-    //   if (node.tagName !== 'TEMPLATE') {
-    //     this.#processChildren([...node.children])
-    //     continue
-    //   }
+    trackers.forEach(tracker => {
+      const placeholder = content.getElementById(tracker.id)
+      tracker.render(this.#parent, placeholder, this.#getOptions(placeholder))
+    })
 
-    //   const { classList } = node
+    templates.forEach(template => {
+      const placeholder = content.getElementById(template.id)
+      const fragment = new Fragment(this.#parent, template, this.#getOptions(placeholder))
+      placeholder.replaceWith(fragment.render())
+    })
+  }
 
-    //   if (classList.contains('tracker')) {
-    //     console.log(node);
-    //     // const tracker = TrackerRegistry.get(node.id)
-    //     // console.log(tracker);
-    //     // tracker.render(node)
-    //     continue
-    //   }
-    // }
+  #getOptions (node) {
+    return {
+      retainFormatting: this.#options.retainFormatting || !!node.closest('pre')
+    }
   }
 }

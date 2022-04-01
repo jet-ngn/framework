@@ -58,10 +58,10 @@ const shell = new Shell({
             target: ['es2020'],
             format: 'esm',
 
-            aliases: [{
-              filter: /^NGN\/libdata/,
-              filepath: path.join(source, 'node_modules', '@ngnjs', 'libdata', 'index.js')
-            }],
+            // aliases: [{
+            //   filter: /^NGN\/libdata/,
+            //   filepath: path.join(source, 'node_modules', '@ngnjs', 'libdata', 'index.js')
+            // }],
 
             banner: {
               js: `/**

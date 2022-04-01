@@ -1,13 +1,13 @@
-import { App, html, observe, track } from './index.js'
+import { App, html, createTrackable, track } from './index.js'
 
-const dataFromElsewhere = {
+const user = createTrackable({
   name: 'Graham',
   age: 37,
-  arr: [1,2,3],
+  arr: [1,2,3,4],
   bool: true
-}
+})
 
-const data = observe(dataFromElsewhere)
+// const arr = createTrackable([1,2,3])
 
 const app = new App(document.body, {
   name: 'My App',
@@ -15,15 +15,31 @@ const app = new App(document.body, {
   scope: 'root',
 
   get template () {
-    return html`
-      <div>${track(data, 'arr')}</div>
-    `.attr({
-      class: [{
-        hello: track(data, 'bool')
-      }, track(data, 'name'), 'hey']
-    })
-  }
+    return html`<pre>${track(user, 'bool', bool => bool && JSON.stringify(user, null, 2))}</pre>`
+  },
+
+  // on: {
+  //   mount () {
+  //     setTimeout(() => {
+  //       arr.push(4)
+  //       // user.name = 'Corey'
+  //       // user.age = 40
+  //     }, 1500)
+  //   }
+  // }
 })
+
+// return html`
+    //   <div>${track(data, 'arr')}</div>
+    // `.attr({
+    //   class: track(data, 'name')
+
+    //   // test: track(data, 'bool'),
+
+    //   // class: [{
+    //   //   hello: track(data, 'bool')
+    //   // }, track(data, 'name'), 'hey']
+    // })
 
 // const View1 = {
 //   name: 'view.1',

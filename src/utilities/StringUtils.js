@@ -1,16 +1,15 @@
 const textarea = document.createElement('textarea')
 
 export function escapeString (string) {
-  textarea.textContent = string
-  const output = textarea.innerHTML
   textarea.innerHTML = ''
-  return output
+  textarea.textContent = string
+  return textarea.innerHTML
 }
 
 export function normalizeString (string) {
   return string.replace(/\r?\n|\r/g, '')
 }
 
-export function sanitizeString (string, { retainFormatting }) {
-  return escapeString(retainFormatting ? string : normalizeString(string))
+export function sanitizeString (string, options) {
+  return escapeString(options?.retainFormatting === true ? string : normalizeString(string))
 }

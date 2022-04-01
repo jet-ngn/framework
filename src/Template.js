@@ -1,4 +1,7 @@
+import { NANOID } from "@ngnjs/libdata"
+
 export default class Template {
+  #id = NANOID()
   #type
   #strings
   #interpolations
@@ -14,6 +17,10 @@ export default class Template {
 
   get attributes () {
     return this.#attributes
+  }
+
+  get id () {
+    return this.#id
   }
 
   get interpolations () {
@@ -33,6 +40,7 @@ export default class Template {
   }
 
   attr (cfg) {
+    console.log(cfg);
     this.#attributes = { ...(this.#attributes ?? {}), ...cfg }
     return this
   }
