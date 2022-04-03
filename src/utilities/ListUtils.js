@@ -1,5 +1,5 @@
 import { typeOf } from '@ngnjs/libdata'
-import { TrackingInterpolation } from '../registries/TrackableRegistry.js'
+import { TrackingInterpolation } from '../Interpolation.js'
 
 export function processList (items) {
   return items.reduce((result, item) => {

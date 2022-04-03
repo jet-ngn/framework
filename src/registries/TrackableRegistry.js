@@ -2,36 +2,6 @@ import Template from '../Template.js'
 import { NANOID } from '@ngnjs/libdata'
 import { reconcileNodes } from '../Reconciler.js'
 import { sanitizeString } from '../utilities/StringUtils.js'
-import Renderer from '../Renderer.js'
-
-export class TrackingInterpolation {
-  #target
-  #property
-  #transform
-
-  constructor (target, property, transform) {
-    this.#target = target
-    this.#property = property
-    this.#transform = transform ?? (value => value)
-
-    if (typeof property === 'function') {
-      this.#property = null
-      this.#transform = property
-    }
-  }
-
-  get target () {
-    return this.#target
-  }
-
-  get property () {
-    return this.#property
-  }
-
-  get transform () {
-    return this.#transform
-  }
-}
 
 class Tracker {
   #id = NANOID()
@@ -90,12 +60,13 @@ class ContentTracker extends Tracker {
     reconcileNodes(this.#nodes, this.value.map(node => this.#getNodes(node)))
   }
 
-  render (parent, node, options) {
+  render (parent, node, children, options) {
+    console.log(children);
     this.#parent = parent
     this.#placeholder = node
     this.#nodes = [node]
     this.#options = options
-    this.update()
+    this.update(children)
   }
 
   shift () {
@@ -109,41 +80,14 @@ class ContentTracker extends Tracker {
     this.#nodes.unshift(...nodes)
   }
 
-  update () {
-    const { value } = this
+  update (children) {
+    // const { value } = this
 
-    if (Array.isArray(value) || value instanceof Template) {
-      this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(value))
-      return
-    }
-
-    // if (!this.property || value instanceof Template) {
-    //   this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(value))
-    //   return 
+    // if (value instanceof Template) {
+    //   return this.#replaceWith(value)
     // }
-
-    // if (Array.isArray(value)) {
-    //   console.log('HEYYYYY');
-    //   this.#nodes = reconcileNodes(this.#nodes, value.map(item => this.#getNodes(item)))
-    //   return
-    // }
-
-    this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(value))
-
-    // switch (typeof value) {
-    //   case 'string':
-    //   case 'number': 
-    //     this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(value))
-    //     return
-      
-    //   case 'boolean':
-    //     this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(`${value}`))
-    //     return
-
-    //   case 'object'
-
-    //   default: throw new TypeError(`Unsupported tracked content type "${typeof value}"`)
-    // }
+    
+    this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(this.value))
   }
 
   #getNodes (value) {
@@ -156,7 +100,8 @@ class ContentTracker extends Tracker {
     }
 
     if (value instanceof Template) {
-      return [...Renderer.render(this.#parent, value, this.#options).childNodes]
+      // return [...Renderer.renderTemplate(this.#parent, value, children, this.#options).childNodes]
+      return console.log(children);
     }
 
     switch (typeof value) {
@@ -167,6 +112,17 @@ class ContentTracker extends Tracker {
     
       default: return console.log('HANDLE ', typeof value)
     }
+  }
+
+  #replaceWith (nodes) {
+    this.#nodes.at(-1).after(this.#placeholder)
+
+    for (let i = 0, { length } = this.#nodes; i < length; i++) {
+      this.#nodes[i].remove()
+    }
+    console.log(nodes);
+    this.#placeholder.replaceWith(...nodes)
+    this.#nodes = nodes
   }
 }
 
@@ -195,8 +151,8 @@ export default class TrackableRegistry {
     return [...trackables.values()].some(({ proxy }) => proxy === target)
   }
 
-  static registerContentTracker ({ target, property, transform }) {
-    return this.#register(new ContentTracker(...arguments))
+  static registerContentTracker ({ target, property, transform }, children) {
+    return this.#register(new ContentTracker(...arguments), children)
   }
 
   static observe (target) {

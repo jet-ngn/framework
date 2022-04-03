@@ -1,4 +1,4 @@
-import { NANOID } from "@ngnjs/libdata"
+import { NANOID } from '@ngnjs/libdata'
 
 export default class Template {
   #id = NANOID()
@@ -7,6 +7,7 @@ export default class Template {
   #interpolations
 
   #attributes = null
+  #entityConfig = null
   #listeners = null
 
   constructor ({ type, strings, interpolations }) {
@@ -17,6 +18,10 @@ export default class Template {
 
   get attributes () {
     return this.#attributes
+  }
+
+  get entityConfig () {
+    return this.#entityConfig
   }
 
   get id () {
@@ -40,13 +45,12 @@ export default class Template {
   }
 
   attr (cfg) {
-    console.log(cfg);
     this.#attributes = { ...(this.#attributes ?? {}), ...cfg }
     return this
   }
 
-  bind (entity) {
-    console.log(entity)
+  bind (entityConfig) {
+    this.#entityConfig = entityConfig ?? null
     return this
   }
 
@@ -56,19 +60,13 @@ export default class Template {
     }
 
     if (typeof evt === 'object') {
-      return this.#pool(evt)
-    }
-
-    if (this.#listeners.hasOwnProperty(evt)) {
+      Object.keys(evt).forEach(name => this.on(name, evt[name]))
+    } else if (this.#listeners.hasOwnProperty(evt)) {
       this.#listeners[evt].push({ handler, cfg })
     } else {
       this.#listeners[evt] = [{ handler, cfg }]
     }
 
     return this
-  }
-
-  #pool () {
-    console.log('POOL');
   }
 }

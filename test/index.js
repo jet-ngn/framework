@@ -30,3 +30,9 @@ test('Sanity', t => {
 
 //   t.end()
 // })
+
+// html`${null ?? 'NOT NULLISH'}`
+// html`${true && 'WILL SHOW'}`
+// html`${false && 'WILL NOT SHOW'}`
+// html`${true ? 'WILL SHOW' : 'WILL NOT SHOW'}`
+// html`${false ? 'WILL NOT SHOW' : 'WILL SHOW'}`

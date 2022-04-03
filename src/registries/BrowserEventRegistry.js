@@ -1,6 +1,7 @@
 import NGN from 'NGN'
 import EventHandler from '../events/EventHandler.js'
 
+// TODO: It may be better if this does not extend EventHandler
 class BrowserEventHandler extends EventHandler {
   constructor (context, event, callback, cfg) {
     if (cfg?.once) {
@@ -99,7 +100,12 @@ class BrowserEventRegistry {
       handler: listener.handler.id
     }, listener)
 
-    applyListeners && this.#applyListeners(event)
+    if (['blur', 'focus'].includes(event)) {
+      return node.addEventListener(event, evt => listener.handler.call(event))
+    } else if (!!applyListeners) {
+      this.#applyListeners(event)
+    }
+
     // NGN.INTERNAL('BrowserEventListener.added', listener)
 
     return listener
@@ -142,7 +148,7 @@ class BrowserEventRegistry {
   }
 }
 
-export default new BrowserEventRegistry(window)
+export default new BrowserEventRegistry(document.body)
 
 // export default class DOMEventManager {
 //   #context

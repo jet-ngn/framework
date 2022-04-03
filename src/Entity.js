@@ -1,28 +1,51 @@
-import { Bus, html } from './index.js'
-import { forEachKey } from './utilities/IteratorUtils.js'
-import { addHandler, getNamespacedEvent } from './utilities/EventUtils.js'
-// import { attachDataManager } from './data/DataManager.js'
-// import { attachStateManager } from './StateManager.js'
-// import { attachReferenceManager } from './ReferenceManager.js'
-import Template from './Template.js'
-import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
-import Renderer from './Renderer.js'
+import { Bus } from './index.js'
+import { getNamespacedEvent } from './utilities/EventUtils.js'
 import Node from './Node.js'
+import { NANOID } from '@ngnjs/libdata'
 
-const reservedEventNames = ['mount', 'unmount']
-
-class Entity extends Node {
+export default class Entity {
+  #id = NANOID()
+  #name
   #scope
+  #root
   #parent
+  #children = []
+  #config
 
-  constructor (scope, root, parent) {
-    super(root)
-    this.#scope = scope
+  constructor (root, cfg, parent) {
+    this.#name = cfg.name ?? `Unnamed Entity`
+    this.#scope = cfg.scope ?? this.#id
+    this.#root = new Node(root)
     this.#parent = parent ?? null
+    this.#config = cfg
+  }
+
+  get children () {
+    return this.#children
+  }
+
+  get config () {
+    return this.#config
+  }
+
+  get id () {
+    return this.#id
+  }
+
+  get name () {
+    return this.#name
+  }
+
+  get parent () {
+    return this.#parent
+  }
+
+  get root () {
+    return this.#root
   }
 
   get scope () {
-    return `${this.#parent ? `${this.#parent.scope}.` : ''}${this.#scope}`
+    return `${this.parent ? `${this.parent.scope}.` : ''}${this.#scope}`
   }
 
   emit (evt, ...args) {
@@ -32,80 +55,4 @@ class Entity extends Node {
 
     Bus.emit(getNamespacedEvent(this.scope, evt), ...args)
   }
-
-  remove () {
-    throw new Error(`Cannot manually remove node tied to entity`)
-  }
 }
-
-export function makeEntity (element, cfg, parent, options) {
-  const entity = new Entity(cfg.scope, element, parent)
-  const template = Reflect.get(cfg, 'template', entity) ?? html``
-
-  if (!(template instanceof Template)) {
-    throw new TypeError(`Entity "${entity.scope}" template must return a tagged template literal`)
-  }
-
-  return {
-    entity,
-
-    async mount () {
-      // TODO: Check for any plugins and apply them here
-
-      // attachReferenceManager(entity, cfg.references ?? {})
-      // attachDataManager(entity, cfg.data ?? {})
-      // attachStateManager(entity, cfg.states ?? null),
-      applyEventHandlers(entity, cfg.on ?? {})
-      
-      entity.replaceChildren(Renderer.render(entity, template, {
-        retainFormatting: options?.retainFormatting ?? entity.tagName === 'PRE'
-      }))
-
-      await cfg.on?.mount?.call(entity)
-    },
-
-    async unmount () {
-      children.forEach(child => child.unmount())
-      
-      BrowserEventRegistry.removeByEntity(entity)
-      // TrackerRegistry.removeTrackersByEntity(entity)
-      await cfg.on?.unmount?.call(entity)
-    }
-  }
-}
-
-function applyEventHandlers (entity, cfg) {
-  if (typeof cfg !== 'object') {
-    throw new TypeError(`Invalid entity "on" configuration. Expected "object", received "${typeof cfg}"`)
-  }
-
-  forEachKey(cfg, (evt, handler) => !reservedEventNames.includes(evt) && addHandler(entity, evt, handler))
-}
-
-// on (evt, cb, cfg) {
-  //   return addHandler(this, ...arguments)
-  // }
-
-  // off (evt, handler) {
-  //   NGN.BUS.off(getNamespacedEvent(this.name, evt), handler)
-  // }
-
-// , ...Object.keys(cfg).reduce((result, property) => {
-//   switch (property) {
-//     case 'on':
-//     case 'name':
-//     case 'states': 
-//     case 'data': 
-//     case 'routes': 
-//     case 'references': 
-//     case 'reactions': 
-//     case 'methods': 
-//     case 'initialize':
-//     case 'render':
-//     case 'plugins': break
-  
-//     default: throw new Error(`Invalid configuration property "${property}"`)
-//   }
-
-//   return result
-// }, [])

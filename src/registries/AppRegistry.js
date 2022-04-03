@@ -1,11 +1,11 @@
 import { Bus } from '../index.js'
  
-export function onLoad () {
+export async function onLoad () {
   for (let app in apps) {
     app = apps[app]
     
     if (app.autostart && !app.started) {
-      app.start()
+      await app.start()
     }
   }
 

@@ -4,10 +4,52 @@ const user = createTrackable({
   name: 'Graham',
   age: 37,
   arr: [1,2,3,4],
-  bool: true
+  bool: false,
+  
+  obj: {
+    hi: 'hey',
+    yo: 'hi there',
+    sup: 'yo'
+  },
+
+  zul: null
 })
 
-// const arr = createTrackable([1,2,3])
+const Test1 = {
+  name: 'Test Entity 1',
+  scope: 'test1 ',
+
+  get template () {
+    return html`TEST ENTITY 1`
+  },
+
+  on: {
+    mount () {
+      console.log('TEST 1 MOUNTED')
+    }
+  }
+}
+
+const Test2 = {
+  name: 'Test Entity 2',
+  scope: 'test2',
+
+  get template () {
+    return html`
+      <h1>Test Entity 2</h1>
+
+      <div>${'hello'}</div>
+    `
+  },
+
+  on: {
+    mount () {
+      console.log('TEST 2 MOUNTED')
+    }
+  }
+}
+
+// TODO: Trackers
 
 const app = new App(document.body, {
   name: 'My App',
@@ -15,19 +57,41 @@ const app = new App(document.body, {
   scope: 'root',
 
   get template () {
-    return html`<pre>${track(user, 'bool', bool => bool && JSON.stringify(user, null, 2))}</pre>`
+    console.log(this);
+    return html `
+      ${html`<div></div>`.bind(Test1)}
+    `.bind(Test2)
   },
 
-  // on: {
-  //   mount () {
-  //     setTimeout(() => {
-  //       arr.push(4)
-  //       // user.name = 'Corey'
-  //       // user.age = 40
-  //     }, 1500)
-  //   }
-  // }
+  on: {
+    mount () {
+      console.log('ROOT MOUNTED');
+      // setTimeout(() => {
+      //   user.age = 40
+      // }, 1500)
+    }
+  }
 })
+
+{/* <h1>My App</h1>
+
+<pre>${user.zul ?? html`<div>WORKS</div>`.on('click', console.log)}</pre>
+
+${html`<div>Has Attributes</div>`.attr({
+  test: true
+})} */}
+
+// on: {
+//   mount () {
+//     setTimeout(() => {
+//       user.bool = true
+//       // arr.push(4)
+//       // user.name = 'Corey'
+//       // user.age = 40
+//       // user.arr.push(5)
+//     }, 1500)
+//   }
+// }
 
 // return html`
     //   <div>${track(data, 'arr')}</div>

@@ -1,38 +1,20 @@
-export function shiftArray (nodes) {
-  nodes.at(-1).remove()
-  nodes.pop()
-  return nodes
-}
+// export function shiftArray (nodes) {
+//   nodes.at(-1).remove()
+//   nodes.pop()
+//   return nodes
+// }
 
-export function unshiftArray (nodes) {
-  nodes.at(-1).remove()
-  nodes.pop()
-  return nodes
-}
+// export function unshiftArray (nodes) {
+//   nodes.at(-1).remove()
+//   nodes.pop()
+//   return nodes
+// }
 
 export function reconcileNode (original, update) {
-  const types = {
-    original: original.constructor.name,
-    update: update.constructor.name
-  }
-
-  if (types.original !== types.update) {
-    // TODO: Clean up event listeners
-    // TODO: Reapply event listeners
-    original.replaceWith(update)
-    return update
-  }
-
-  switch (types.original) {
-    case 'Text': return reconcileTextNode(original, update)
-    
-    default: return reconcileElementNode({
-      type: types.original,
-      node: original
-    }, {
-      type: types.update,
-      node: update
-    })
+  switch (original.nodeType) {
+    case 1: return reconcileElementNode(...arguments)
+    case 3: return reconcileTextNode(...arguments)
+    default: throw new TypeError(`Cannot reconcile node type "${original.nodeType}"`)
   }
 }
 
@@ -49,16 +31,16 @@ function removeAllAttributes (node) {
 }
 
 function reconcileElementNode (original, update) {
-  if (original.type !== update.type) {
+  if (original.constructor.name !== update.constructor.name) {
     // TODO: Cleanup event listeners
     original.replaceWith(update)
     return update
   }
 
-  if (update.node.attributes.length > 0) {
-    reconcileAttributes(original.node, update.node)
+  if (update.attributes.length > 0) {
+    reconcileAttributes(original, update)
   } else {
-    removeAllAttributes(original.node)
+    removeAllAttributes(original)
   }
 
   console.log('REC EVENT LISTENERS')
@@ -106,7 +88,7 @@ export function reconcileNodes (original, update) {
       console.log('REMOVE EXISTING NODE')
       continue
     }
-
+    
     result.push(reconcileNode(existingNode,  newNode))
   }
 

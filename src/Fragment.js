@@ -1,9 +1,10 @@
 import { NANOID, typeOf } from '@ngnjs/libdata'
 import Template from './Template.js'
-import TrackableRegistry, { TrackingInterpolation } from './registries/TrackableRegistry.js'
+import TrackableRegistry from './registries/TrackableRegistry.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
 import { processList } from './utilities/ListUtils.js'
 import { sanitizeString } from './utilities/StringUtils.js'
+import { TrackingInterpolation } from './Interpolation.js'
 
 class Interpolation {
   #id = NANOID()
@@ -28,113 +29,110 @@ class StringInterpolation extends Interpolation {
   }
 }
 
-class BooleanInterpolation extends Interpolation {
-  render (options) {
-    return !!this.interpolation ? 'true' : ''
-  }
-}
-
 export default class Fragment {
   #parent
   #template
   #options
+  #entity = null
 
   #children = {
-    entities: [],
     interpolations: [],
     templates: [],
     trackers: []
   }
 
-  constructor (parent, template, options) {
-    this.#parent = parent
+  constructor (entity, template, options) {
+    this.#parent = entity
     this.#template = template
     this.#options = options
+    this.#entity = template.entity
+  }
+
+  get children () {
+    return this.#children
+  }
+
+  get entity () {
+    return this.#entity
   }
 
   get options () {
     return this.#options
   }
 
-  render () {
+  render (children) {
     const { attributes, listeners, type } = this.#template
 
     const template = type === 'svg'
       ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       : document.createElement('template')
 
-    template.innerHTML = this.#parse()
+    template.innerHTML = this.#parse(children)
+    const nodes = [...template.content.children]
 
-    // const children = [...template.content.children]
+    if (!!attributes) {
+      this.#bindAttributes(nodes, attributes)
+    }
 
-    // if (!!attributes) {
-    //   this.#bindAttributes(children, attributes)
-    // }
+    if (!!listeners) {
+      this.#bindListeners(nodes, listeners)
+    }
 
-    // TODO: Handle Bindings
-
-    // if (!!listeners) {
-    //   this.#bindListeners(children, listeners)
-    // }
-
-    this.#processChildren(template.content)
     return template.content
   }
 
   #bindAttributes (nodes, attributes) {
+    if (nodes.length === 0) {
+      throw new Error(`Cannot bind attributes to non-element nodes`)
+    }
+
     if (nodes.length > 1) {
-      throw new Error(`Cannot bind attributes to multiple nodes`)
+      throw new Error(`Cannot bind attributes to more than one node`)
     }
 
     const node = nodes[0]
 
-    for (let name in attributes) {
-      const value = attributes[name]
+    for (let attribute in attributes) {
+      this.#setAttribute(node, attribute, attributes[attribute])
+    }
+  }
 
-      if (Array.isArray(value)) {
-        return node.setAttribute(name, processList(value).join(' '))
-      }
+  #setAttribute (node, name, value) {
+    if (Array.isArray(value)) {
+      const list = processList(value)
+      return node.setAttribute(name, list.join(' '))
+    }
 
-      // if (name === 'data') {
-      //   processDataAttributes()
-      //   continue
-      // }
+    if (value instanceof TrackingInterpolation) {
+      return console.log('HANDLE ATTRIBUTE TRACKER')
+    }
 
-      if (value instanceof Tracker) {
-        value.type = 'attribute'
-        return value.output
-      }
+    let type = typeOf(value)
 
-      let type = typeOf(value)
-
-      switch (type) {
-        case 'string':
-        case 'number':
-          node.setAttribute(name, value)
-          continue
-  
-        case 'boolean':
-          value && node.setAttribute(name, '')
-          continue
-  
-        default: throw new TypeError(`"${this.#parent.name}" rendering error: Invalid attribute value type "${type ?? typeof value}"`)
-      }
+    switch (type) {
+      case 'string':
+      case 'number': return node.setAttribute(name, value)
+      case 'boolean': return value && node.setAttribute(name, '')
+      case 'object': return Object.keys(value).forEach(slug => this.#setAttribute(node, `${name}-${slug}`, value[slug]))
+      default: throw new TypeError(`"${this.#parent.name}" rendering error: Invalid attribute value type "${type ?? typeof value}"`)
     }
   }
 
   #bindListeners (nodes, listeners) {
-    if (nodes.length > 1) {
-      throw new Error(`Cannot bind event listeners to multiple nodes`)
+    if (nodes.length === 0) {
+      throw new Error(`Cannot bind event listeners to non-element nodes`)
     }
 
-    const node = nodes[0]
+    if (nodes.length > 1) {
+      throw new Error(`Cannot bind event listeners to more than one node`)
+    }
 
     for (let evt in listeners) {
-      listeners[evt].forEach(({ handler, cfg }) => BrowserEventRegistry.add(this.#parent, node, evt, handler, cfg))
+      listeners[evt].forEach(({ handler, cfg }) => BrowserEventRegistry.add(this.#parent, nodes[0], evt, handler, cfg))
     }
   }
 
-  #parse () {
+  #parse (children) {
     const { interpolations, strings } = this.#template
 
     if (interpolations.length === 0) {
@@ -146,20 +144,17 @@ export default class Fragment {
     for (let i = 0, { length } = strings; i < length; i++) {
       string += strings[i]
 
-      if (i >= interpolations.length) {
-        continue
-      }
-
-      string += this.#parseInterpolation(interpolations[i])
+      const interpolation = interpolations[i]
+      string += interpolation ? this.#parseInterpolation(interpolation, children) : ''
     }
 
     return string
   }
 
-  #parseInterpolation (interpolation) {
+  #parseInterpolation (interpolation, children) {
     if (Array.isArray(interpolation)) {
       return interpolation.reduce((result, item) => {
-        result += this.#parseInterpolation(item)
+        result += this.#parseInterpolation(item, children)
         return result
       }, '')
     }
@@ -170,50 +165,28 @@ export default class Fragment {
     }
 
     if (interpolation instanceof TrackingInterpolation) {
-      const tracker = TrackableRegistry.registerContentTracker(interpolation)
+      const tracker = TrackableRegistry.registerContentTracker(interpolation, children)
       this.#children.trackers.push(tracker)
       return `<template class="tracker" id="${tracker.id}"></template>`
     }
 
+    let type
+
     switch (typeof interpolation) {
+      case 'boolean': return ''
+
       case 'string':
       case 'number':
         interpolation = new StringInterpolation(interpolation)
-        this.#children.interpolations.push(interpolation)
-        return `<template class="string interpolation" id="${interpolation.id}"></template>`
+        type = 'string'
+        break
 
-      case 'boolean': 
-        interpolation = new BooleanInterpolation(interpolation)
-        this.#children.interpolations.push(interpolation)
-        return `<template class="boolean interpolation" id="${interpolation.id}"></template>`
-    
+      // TODO: Handle other data structures, like maps, sets, etc
+
       default: throw new TypeError(`Invalid template string interpolation type "${typeof interpolation}"`)
     }
-  }
 
-  #processChildren (content) {
-    const { interpolations, trackers, templates, entities } = this.#children
-
-    interpolations.forEach(interpolation => {
-      const placeholder = content.getElementById(interpolation.id)
-      placeholder.replaceWith(interpolation.render(this.#getOptions(placeholder)))
-    })
-
-    trackers.forEach(tracker => {
-      const placeholder = content.getElementById(tracker.id)
-      tracker.render(this.#parent, placeholder, this.#getOptions(placeholder))
-    })
-
-    templates.forEach(template => {
-      const placeholder = content.getElementById(template.id)
-      const fragment = new Fragment(this.#parent, template, this.#getOptions(placeholder))
-      placeholder.replaceWith(fragment.render())
-    })
-  }
-
-  #getOptions (node) {
-    return {
-      retainFormatting: this.#options.retainFormatting || !!node.closest('pre')
-    }
+    this.#children.interpolations.push(interpolation)
+    return `<template class="${type} interpolation" id="${interpolation.id}"></template>`
   }
 }
