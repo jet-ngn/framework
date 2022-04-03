@@ -1,11 +1,6 @@
-import AppRegistry from '../registries/AppRegistry.js'
-import Entity from '../Entity.js'
-import EntityRegistry from '../registries/EntityRegistry.js'
-
-function validateVersion (version) {
-  // TODO: Validate semantic version
-  return version
-}
+import AppRegistry from './registries/AppRegistry.js'
+import Entity from './Entity.js'
+import EntityRegistry from './registries/EntityRegistry.js'
 
 export default class App {
   #name
@@ -18,7 +13,7 @@ export default class App {
     const { autostart, name, version } = config
 
     this.#name = name ?? 'Unnamed App'
-    this.#version = validateVersion(version ?? '0.0.1-alpha.1')
+    this.#version = version ?? '0.0.1-alpha.1'
 
     const type = typeof config
 

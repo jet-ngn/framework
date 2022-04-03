@@ -61,7 +61,6 @@ class ContentTracker extends Tracker {
   }
 
   render (parent, node, children, options) {
-    console.log(children);
     this.#parent = parent
     this.#placeholder = node
     this.#nodes = [node]

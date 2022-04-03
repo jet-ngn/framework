@@ -9,7 +9,18 @@ import { reconcileNodes } from '../Reconciler.js'
 // import DataModel from '../../data/DataModel.js'
 // import DataStore from '../../data/DataStore.js'
 
+const targets = {}
 const trackers = {}
+
+class Tracker {
+  #target
+  #property
+  #transform
+
+  constructor (target, property, transform) {
+
+  }
+}
 
 export default class TrackerRegistry {
   static register (target, property, transform) {

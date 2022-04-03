@@ -1,5 +1,5 @@
 import NGN from 'NGN'
-import EventHandler from '../events/EventHandler.js'
+import EventHandler from '../EventHandler.js'
 import { forEachKey } from './IteratorUtils.js'
 
 export function addHandler (context, evt, cb, cfg = {}) {

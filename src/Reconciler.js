@@ -1,15 +1,3 @@
-// export function shiftArray (nodes) {
-//   nodes.at(-1).remove()
-//   nodes.pop()
-//   return nodes
-// }
-
-// export function unshiftArray (nodes) {
-//   nodes.at(-1).remove()
-//   nodes.pop()
-//   return nodes
-// }
-
 export function reconcileNode (original, update) {
   switch (original.nodeType) {
     case 1: return reconcileElementNode(...arguments)

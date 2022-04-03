@@ -29,8 +29,6 @@ class EntityRegistry {
         })
     
         const content = await renderer.render(Reflect.get(config, 'template', entity) ?? html``)
-        
-        // Don't expose the template to the developer
         delete config.template
         
         for (let child of children) {
@@ -38,8 +36,6 @@ class EntityRegistry {
         }
 
         entity.root.replaceChildren(content)
-
-        // this.#applyEventHandlers(entity, on)
         await config.on?.mount?.call(entity)
       },
       

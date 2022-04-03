@@ -1,5 +1,5 @@
 import NGN from 'NGN'
-import EventHandler from '../events/EventHandler.js'
+import EventHandler from '../EventHandler.js'
 
 // TODO: It may be better if this does not extend EventHandler
 class BrowserEventHandler extends EventHandler {
