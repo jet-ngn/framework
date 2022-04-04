@@ -1,4 +1,5 @@
 import Template from './Template.js'
+import TrackableRegistry from './registries/TrackableRegistry.js'
 import { StringInterpolation, TrackingInterpolation } from './Interpolation.js'
 
 export default class Parser {

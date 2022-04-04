@@ -1,61 +1,67 @@
 import Renderer from '../Renderer.js'
 import { forEachKey } from '../utilities/IteratorUtils.js'
 import { addHandler } from '../utilities/EventUtils.js'
+import { html } from '../index.js'
 
 const reservedEventNames = ['mount', 'unmount']
+const entities = {}
+const nodes = new Map
 
 class EntityRegistry {
-  #entities = {}
-
   get entities () {
-    return this.#entities
+    return entities
   }
 
   get (id) {
-    return this.#entities[id] ?? null
+    return entities[id] ?? null
   }
 
-  async register (entity) {
-    const { root, config, children } = entity
+  getEntryByNode (node) {
+    return nodes.get(node)
+  }
 
-    this.#entities[entity.id] = {
+  register (entity, config) {
+    const { root, children } = entity
+
+    const result = {
       entity,
 
-      mount: async () => {
+      mount: () => {
         forEachKey(config.on ?? {}, (evt, handler) => !reservedEventNames.includes(evt) && addHandler(entity, evt, handler))
 
         const renderer = new Renderer(entity, {
           retainFormatting: root.tagName === 'PRE'
         })
-    
-        const content = await renderer.render(Reflect.get(config, 'template', entity) ?? html``)
-        delete config.template
-        
-        for (let child of children) {
-          await this.mount(child.id)
-        }
 
-        entity.root.replaceChildren(content)
-        await config.on?.mount?.call(entity)
+        entity.root.replaceChildren(renderer.render(Reflect.get(config, 'template', entity) ?? html``))
+        config.on?.mount?.call(entity)
       },
       
-      unmount: async () => {
-        // children.forEach(child => child.unmount())
-        // BrowserEventRegistry.removeByEntity(entity)
+      unmount: () => {
+        entity.children.forEach(child => this.unmount(child.id))
+
         // TrackerRegistry.removeTrackersByEntity(entity)
-        await config.on?.unmount?.call(entity)
+
+        nodes.delete(entity.root)
+        delete entities[entity.id]
+
+        config.on?.unmount?.call(entity)
       }
     }
+
+    nodes.set(root, result)
+    entities[entity.id] = result
+    return result
   }
 
-  async mount (id) {
-    const { mount } = this.#entities[id] ?? {}
-    mount && await mount()
+  mount (id) {
+    const { mount } = entities[id] ?? {}
+    mount && mount()
   }
 
-  async unmount (id) {
-    const { unmount } = this.#entities[id] ?? {}
-    unmount && await unmount()
+  unmount (id) {
+    const { unmount } = entities[id] ?? {}
+    unmount && unmount()
   }
 }
 

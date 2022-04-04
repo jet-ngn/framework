@@ -1,9 +1,9 @@
-import { App, html, createTrackable, track } from './index.js'
+import { App, html, createTrackable, track, getChanges } from './index.js'
 
 const user = createTrackable({
   name: 'Graham',
   age: 37,
-  arr: [1,2,3,4],
+  arr: [1, 3],
   bool: false,
   
   obj: {
@@ -20,7 +20,7 @@ const Test1 = {
   scope: 'test1 ',
 
   get template () {
-    return html`TEST ENTITY 1`
+    return html`TEST 1`
   },
 
   on: {
@@ -35,16 +35,34 @@ const Test2 = {
   scope: 'test2',
 
   get template () {
-    return html`
-      <h1>Test Entity 2</h1>
-
-      <div>${'hello'}</div>
-    `
+    return html`TEST 2`
   },
 
   on: {
     mount () {
       console.log('TEST 2 MOUNTED')
+    }
+  }
+}
+
+function make (number) {
+  return {
+    name: `Item ${number}`,
+    scope: `item.${number}`,
+
+    get template () {
+      return html`ENTITY ${number}`
+    },
+
+    on: {
+      mount () {
+        console.log('MOUNTING ', number);
+        console.log(this)
+      },
+
+      unmount () {
+        console.log('UNMOUNTING', number)
+      }
     }
   }
 }
@@ -57,21 +75,37 @@ const app = new App(document.body, {
   scope: 'root',
 
   get template () {
-    console.log(this);
-    return html `
-      ${html`<div></div>`.bind(Test1)}
-    `.bind(Test2)
+    return html`${track(user, 'arr', arr => arr.map(item => html`<div></div>`.bind(make(item))))}`
   },
 
   on: {
     mount () {
       console.log('ROOT MOUNTED');
-      // setTimeout(() => {
-      //   user.age = 40
-      // }, 1500)
+      // user.name = 'Corey'
+      // console.log(getChanges(user));
+      setTimeout(() => {
+        user.arr.pop()
+        // user.name = 'Corey'
+
+        setTimeout(() => {
+          user.arr.push(7)
+          // user.name = 'Alexandra'
+        }, 1500)
+      }, 1500)
     }
   }
 })
+
+{/* <ul>
+        ${track(user, 'arr', arr => arr.map(item => html`
+          <li>
+            <div>Number: ${item}</div>
+            ${html`<div></div>`.bind(Test2)}
+          </li>
+        `))}
+      </ul>
+
+      ${html`<div></div>`.bind(Test1)} */}
 
 {/* <h1>My App</h1>
 

@@ -5,7 +5,8 @@ import EntityRegistry from './registries/EntityRegistry.js'
 export default class App {
   #name
   #version
-  #entity
+  #root
+  #config
   #started = false
   #autostart = true
 
@@ -14,6 +15,7 @@ export default class App {
 
     this.#name = name ?? 'Unnamed App'
     this.#version = version ?? '0.0.1-alpha.1'
+    this.#root = node
 
     const type = typeof config
 
@@ -22,8 +24,8 @@ export default class App {
     }
 
     this.#autostart = typeof autostart === 'boolean' ? autostart : this.#autostart
-    this.#entity = new Entity(node, config)
-    
+    this.#config = config
+
     AppRegistry.register(this)
   }
 
@@ -43,17 +45,15 @@ export default class App {
     return this.#version
   }
 
-  async start () {
+  start () {
     if (this.#started) {
       throw new Error(`App "${this.#name}" has already been started.`)
     }
 
-    if (!this.#entity) {
-      throw new Error(`No root entity has been specified. Aborting...`)
-    }
+    const entity = new Entity(this.#root, this.#config)
 
-    await EntityRegistry.register(this.#entity)
-    await EntityRegistry.mount(this.#entity.id)
+    EntityRegistry.register(entity, this.#config)
+    EntityRegistry.mount(entity.id)
     this.#started = true
   }
 }

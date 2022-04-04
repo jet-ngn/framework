@@ -42,6 +42,7 @@ export default class Node {
   // }
 
   remove () {
+    console.log('REMOVE');
     // NGN.INTERNAL(`${this.constructor.name}.remove`, this)
     this.#source.remove()
     // NGN.INTERNAL(`${this.constructor.name}.removed`, this)

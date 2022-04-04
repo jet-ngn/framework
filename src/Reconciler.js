@@ -33,10 +33,10 @@ function reconcileElementNode (original, update) {
 
   console.log('REC EVENT LISTENERS')
 
-  const { childNodes } = original.node
+  const { childNodes } = original
 
   if (childNodes.length > 0) {
-    reconcileNodes(childNodes, update.node.childNodes)
+    reconcileNodes(childNodes, update.childNodes)
   }
 
   return original

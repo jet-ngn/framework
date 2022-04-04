@@ -49,7 +49,7 @@ export default class Template {
     return this
   }
 
-  bind (entityConfig) {
+  bind (entityConfig = null) {
     this.#entityConfig = entityConfig ?? null
     return this
   }

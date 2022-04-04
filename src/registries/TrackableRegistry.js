@@ -1,7 +1,10 @@
 import Template from '../Template.js'
+import { TrackingInterpolation } from '../Interpolation.js'
 import { NANOID } from '@ngnjs/libdata'
 import { reconcileNodes } from '../Reconciler.js'
 import { sanitizeString } from '../utilities/StringUtils.js'
+import Renderer, { getOptions } from '../Renderer.js'
+import EntityRegistry from './EntityRegistry.js'
 
 class Tracker {
   #id = NANOID()
@@ -39,20 +42,27 @@ class ContentTracker extends Tracker {
   #options
 
   pop () {
-    this.#nodes.at(-1).remove()
+    const last = this.#nodes.at(-1)
+    const { unmount } = EntityRegistry.getEntryByNode(last) ?? {}
+    
+    if (unmount) {
+      unmount()
+    }
+
+    last.remove()
     this.#nodes.pop()
   }
 
-  push (...args) {
-    const nodes = args.map(arg => this.#getNodes(arg))
+  push () {
+    const newNodes = this.#getNodes(this.value.at(-1))
     const last = this.#nodes.at(-1)
-  
-    if (last === this.#placeholder) {
-      last.replaceWith(...nodes)
-      this.#nodes = nodes
+
+    if (!last) {
+      this.#placeholder.replaceWith(...newNodes)
+      this.#nodes = newNodes
     } else {
-      last.after(...nodes)
-      this.#nodes.push(...nodes)
+      last.after(...newNodes)
+      this.#nodes.push(...newNodes)
     }
   }
 
@@ -60,12 +70,12 @@ class ContentTracker extends Tracker {
     reconcileNodes(this.#nodes, this.value.map(node => this.#getNodes(node)))
   }
 
-  render (parent, node, children, options) {
+  render (parent, node, options) {
     this.#parent = parent
     this.#placeholder = node
     this.#nodes = [node]
-    this.#options = options
-    this.update(children)
+    this.#options = getOptions(options, node)
+    this.update()
   }
 
   shift () {
@@ -79,48 +89,43 @@ class ContentTracker extends Tracker {
     this.#nodes.unshift(...nodes)
   }
 
-  update (children) {
-    // const { value } = this
-
-    // if (value instanceof Template) {
-    //   return this.#replaceWith(value)
-    // }
-    
+  update () {    
     this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(this.value))
   }
 
   #getNodes (value) {
     if (Array.isArray(value)) {
-      return value.reduce((result, item) => {
+      const result = []
+
+      for (let item of value) {
         const output = this.#getNodes(item)
-        result.push(...(Array.isArray(output) ? output : [output]))
-        return result
-      }, [])
+        result.push(...output)
+      }
+
+      return result
     }
 
     if (value instanceof Template) {
-      // return [...Renderer.renderTemplate(this.#parent, value, children, this.#options).childNodes]
-      return console.log(children);
+      const renderer = new Renderer(this.#parent, this.#options)
+      return [...renderer.render(value, true).childNodes]
     }
 
     switch (typeof value) {
       case 'string':
       case 'number':
       case 'boolean': return [document.createTextNode(sanitizeString(!!value ? `${value}` : '', this.#options))]
-      case 'object': return [document.createTextNode(sanitizeString(JSON.stringify(value, null, 2), { retainFormatting: true }))]
+      // case 'object': return [document.createTextNode(sanitizeString(JSON.stringify(value, null, 2), { retainFormatting: true }))]
     
       default: return console.log('HANDLE ', typeof value)
     }
   }
 
   #replaceWith (nodes) {
-    this.#nodes.at(-1).after(this.#placeholder)
-
-    for (let i = 0, { length } = this.#nodes; i < length; i++) {
+    for (let i = 1, { length } = this.#nodes; i < length; i++) {
       this.#nodes[i].remove()
     }
-    console.log(nodes);
-    this.#placeholder.replaceWith(...nodes)
+    
+    this.#nodes.at(0).replaceWith(...nodes)
     this.#nodes = nodes
   }
 }
@@ -185,40 +190,57 @@ export default class TrackableRegistry {
     return revocable.proxy
   }
 
-  static #updateArrayTrackers (arr, handler, trackers, changelog, callback) {
-    return (...args) => {
-      const output = handler.apply(arr, args)
+  // static #updateArrayTrackers (arr, handler, trackers, changelog, callback) {
+  //   return (...args) => {
+  //     const output = handler.apply(arr, args)
 
-      for (let tracker of trackers) {
-        callback(tracker, args)
-      }
+  //     for (let tracker of trackers) {
+  //       callback(tracker, args)
+  //     }
 
-      return output
-    }
-  }
+  //     return output
+  //   }
+  // }
 
-  static #getArrayMethodHandler (arr, name, handler, trackers, changelog) {
-    switch (name) {
-      case 'pop':
-      case 'push':
-      case 'shift':
-      case 'unshift': return this.#updateArrayTrackers(arr, handler, trackers, changelog, (tracker, args) => tracker[property](...args))
+  // static #getArrayMethodHandler (arr, name, handler, trackers, changelog) {
+  //   switch (name) {
+  //     case 'pop':
+  //     case 'push':
+  //     case 'shift':
+  //     case 'unshift': return this.#updateArrayTrackers(arr, handler, trackers, changelog, (tracker, args) => tracker[property](...args))
 
-      case 'copyWithin':
-      case 'fill':
-      case 'reverse':
-      case 'sort':
-      case 'splice': return this.#updateArrayTrackers(arr, handler, trackers, changelog, tracker => tracker.reconcile())
+  //     case 'copyWithin':
+  //     case 'fill':
+  //     case 'reverse':
+  //     case 'sort':
+  //     case 'splice': return this.#updateArrayTrackers(arr, handler, trackers, changelog, tracker => tracker.reconcile())
     
-      default: return (...args) => handler.apply(arr, args)
-    }
-  }
+  //     default: return (...args) => handler.apply(arr, args)
+  //   }
+  // }
 
-  static #getArrayProxyHandlers (trackers, changelog = null) {
+  static #getArrayProxyHandlers (registeredTarget) {
     return {
       get: (target, property) => {
-        return target[property]
-        // const method = target[property]
+        const method = target[property]
+        
+        switch (property) {
+          case 'pop':
+          case 'push':
+          case 'shift':
+          case 'unshift': return (...args) => {
+            const output = method.apply(target, args)
+
+            for (let tracker of registeredTarget.trackers) {
+              tracker[property](...args)
+            }
+
+            return output
+          }
+        
+          default: return (...args) => method.apply(target, args)
+        }
+
         // const currentValue = target
         // const handler = this.#getArrayMethodHandler(target, property, method, trackers, changelog)
 
@@ -304,20 +326,20 @@ export default class TrackableRegistry {
   }
 
   static #observeObject (obj) {
-    const changelog = []
-
     const revocable = Proxy.revocable(obj, {
       get: (target, property) => {
         const value = target[property]
 
         if (Array.isArray(value)) {
-          return new Proxy(value, this.#getArrayProxyHandlers())
+          return new Proxy(value, this.#getArrayProxyHandlers(this.getTarget(target)))
         }
 
         return value
       },
 
       set: (target, property, value) => {
+        const { trackers, changelog } = this.getTarget(target) ?? {}
+
         changelog.push({
           timestamp: Date.now(),
           property,
@@ -328,7 +350,6 @@ export default class TrackableRegistry {
         })
 
         target[property] = value
-        const { trackers } = this.getTarget(target) ?? {}
 
         for (let tracker of trackers) {
           tracker.update()
@@ -338,7 +359,7 @@ export default class TrackableRegistry {
       }
     })
 
-    trackables.set(obj, { revocable, trackers: [], changelog })
+    trackables.set(obj, { revocable, trackers: [], changelog: [] })
     return revocable.proxy
   }
 
@@ -356,4 +377,12 @@ export default class TrackableRegistry {
 
 export function createTrackable (target) {
   return TrackableRegistry.getTarget(target) ?? TrackableRegistry.observe(target)
+}
+
+export function getChanges (trackable) {
+  return TrackableRegistry.getChanges(trackable)
+}
+
+export function track (target, property, transform) {
+  return TrackableRegistry.track(...arguments)
 }

@@ -1,6 +1,5 @@
 import { Bus } from './index.js'
 import { getNamespacedEvent } from './utilities/EventUtils.js'
-import Node from './Node.js'
 import { NANOID } from '@ngnjs/libdata'
 
 export default class Entity {
@@ -10,22 +9,16 @@ export default class Entity {
   #root
   #parent
   #children = []
-  #config
 
   constructor (root, cfg, parent) {
     this.#name = cfg.name ?? `Unnamed Entity`
     this.#scope = cfg.scope ?? this.#id
-    this.#root = new Node(root)
+    this.#root = root
     this.#parent = parent ?? null
-    this.#config = cfg
   }
 
   get children () {
     return this.#children
-  }
-
-  get config () {
-    return this.#config
   }
 
   get id () {

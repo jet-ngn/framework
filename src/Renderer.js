@@ -5,6 +5,12 @@ import EntityRegistry from './registries/EntityRegistry.js'
 import { TrackingInterpolation } from './Interpolation.js'
 import { typeOf } from '@ngnjs/libdata'
 
+export function getOptions (options, node) {
+  return {
+    retainFormatting: options.retainFormatting || !!node.closest('pre')
+  }
+}
+
 export default class Renderer {
   #parent
   #parser = new Parser
@@ -15,7 +21,7 @@ export default class Renderer {
     this.#options = options
   }
 
-  async render (template, isChild = false) {
+  render (template, isChild = false) {
     const { attributes, entityConfig, listeners, type } = template
 
     const target = type === 'svg'
@@ -37,18 +43,18 @@ export default class Renderer {
 
     const { interpolations, templates, trackers } = this.#parser
 
-    await this.#renderCollection(content, interpolations, (interpolation, placeholder) => {
-      placeholder?.replaceWith(interpolation.render(this.#getOptions(placeholder)))
+    this.#renderCollection(content, interpolations, (interpolation, placeholder) => {
+      placeholder?.replaceWith(interpolation.render(getOptions(this.#options, placeholder)))
     })
 
-    // this.#renderCollection(content, trackers, (tracker, placeholder) => {
-    //   placeholder && tracker?.render(this, placeholder, this.#manages, this.#getOptions(placeholder))
-    // })
+    this.#renderCollection(content, trackers, (tracker, placeholder) => {
+      placeholder && tracker?.render(this.#parent, placeholder, getOptions(this.#options, placeholder))
+    })
 
-    await this.#renderCollection(content, templates, async (template, placeholder) => {
+    this.#renderCollection(content, templates, (template, placeholder) => {
       if (placeholder) {
-        const renderer = new Renderer(this.#parent, this.#getOptions(placeholder))
-        placeholder.replaceWith(await renderer.render(template, true))
+        const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
+        placeholder.replaceWith(renderer.render(template, true))
       }
     })
 
@@ -62,8 +68,9 @@ export default class Renderer {
       }
 
       const entity = new Entity(content.firstElementChild, entityConfig, this.#parent)
-      await EntityRegistry.register(entity)
+      const { mount } = EntityRegistry.register(entity, entityConfig)
       this.#parent.children.push(entity)
+      mount()
     }
 
     return content
@@ -99,19 +106,13 @@ export default class Renderer {
     }
   }
 
-  #getOptions (node) {
-    return {
-      retainFormatting: this.#options.retainFormatting || !!node.closest('pre')
-    }
+  #renderChild (content, child, callback) {
+    return callback(child, content.getElementById(child.id))
   }
 
-  async #renderChild (content, child, callback) {
-    return await callback(child, content.getElementById(child.id))
-  }
-
-  async #renderCollection (content, collection, callback) {
+  #renderCollection (content, collection, callback) {
     for (let item of collection) {
-      await this.#renderChild(content, item, callback)
+      this.#renderChild(content, item, callback)
     }
   }
 
