@@ -1,9 +1,8 @@
 import NGN from 'NGN'
 import App from './App.js'
-import Template from './Template.js'
-import TrackableRegistry, { createTrackable, getChanges, track } from './registries/TrackableRegistry.js'
-
-const { BUS, EventEmitter, Queue } = NGN
+import { html, svg } from './Tags.js'
+import { getChanges, track, Trackable } from './registries/TrackableRegistry.js'
+const { BUS, EventEmitter } = NGN
 
 window.addEventListener('popstate', evt => {
   console.log(evt);
@@ -20,20 +19,6 @@ window.addEventListener('popstate', evt => {
   // TODO: Throw Error
 })
 
-function html (strings, ...interpolations) {
-  return new Template({ type: 'html', strings, interpolations })
-}
-
-function svg (strings, ...interpolations) {
-  return new Template({ type: 'svg', strings, interpolations })
-}
-
-// function css (strings, ...interpolations) {
-//   return new Template({ type: 'css', strings, interpolations })
-// }
-
-// globalThis.md = md
-
 // BUS.on('*', function () {
 //   console.log(this.event);
 // })
@@ -42,12 +27,11 @@ export {
   App,
   BUS as Bus,
   EventEmitter,
-  Queue,
   html,
   svg,
   // css,
   // md,
-  createTrackable,
+  Trackable,
   track,
   getChanges
 }

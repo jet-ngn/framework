@@ -49,8 +49,8 @@ export default class Template {
     return this
   }
 
-  bind (entityConfig = null) {
-    this.#entityConfig = entityConfig ?? null
+  bind (config = null) {
+    this.#entityConfig = config ?? null
     return this
   }
 

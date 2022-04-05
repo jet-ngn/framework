@@ -2,6 +2,7 @@ import Renderer from '../Renderer.js'
 import { forEachKey } from '../utilities/IteratorUtils.js'
 import { addHandler } from '../utilities/EventUtils.js'
 import { html } from '../index.js'
+import Entity from '../Entity.js'
 
 const reservedEventNames = ['mount', 'unmount']
 const entities = {}
@@ -20,36 +21,43 @@ class EntityRegistry {
     return nodes.get(node)
   }
 
-  register (entity, config) {
-    const { root, children } = entity
+  register (root, config, parent) {
+    const entity = new Entity(...arguments)
 
     const result = {
       entity,
 
       mount: () => {
+        console.log('MOUNT ', entity.name, entity)
         forEachKey(config.on ?? {}, (evt, handler) => !reservedEventNames.includes(evt) && addHandler(entity, evt, handler))
 
         const renderer = new Renderer(entity, {
           retainFormatting: root.tagName === 'PRE'
         })
 
-        entity.root.replaceChildren(renderer.render(Reflect.get(config, 'template', entity) ?? html``))
+        const template = Reflect.get(config, 'template', entity) ?? html``
+        const { content, tasks } = renderer.render(template)
+
+        root.replaceChildren(content)
+        tasks.forEach(task => task())
         config.on?.mount?.call(entity)
       },
       
       unmount: () => {
-        entity.children.forEach(child => this.unmount(child.id))
+        console.log('UNMOUNT ', entity.name, entity)
+        const { children, id, root } = entity
+        children.forEach(child => this.unmount(child.id))
 
         // TrackerRegistry.removeTrackersByEntity(entity)
 
-        nodes.delete(entity.root)
-        delete entities[entity.id]
+        nodes.delete(root)
+        delete entities[id]
 
         config.on?.unmount?.call(entity)
       }
     }
 
-    nodes.set(root, result)
+    nodes.set(entity.root, result)
     entities[entity.id] = result
     return result
   }
@@ -61,6 +69,11 @@ class EntityRegistry {
 
   unmount (id) {
     const { unmount } = entities[id] ?? {}
+    unmount && unmount()
+  }
+
+  unmountByNode (node) {
+    const { unmount } = this.getEntryByNode(node)
     unmount && unmount()
   }
 }

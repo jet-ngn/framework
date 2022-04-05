@@ -1,9 +1,10 @@
 import Parser from './Parser.js'
-import Entity from './Entity.js'
 import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
 import EntityRegistry from './registries/EntityRegistry.js'
+import TrackableRegistry from './registries/TrackableRegistry.js'
 import { TrackingInterpolation } from './Interpolation.js'
 import { typeOf } from '@ngnjs/libdata'
+import AttributeList from './AttributeList.js'
 
 export function getOptions (options, node) {
   return {
@@ -13,15 +14,16 @@ export function getOptions (options, node) {
 
 export default class Renderer {
   #parent
-  #parser = new Parser
+  #parser
   #options
 
   constructor (parent, options) {
     this.#parent = parent
     this.#options = options
+    this.#parser = new Parser(parent)
   }
 
-  render (template, isChild = false) {
+  render (template, isChild = false, tasks = []) {
     const { attributes, entityConfig, listeners, type } = template
 
     const target = type === 'svg'
@@ -54,7 +56,8 @@ export default class Renderer {
     this.#renderCollection(content, templates, (template, placeholder) => {
       if (placeholder) {
         const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
-        placeholder.replaceWith(renderer.render(template, true))
+        const output = renderer.render(template, true, tasks)
+        placeholder?.replaceWith(output.content)
       }
     })
 
@@ -67,13 +70,22 @@ export default class Renderer {
         this.#parent.children.length = 0
       }
 
-      const entity = new Entity(content.firstElementChild, entityConfig, this.#parent)
-      const { mount } = EntityRegistry.register(entity, entityConfig)
-      this.#parent.children.push(entity)
-      mount()
+      const node = content.firstElementChild
+      let config = entityConfig
+
+      if (entityConfig instanceof TrackingInterpolation) {
+        const tracker = TrackableRegistry.registerBindingTracker(node, config, this.#parent)
+        config = tracker.value
+      } 
+        
+      tasks.push(() => {
+        const { entity, mount } = EntityRegistry.register(node, config, this.#parent)
+        this.#parent.children.push(entity)
+        mount()
+      })
     }
 
-    return content
+    return { content, tasks }
   }
 
   #bindAttributes (nodes, attributes) {
@@ -118,12 +130,13 @@ export default class Renderer {
 
   #setAttribute (node, name, value) {
     if (Array.isArray(value)) {
-      const list = processList(value)
-      return node.setAttribute(name, list.join(' '))
+      const list = new AttributeList(node, name, value, this.#parent)
+      return node.setAttribute(name, list.value)
     }
 
     if (value instanceof TrackingInterpolation) {
-      return console.log('HANDLE ATTRIBUTE TRACKER')
+      const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#parent)
+      return tracker.reconcile()
     }
 
     let type = typeOf(value)

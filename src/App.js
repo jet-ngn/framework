@@ -1,5 +1,4 @@
 import AppRegistry from './registries/AppRegistry.js'
-import Entity from './Entity.js'
 import EntityRegistry from './registries/EntityRegistry.js'
 
 export default class App {
@@ -50,10 +49,9 @@ export default class App {
       throw new Error(`App "${this.#name}" has already been started.`)
     }
 
-    const entity = new Entity(this.#root, this.#config)
+    const { mount } = EntityRegistry.register(this.#root, this.#config)
+    mount()
 
-    EntityRegistry.register(entity, this.#config)
-    EntityRegistry.mount(entity.id)
     this.#started = true
   }
 }

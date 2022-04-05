@@ -3,9 +3,14 @@ import TrackableRegistry from './registries/TrackableRegistry.js'
 import { StringInterpolation, TrackingInterpolation } from './Interpolation.js'
 
 export default class Parser {
+  #parent
   #interpolations = []
   #templates = []
   #trackers = []
+
+  constructor (parent) {
+    this.#parent = parent
+  }
 
   get interpolations () {
     return this.#interpolations
@@ -26,7 +31,7 @@ export default class Parser {
       result += string
 
       const interpolation = interpolations[index]
-      result += interpolation ? this.#parseInterpolation(interpolation) : ''
+      result += this.#parseInterpolation(interpolation)
       
       return result
     }, '')
@@ -46,7 +51,7 @@ export default class Parser {
     }
 
     if (interpolation instanceof TrackingInterpolation) {
-      const tracker = TrackableRegistry.registerContentTracker(interpolation)
+      const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#parent)
       this.#trackers.push(tracker)
       return `<template class="tracker" id="${tracker.id}"></template>`
     }
@@ -54,6 +59,7 @@ export default class Parser {
     let type
 
     switch (typeof interpolation) {
+      case 'undefined':
       case 'boolean': return ''
 
       case 'string':

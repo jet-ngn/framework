@@ -1,15 +1,15 @@
 import { Bus } from '../index.js'
  
-export async function onLoad () {
+export function onLoad () {
   for (let app in apps) {
     app = apps[app]
     
     if (app.autostart && !app.started) {
-      await app.start()
+      app.start()
     }
   }
 
-  Bus.emit('loaded')
+  Bus.emit('ready')
   document.removeEventListener('DOMContentLoaded', onLoad)
 }
 

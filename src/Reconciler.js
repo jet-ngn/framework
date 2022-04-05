@@ -1,4 +1,7 @@
+import EntityRegistry from "./registries/EntityRegistry"
+
 export function reconcileNode (original, update) {
+  console.log('RECONCILE NODE')
   switch (original.nodeType) {
     case 1: return reconcileElementNode(...arguments)
     case 3: return reconcileTextNode(...arguments)
@@ -20,10 +23,16 @@ function removeAllAttributes (node) {
 
 function reconcileElementNode (original, update) {
   if (original.constructor.name !== update.constructor.name) {
+    console.log('REPLACE EXISTING NODE')
     // TODO: Cleanup event listeners
+    // const { unmount } = EntityRegistry.getEntryByNode(original) ?? {}
+    // unmount && unmount()
+
     original.replaceWith(update)
     return update
   }
+
+  EntityRegistry.unmountByNode(original)
 
   if (update.attributes.length > 0) {
     reconcileAttributes(original, update)
@@ -62,6 +71,7 @@ export function reconcileNodes (original, update) {
         break
       }
 
+      console.log('ADD NODE TO END')
       // TODO: Add event listeners
       result.at(-1).after(newNode)
       result.push(newNode)
