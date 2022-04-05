@@ -1,4 +1,4 @@
-import { App, html, track, Trackable } from './index.js'
+import { App, svg, html, track, Trackable } from './index.js'
 
 const View1 = {
   name: 'View 1',
@@ -21,9 +21,33 @@ const View2 = {
 const state = new Trackable({
   view: View1,
   bool: true,
+  cls: 'classname',
 
   arr: ['test', 'test2', 'test3']
 })
+
+export default function Icon (name) {
+  return html`
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+      ${getIconBody(name)}
+    </svg>
+  `
+}
+
+function getIconBody (name) {
+  switch (name) {
+    case 'pause': return svg`
+      <rect x="6" y="4" width="4" height="16"></rect>
+      <rect x="14" y="4" width="4" height="16"></rect>
+    `
+
+    case 'play': return svg`
+      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+    `
+  
+    default: throw new ReferenceError(`Icon "${name}" not found`)
+  }
+}
 
 const TestApp = new App(document.body, {
   name: 'Test App',
@@ -32,8 +56,21 @@ const TestApp = new App(document.body, {
 
   get template () {
     return html`
-      ${state.arr.map(item => html`<section class="${item}">${item}</section>`)}
+      ${html`
+        <button>
+          ${track(state, 'bool', bool => Icon(bool ? 'pause' : 'play'))}
+        </button>
+      `.on('click', evt => state.bool = !state.bool)}
     `
+    // return html`${track(state, 'bool', bool => bool ? html`TRUE` : html`FALSE`)}`
+
+    // return html`<section></section>`.bind(track(state, 'view')).attr({
+    //   class: [track(state, 'view', ({ scope }) => scope), 'test']
+    // })
+
+    // return html`
+    //   ${state.arr.map(item => html`<section class="${item}">${item}</section>`)}
+    // `
     // return html`<main></main>`.bind(track(state, 'view')).attr({
     //   class: [{
     //     test: track(state, 'bool')
@@ -44,12 +81,12 @@ const TestApp = new App(document.body, {
   // on: {
   //   mount () {
   //     setTimeout(() => {
-  //       state.view = View2
+  //       // state.view = View2
   //       state.bool = false
 
   //       setTimeout(() => {
   //         state.bool = true
-  //         state.view = View1
+  //         // state.view = View1
   //       }, 1500)
   //     }, 1500)
   //   }

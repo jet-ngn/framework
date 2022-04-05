@@ -23,12 +23,9 @@ export default class Renderer {
     this.#parser = new Parser(parent)
   }
 
-  render (template, isChild = false, tasks = []) {
-    const { attributes, entityConfig, listeners, type } = template
-
-    const target = type === 'svg'
-      ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      : document.createElement('template')
+  #renderHTML (template, isChild = false, tasks = []) {
+    const { attributes, entityConfig, listeners } = template
+    const target = document.createElement('template')
 
     target.innerHTML = this.#parser.parse(template, this.#options)
 
@@ -50,14 +47,14 @@ export default class Renderer {
     })
 
     this.#renderCollection(content, trackers, (tracker, placeholder) => {
-      placeholder && tracker?.render(this.#parent, placeholder, getOptions(this.#options, placeholder))
+      placeholder && tracker?.render(placeholder, getOptions(this.#options, placeholder))
     })
 
     this.#renderCollection(content, templates, (template, placeholder) => {
       if (placeholder) {
         const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
-        const output = renderer.render(template, true, tasks)
-        placeholder?.replaceWith(output.content)
+        const { content } = renderer.render(template, true, tasks)
+        placeholder?.replaceWith(content)
       }
     })
 
@@ -86,6 +83,28 @@ export default class Renderer {
     }
 
     return { content, tasks }
+  }
+
+  #renderSVG (template, isChild, tasks = []) {
+    const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
+    target.innerHTML = this.#parser.parse(template, this.#options)
+    const fragment = document.createDocumentFragment()
+    fragment.append(...target.children)
+
+    return {
+      content: fragment,
+      tasks
+    }
+  }
+
+  render (template, isChild = false, tasks = []) {
+    switch (template.type) {
+      case 'html': return this.#renderHTML(...arguments)
+      case 'svg': return this.#renderSVG(...arguments)
+    
+      default: throw new TypeError(`Invalid template type "${template.type}"`)
+    }
   }
 
   #bindAttributes (nodes, attributes) {

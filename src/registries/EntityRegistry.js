@@ -73,7 +73,7 @@ class EntityRegistry {
   }
 
   unmountByNode (node) {
-    const { unmount } = this.getEntryByNode(node)
+    const { unmount } = this.getEntryByNode(node) ?? {}
     unmount && unmount()
   }
 }

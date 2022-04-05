@@ -84,6 +84,7 @@ class AttributeListTracker extends AttributeTracker {
     if (this.name === 'class') {
       this.node.classList.replace(this.#currentValue, value)      
     } else {
+      console.log('HEY');
       this.node.setAttribute(this.name, this.node.getAttribute(this.name).replace(this.#currentValue, value))
     }
 
@@ -129,6 +130,12 @@ class ContentTracker extends Tracker {
   #placeholder
   #nodes
   #options
+  #currentValue
+
+  constructor () {
+    super(...arguments)
+    this.#currentValue = this.value
+  }
 
   pop () {
     const last = this.#nodes.at(-1)
@@ -155,7 +162,15 @@ class ContentTracker extends Tracker {
     }
   }
 
-  render (parent, node, options) {
+  reconcile () {
+    if ([this.#currentValue, this.value].every(item => item instanceof Template)) {
+      return this.#replaceWith(this.#getNodes(this.value))
+    }
+
+    this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(this.value))
+  }
+
+  render (node, options) {
     this.#placeholder = node
     this.#nodes = [node]
     this.#options = getOptions(options, node)
@@ -187,10 +202,6 @@ class ContentTracker extends Tracker {
     }
   }
 
-  reconcile () {    
-    this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(this.value, false))
-  }
-
   #getNodes (value) {
     if (Array.isArray(value)) {
       const result = []
@@ -205,7 +216,9 @@ class ContentTracker extends Tracker {
 
     if (value instanceof Template) {
       const renderer = new Renderer(this.parent, this.#options)
-      return [...renderer.render(value, true).childNodes]
+      const { content, tasks } = renderer.render(value, true)
+      tasks.forEach(task => task())
+      return [...content.childNodes]
     }
 
     switch (typeof value) {
@@ -218,14 +231,14 @@ class ContentTracker extends Tracker {
     }
   }
 
-  // #replaceWith (nodes) {
-  //   for (let i = 1, { length } = this.#nodes; i < length; i++) {
-  //     this.#nodes[i].remove()
-  //   }
+  #replaceWith (nodes) {
+    for (let i = 1, { length } = this.#nodes; i < length; i++) {
+      this.#nodes[i].remove()
+    }
     
-  //   this.#nodes.at(0).replaceWith(...nodes)
-  //   this.#nodes = nodes
-  // }
+    this.#nodes.at(0).replaceWith(...nodes)
+    this.#nodes = nodes
+  }
 }
 
 const trackables = new Map
