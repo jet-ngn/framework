@@ -79,11 +79,15 @@ class AttributeListTracker extends AttributeTracker {
   }
 
   reconcile () {
+    const { value } = this
+
     if (this.name === 'class') {
-      return this.node.classList.replace(this.#currentValue, this.value)      
+      this.node.classList.replace(this.#currentValue, value)      
+    } else {
+      this.node.setAttribute(this.name, this.node.getAttribute(this.name).replace(this.#currentValue, value))
     }
 
-    this.node.setAttribute(this.name, this.node.getAttribute(this.name).replace(this.#currentValue, this.value))
+    this.#currentValue = value
   }
 }
 
@@ -462,6 +466,12 @@ export default class TrackableRegistry {
       },
 
       set: (target, property, value) => {
+        const currentValue = target[property]
+
+        if (currentValue === value) {
+          return true
+        }
+
         const { trackers, changelog } = this.getTarget(target) ?? {}
 
         changelog.push({
@@ -476,7 +486,7 @@ export default class TrackableRegistry {
         target[property] = value
 
         for (let tracker of trackers) {
-          tracker.reconcile()
+          tracker.property === property && tracker.reconcile()
         }
 
         return true
@@ -488,14 +498,11 @@ export default class TrackableRegistry {
   }
 
   static #register (tracker) {
-    console.log(tracker);
     const trackable = this.getProxy(tracker.target)
 
     if (!trackable) {
       throw new Error(`Cannot track untrackable object`)
     }
-
-    console.log(tracker.parent)
 
     trackable.trackers.push(tracker)
     return tracker

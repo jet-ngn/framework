@@ -28,7 +28,7 @@ class EntityRegistry {
       entity,
 
       mount: () => {
-        console.log('MOUNT ', entity.name, entity)
+        // console.log('MOUNT ', entity.name, entity)
         forEachKey(config.on ?? {}, (evt, handler) => !reservedEventNames.includes(evt) && addHandler(entity, evt, handler))
 
         const renderer = new Renderer(entity, {
@@ -44,7 +44,7 @@ class EntityRegistry {
       },
       
       unmount: () => {
-        console.log('UNMOUNT ', entity.name, entity)
+        // console.log('UNMOUNT ', entity.name, entity)
         const { children, id, root } = entity
         children.forEach(child => this.unmount(child.id))
 

@@ -20,30 +20,40 @@ const View2 = {
 
 const state = new Trackable({
   view: View1,
-  bool: true
+  bool: true,
+
+  arr: ['test', 'test2', 'test3']
 })
 
 const TestApp = new App(document.body, {
   name: 'Test App',
   version: '0.0.1-alpha.1',
   scope: 'root',
-  // .bind(track(state, 'view'))
+
   get template () {
-    return html`<main></main>`.attr({
-      class: [{
-        test: track(state, 'bool')
-      }, track(state, 'bool', bool => bool ? 'yep' : 'nope')]
-    })
+    return html`
+      ${state.arr.map(item => html`<section class="${item}">${item}</section>`)}
+    `
+    // return html`<main></main>`.bind(track(state, 'view')).attr({
+    //   class: [{
+    //     test: track(state, 'bool')
+    //   }, track(state, 'bool', bool => bool ? 'yep' : 'nope')]
+    // })
   },
 
-  on: {
-    mount () {
-      setTimeout(() => {
-        state.bool = false
-        // state.view = View2
-      }, 1500)
-    }
-  }
+  // on: {
+  //   mount () {
+  //     setTimeout(() => {
+  //       state.view = View2
+  //       state.bool = false
+
+  //       setTimeout(() => {
+  //         state.bool = true
+  //         state.view = View1
+  //       }, 1500)
+  //     }, 1500)
+  //   }
+  // }
 })
 
 // const user = createTrackable({

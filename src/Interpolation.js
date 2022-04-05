@@ -18,12 +18,6 @@ class Interpolation {
   }
 }
 
-export class StringInterpolation extends Interpolation {
-  render (options) {
-    return sanitizeString(`${this.interpolation}`, options)
-  }
-}
-
 export class TrackingInterpolation {
   #target
   #property

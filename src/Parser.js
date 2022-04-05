@@ -1,15 +1,18 @@
 import Template from './Template.js'
 import TrackableRegistry from './registries/TrackableRegistry.js'
-import { StringInterpolation, TrackingInterpolation } from './Interpolation.js'
+import { TrackingInterpolation } from './Interpolation.js'
+import { sanitizeString } from './utilities/StringUtils.js'
 
 export default class Parser {
   #parent
+  #options
   #interpolations = []
   #templates = []
   #trackers = []
 
-  constructor (parent) {
+  constructor (parent, options) {
     this.#parent = parent
+    this.#options = options
   }
 
   get interpolations () {
@@ -63,17 +66,11 @@ export default class Parser {
       case 'boolean': return ''
 
       case 'string':
-      case 'number':
-        interpolation = new StringInterpolation(interpolation)
-        type = 'string'
-        break
+      case 'number': return `${sanitizeString(interpolation, this.#options)}`
 
       // TODO: Handle other data structures, like maps, sets, etc
 
       default: throw new TypeError(`Invalid template string interpolation type "${typeof interpolation}"`)
     }
-
-    this.#interpolations.push(interpolation)
-    return `<template class="${type} interpolation" id="${interpolation.id}"></template>`
   }
 }

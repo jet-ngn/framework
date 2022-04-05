@@ -30,7 +30,7 @@ export default class Renderer {
       ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       : document.createElement('template')
 
-    target.innerHTML = this.#parser.parse(template)
+    target.innerHTML = this.#parser.parse(template, this.#options)
 
     const { content } = target
     const nodes = [...content.children]
