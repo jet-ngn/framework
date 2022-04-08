@@ -10,8 +10,12 @@ export function normalizeString (string) {
   return string.replace(/\r?\n|\r/g, '')
 }
 
+export function stripSpaces (string) {
+  return string.replace(/\s+/g, '').trim()
+}
+
 export function stripExtraSpaces (string) {
-  return string.replace(/\s+/g,' ').trim()
+  return string.replace(/\s+/g, ' ').trim()
 }
 
 export function sanitizeString (string, options) {

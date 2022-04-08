@@ -27,10 +27,10 @@ export default class Parser {
     return this.#trackers
   }
 
-  parse (template) {
+  parse (template, { retainFormatting }) {
     const { interpolations, strings } = template
 
-    return interpolations.length === 0 ? strings.join(' ') : strings.reduce((result, string, index) => {
+    return interpolations.length === 0 ? strings[0] : strings.reduce((result, string, index) => {
       result += string
 
       const interpolation = interpolations[index]
@@ -66,7 +66,7 @@ export default class Parser {
       case 'boolean': return ''
 
       case 'string':
-      case 'number': return `${sanitizeString(interpolation, this.#options)}`
+      case 'number': return `${sanitizeString(`${interpolation}`, this.#options)}`
 
       // TODO: Handle other data structures, like maps, sets, etc
 

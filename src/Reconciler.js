@@ -9,7 +9,7 @@ export function reconcileNode (original, update) {
 }
 
 function reconcileAttributes (original, update) {
-  console.log('REC ATTRIBUTES')
+  // console.log('REC ATTRIBUTES')
 }
 
 function removeAllAttributes (node) {
@@ -35,7 +35,7 @@ function reconcileElementNode (original, update) {
     removeAllAttributes(original)
   }
 
-  console.log('REC EVENT LISTENERS')
+  // console.log('REC EVENT LISTENERS')
 
   const { childNodes } = original
 
@@ -55,7 +55,6 @@ function reconcileTextNode (original, update) {
 }
 
 export function reconcileNodes (original, update) {
-  console.log(...arguments);
   const tasks = []
   const result = []
 

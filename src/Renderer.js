@@ -5,6 +5,8 @@ import TrackableRegistry from './registries/TrackableRegistry.js'
 import { TrackingInterpolation } from './Interpolation.js'
 import { typeOf } from '@ngnjs/libdata'
 import AttributeList from './AttributeList.js'
+import Template from './Template.js'
+import { normalizeString } from './utilities/StringUtils.js'
 
 export function getOptions (options, node) {
   return {
@@ -23,82 +25,32 @@ export default class Renderer {
     this.#parser = new Parser(parent)
   }
 
-  #renderHTML (template, isChild = false, tasks = []) {
-    const { attributes, entityConfig, listeners } = template
-    const target = document.createElement('template')
+  #renderArray (arr, isChild = false, tasks = []) {
+    const content = document.createDocumentFragment()
 
-    target.innerHTML = this.#parser.parse(template, this.#options)
+    arr.forEach(item => {
+      let output
 
-    const { content } = target
-    const nodes = [...content.children]
-
-    if (!!attributes) {
-      this.#bindAttributes(nodes, attributes)
-    }
-
-    if (!!listeners) {
-      this.#bindListeners(nodes, listeners)
-    }
-
-    const { interpolations, templates, trackers } = this.#parser
-
-    this.#renderCollection(content, interpolations, (interpolation, placeholder) => {
-      placeholder?.replaceWith(interpolation.render(getOptions(this.#options, placeholder)))
-    })
-
-    this.#renderCollection(content, trackers, (tracker, placeholder) => {
-      placeholder && tracker?.render(placeholder, getOptions(this.#options, placeholder))
-    })
-
-    this.#renderCollection(content, templates, (template, placeholder) => {
-      if (placeholder) {
-        const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
-        const { content } = renderer.render(template, true, tasks)
-        placeholder?.replaceWith(content)
-      }
-    })
-
-    if (entityConfig) {
-      if (content.childElementCount > 1) {
-        throw new Error(`Cannot bind entity to more than one node`)
+      if (Array.isArray(item)) {
+        output = this.#renderArray(item, true, tasks)
+      } else if (item instanceof Template) {
+        output = this.render(item, true, tasks)
+      } else {
+        console.log('HANDLE PRIMITIVE')
       }
 
-      if (!isChild) {
-        this.#parent.children.length = 0
-      }
-
-      const node = content.firstElementChild
-      let config = entityConfig
-
-      if (entityConfig instanceof TrackingInterpolation) {
-        const tracker = TrackableRegistry.registerBindingTracker(node, config, this.#parent)
-        config = tracker.value
-      } 
-        
-      tasks.push(() => {
-        const { entity, mount } = EntityRegistry.register(node, config, this.#parent)
-        this.#parent.children.push(entity)
-        mount()
-      })
-    }
+      content.append(output.content)
+      tasks.push(...output.tasks)
+    })
 
     return { content, tasks }
   }
 
-  #renderSVG (template, isChild, tasks = []) {
-    const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-
-    target.innerHTML = this.#parser.parse(template, this.#options)
-    const fragment = document.createDocumentFragment()
-    fragment.append(...target.children)
-
-    return {
-      content: fragment,
-      tasks
-    }
-  }
-
   render (template, isChild = false, tasks = []) {
+    if (Array.isArray(template)) {
+      return this.#renderArray(...arguments)
+    }
+
     switch (template.type) {
       case 'html': return this.#renderHTML(...arguments)
       case 'svg': return this.#renderSVG(...arguments)
@@ -144,6 +96,81 @@ export default class Renderer {
   #renderCollection (content, collection, callback) {
     for (let item of collection) {
       this.#renderChild(content, item, callback)
+    }
+  }
+
+  #renderHTML (template, isChild = false, tasks = []) {
+    const { attributes, boundListeners, entityConfig, listeners } = template
+    const target = document.createElement('template')
+
+    target.innerHTML = this.#parser.parse(template, this.#options)
+    
+    const { content } = target
+    const nodes = [...content.children]
+
+    if (!!attributes) {
+      this.#bindAttributes(nodes, attributes)
+    }
+
+    if (!!listeners) {
+      this.#bindListeners(nodes, listeners)
+    }
+
+    const { interpolations, templates, trackers } = this.#parser
+    
+    this.#renderCollection(content, interpolations, (interpolation, placeholder) => {
+      placeholder?.replaceWith(interpolation.render(getOptions(this.#options, placeholder)))
+    })
+
+    this.#renderCollection(content, trackers, (tracker, placeholder) => {
+      placeholder && tracker?.render(placeholder, getOptions(this.#options, placeholder))
+    })
+    
+    this.#renderCollection(content, templates, (template, placeholder) => {
+      if (placeholder) {
+        const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
+        const { content } = renderer.render(template, true, tasks)
+        placeholder?.replaceWith(content)
+      }
+    })
+
+    if (entityConfig) {
+      if (content.childElementCount > 1) {
+        throw new Error(`Cannot bind entity to more than one node`)
+      }
+
+      if (!isChild) {
+        this.#parent.children.length = 0
+      }
+
+      const node = content.firstElementChild
+      let config = entityConfig
+
+      if (entityConfig instanceof TrackingInterpolation) {
+        const tracker = TrackableRegistry.registerBindingTracker(node, config, this.#parent, boundListeners)
+        config = tracker.value
+      } 
+        
+      tasks.push(() => {
+        const { entity, mount } = EntityRegistry.register(node, config, this.#parent)
+        this.#parent.children.push(entity)
+        mount()
+      })
+    }
+
+    return { content, tasks }
+  }
+
+  #renderSVG (template, isChild, tasks = []) {
+    const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
+    target.innerHTML = this.#parser.parse(template, this.#options)
+    const fragment = document.createDocumentFragment()
+    fragment.append(...target.children)
+
+    return {
+      content: fragment,
+      tasks
     }
   }
 

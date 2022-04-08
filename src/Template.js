@@ -8,6 +8,7 @@ export default class Template {
 
   #attributes = null
   #entityConfig = null
+  #boundListeners = null
   #listeners = null
 
   constructor ({ type, strings, interpolations }) {
@@ -18,6 +19,10 @@ export default class Template {
 
   get attributes () {
     return this.#attributes
+  }
+
+  get boundListeners () {
+    return this.#boundListeners
   }
 
   get entityConfig () {
@@ -49,8 +54,9 @@ export default class Template {
     return this
   }
 
-  bind (config = null) {
+  bind (config = null, on) {
     this.#entityConfig = config ?? null
+    this.#boundListeners = on ?? null
     return this
   }
 

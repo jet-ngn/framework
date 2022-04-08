@@ -56,10 +56,10 @@ export default class AttributeList {
       if (value instanceof TrackingInterpolation) {
         const tracker = TrackableRegistry.registerBooleanAttributeListTracker(this.#node, this.#name, name, value, this.#parent)
         tracker.value === true && result.push(name)
+      } else if (typeof value !== 'boolean') {
+        throw new TypeError(`Invalid list entry. Expected "boolean", received "${typeOf(value)}"`)
       } else if (value === true) {
         result.push(name)
-      } else {
-        throw new TypeError(`Invalid list entry. Expected "boolean", received "${typeOf(value)}"`)
       }
   
       return result
