@@ -1,106 +1,83 @@
 #!/usr/bin/env node
 
-import Builder from './build/index.js'
-import { Shell } from '@author.io/shell'
 import path from 'path'
+import { Shell } from '@author.io/shell'
+import ProductionLine, { bundleJs } from 'productionline'
+
+const Builder = new ProductionLine({
+  name: 'jet-build',
+  description: 'Build tool to produce Jet UI Library distribution packages',
+  version: '0.0.1-alpha.1'
+})
 
 const shell = new Shell({
-  name: 'jet-dev',
-  description: 'Jet development environment CLI',
+  name: 'jet',
+  description: 'CLI for testing and creating Jet distributable packages',
   version: '0.0.1',
 
   commands: [
     {
       name: 'build',
-      description: 'Build Jet UI Library distributable package.',
-      
-      flags: {
-        dev: {
-          type: 'boolean',
-          description: 'Run a development build. This will prevent minification.'
-        },
+      description: 'Generate Jet UI Library distributable packages.',
 
-        watch: {
-          type: 'boolean',
-          description: 'Watch the source directory and rebuild when changes are made.'
-        }
-      },
-
-      handler ({ flag, input }) {
+      async handler ({ flag, input }) {
         const { source, output } = Builder
-        const { version, homepage, description, bugsURL } = Builder.project
-        const dev = flag('dev')
+        const { version, homepage, bugsURL } = Builder.project
 
-        Builder.addTask('Cleaning output directory', next => {
-          Builder.clean()
-          next()
-        })
+        const config = {
+          entry: [path.join(source, `index.js`)],
 
-        Builder.addTask('Creating bundle', async (next) => {
-          const filename = dev ? 'test' : 'index'
+          external: [
+            'os',
+            '@ngnjs/libnet-node',
+            '@ngnjs/crypto',
+            '@ngnjs/net',
+            'ngn-data',
+            'crypto',
+            'http',
+            'https'
+          ],
 
-          await Builder.bundle({
-            entryPoints: [path.join(source, `${filename}.js`)],
-            outfile: path.join(output, `${filename}.js`),
-            minify: !dev,
-            sourcemap: true,
-            bundle: true,
-            external: [
-              'os',
-              '@ngnjs/libnet-node',
-              '@ngnjs/crypto',
-              '@ngnjs/net',
-              'ngn-data',
-              'crypto',
-              'http',
-              'https'
-            ],
-            target: ['es2020'],
-            format: 'esm',
-
-            // aliases: [{
-            //   filter: /^NGN\/libdata/,
-            //   filepath: path.join(source, 'node_modules', '@ngnjs', 'libdata', 'index.js')
-            // }],
-
-            banner: {
-              js: `/**
- * Jet v${version} ${description}
- * Copyright ${new Date().getFullYear()} Ecor Ventures, LLC
- * Documentation: ${homepage}
- * Submit bug reports to: ${bugsURL}
- **/`
-            }
-          })
-
-          next()
-        })
-
-        if (dev) {
-          Builder.addTask('Copy test files', async (next) => {
-            await Builder.copyFile('index.html')
-            next()
-          })
+          aliases: [{
+            filter: /^history/,
+            path: path.join(source, 'node_modules', 'history', 'browser.js')
+          }]
         }
 
-        if (flag('watch')) {
-          Builder.once('complete', () => {
-            if (flag('watch')) {
-              return Builder.watch(file => shell.exec(`build${input === '' ? '' : ` ${input}`}`))
-            }
+        Builder.addTask('Cleaning output directory', async () => await Builder.clean())
+
+        Builder.addTask('Creating development bundle', async () => {
+          await bundleJs({
+            ...config,
+            output: path.join(output, 'dev', `index.js`),
+            minify: false,
+
+            banner: `/**
+* Jet Development Build v${version}
+* Copyright ${new Date().getFullYear()} Ecor Ventures, LLC
+* Documentation: ${homepage}
+* Submit bug reports to: ${bugsURL}
+**/`
           })
-        }
+        })
 
-        Builder.run()
-      },
+        Builder.addTask('Creating production bundle', async () => {
+          await bundleJs({
+            ...config,
+            output: path.join(output, 'prod', `index.js`),
+            minify: true,
 
-      commands: [{
-        name: 'examples',
+            banner: `/**
+* Jet Production Build v${version}
+* Copyright ${new Date().getFullYear()} Ecor Ventures, LLC
+* Documentation: ${homepage}
+* Submit bug reports to: ${bugsURL}
+**/`
+          })
+        })
 
-        handler () {
-          console.log('Build Examples')
-        },
-      }]
+        await Builder.run()
+      }
     },
 
     {

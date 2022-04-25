@@ -1,12 +1,12 @@
-import Parser from './Parser.js'
-import BrowserEventRegistry from './registries/BrowserEventRegistry.js'
-import EntityRegistry from './registries/EntityRegistry.js'
-import TrackableRegistry from './registries/TrackableRegistry.js'
-import { TrackingInterpolation } from './Interpolation.js'
-import { typeOf } from '@ngnjs/libdata'
-import AttributeList from './AttributeList.js'
-import Template from './Template.js'
-import { normalizeString } from './utilities/StringUtils.js'
+import Parser from './Parser'
+import DOMEventRegistry from './DOMEventRegistry.js'
+import EntityRegistry from './EntityRegistry.js'
+import TrackingInterpolation from './TrackingInterpolation.js'
+
+function getExistingAttributeValue (node, name) {
+  const value = node.getAttribute(name)
+  return value ? value.trim().split(' ').map(item => item.trim()) : []
+}
 
 export function getOptions (options, node) {
   return {
@@ -25,67 +25,15 @@ export default class Renderer {
     this.#parser = new Parser(parent)
   }
 
-  #renderArray (arr, isChild = false, tasks = []) {
-    const content = document.createDocumentFragment()
-
-    arr.forEach(item => {
-      let output
-
-      if (Array.isArray(item)) {
-        output = this.#renderArray(item, true, tasks)
-      } else if (item instanceof Template) {
-        output = this.render(item, true, tasks)
-      } else {
-        console.log('HANDLE PRIMITIVE')
-      }
-
-      content.append(output.content)
-      tasks.push(...output.tasks)
-    })
-
-    return { content, tasks }
-  }
-
-  render (template, isChild = false, tasks = []) {
+  render (template, tasks, isChild) {
     if (Array.isArray(template)) {
-      return this.#renderArray(...arguments)
+      return console.log('Render Array of Templates')
     }
 
     switch (template.type) {
       case 'html': return this.#renderHTML(...arguments)
-      case 'svg': return this.#renderSVG(...arguments)
-    
+      case 'svg': return console.log(`RENDER SVG`)
       default: throw new TypeError(`Invalid template type "${template.type}"`)
-    }
-  }
-
-  #bindAttributes (nodes, attributes) {
-    if (nodes.length === 0) {
-      throw new Error(`Cannot bind attributes to non-element nodes`)
-    }
-
-    if (nodes.length > 1) {
-      throw new Error(`Cannot bind attributes to more than one node`)
-    }
-
-    const node = nodes[0]
-
-    for (let attribute in attributes) {
-      this.#setAttribute(node, attribute, attributes[attribute])
-    }
-  }
-
-  #bindListeners (nodes, listeners) {
-    if (nodes.length === 0) {
-      throw new Error(`Cannot bind event listeners to non-element nodes`)
-    }
-
-    if (nodes.length > 1) {
-      throw new Error(`Cannot bind event listeners to more than one node`)
-    }
-
-    for (let evt in listeners) {
-      listeners[evt].forEach(({ handler, cfg }) => BrowserEventRegistry.add(this, nodes[0], evt, handler, cfg))
     }
   }
 
@@ -99,25 +47,46 @@ export default class Renderer {
     }
   }
 
-  #renderHTML (template, isChild = false, tasks = []) {
-    const { attributes, boundListeners, entityConfig, listeners } = template
-    const target = document.createElement('template')
+  #bind (item, node, hasMoreThanOneNode, cb) {
+    if (!node) {
+      throw new Error(`Cannot bind ${item} to non-element nodes`)
+    }
 
+    if (hasMoreThanOneNode) {
+      throw new Error(`Cannot bind ${item} to more than one node`)
+    }
+
+    cb()
+  }
+
+  #renderHTML (template, tasks = [], isChild = false) {
+    const target = document.createElement('template')
     target.innerHTML = this.#parser.parse(template, this.#options)
-    
+
     const { content } = target
-    const nodes = [...content.children]
+    const node = content.firstElementChild
+    const hasMoreThanOneNode = content.children.length > 1
+
+    const { attributes, bound, listeners } = template
 
     if (!!attributes) {
-      this.#bindAttributes(nodes, attributes)
+      this.#bind('attributes', node, hasMoreThanOneNode, () => {
+        for (let attribute in attributes) {
+          this.#setAttribute(node, attribute, attributes[attribute])
+        }
+      })
     }
 
     if (!!listeners) {
-      this.#bindListeners(nodes, listeners)
+      this.#bind('listeners', node, hasMoreThanOneNode, () => {
+        for (let evt in listeners) {
+          listeners[evt].forEach(({ handler, cfg }) => DOMEventRegistry.add(this, node, evt, handler, cfg))
+        }
+      })
     }
 
     const { interpolations, templates, trackers } = this.#parser
-    
+
     this.#renderCollection(content, interpolations, (interpolation, placeholder) => {
       placeholder?.replaceWith(interpolation.render(getOptions(this.#options, placeholder)))
     })
@@ -125,74 +94,93 @@ export default class Renderer {
     this.#renderCollection(content, trackers, (tracker, placeholder) => {
       placeholder && tracker?.render(placeholder, getOptions(this.#options, placeholder))
     })
-    
+
     this.#renderCollection(content, templates, (template, placeholder) => {
       if (placeholder) {
         const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
-        const { content } = renderer.render(template, true, tasks)
+        const { content } = renderer.render(template, tasks, true)
         placeholder?.replaceWith(content)
       }
     })
 
-    if (entityConfig) {
-      if (content.childElementCount > 1) {
-        throw new Error(`Cannot bind entity to more than one node`)
-      }
 
-      if (!isChild) {
-        this.#parent.children.length = 0
-      }
 
-      const node = content.firstElementChild
-      let config = entityConfig
+    return { content, tasks }
 
-      if (entityConfig instanceof TrackingInterpolation) {
-        const tracker = TrackableRegistry.registerBindingTracker(node, config, this.#parent, boundListeners)
-        config = tracker.value
-      } 
-        
-      tasks.push(() => {
-        const { entity, mount } = EntityRegistry.register(node, config, this.#parent)
-        this.#parent.children.push(entity)
-        mount()
-      })
-    }
+    // if (!!route && routes.length > 0) {
+    //   const { config, remaining } = template.routes.match(route)
+
+    //   const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
+    //   const { content } = renderer.render(template, { isChild: true, route }, tasks)
+    //   placeholder?.replaceWith(content)
+    //   console.log('RENDER', config)
+    //   console.log(root);
+
+    //   route = remaining
+    // } else {
+    //   
+
+
+    
+
+    
+
+    //   if (bound.config) {
+    //     if (content.childElementCount > 1) {
+    //       throw new Error(`Cannot bind entity to more than one node`)
+    //     }
+
+    //     if (!isChild) {
+    //       this.#parent.children.length = 0
+    //     }
+
+    //     // if (entityConfig instanceof TrackingInterpolation) {
+    //     //   const tracker = TrackableRegistry.registerBindingTracker(node, bound.config, this.#parent, bound)
+    //     //   config = tracker.value
+    //     // }
+
+    //     tasks.push(() => {
+    //       const { entity, mount } = EntityRegistry.register({
+    //         parent: this.#parent,
+    //         root: node,
+    //         config: bound.config,
+    //         options: bound
+    //       })
+
+    //       this.#parent.children.push(entity)
+    //       mount(route)
+    //     })
+    //   }
+    // }
 
     return { content, tasks }
   }
 
-  #renderSVG (template, isChild, tasks = []) {
-    const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-
-    target.innerHTML = this.#parser.parse(template, this.#options)
-    const fragment = document.createDocumentFragment()
-    fragment.append(...target.children)
-
-    return {
-      content: fragment,
-      tasks
-    }
-  }
-
   #setAttribute (node, name, value) {
-    if (Array.isArray(value)) {
-      const list = new AttributeList(node, name, value, this.#parent)
-      return node.setAttribute(name, list.value)
-    }
-
     if (value instanceof TrackingInterpolation) {
       const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#parent)
       return tracker.reconcile()
     }
 
-    let type = typeOf(value)
+    const existing = getExistingAttributeValue(node, name)
 
-    switch (type) {
+    if (Array.isArray(value)) {
+      const list = new AttributeList(node, name, value.concat(...(existing ?? [])), this.#parent)
+      return node.setAttribute(name, list.value)
+    }
+
+    switch (typeof value) {
       case 'string':
-      case 'number': return node.setAttribute(name, value)
+      case 'number': return node.setAttribute(name, `${existing.join(' ')} ${value}`.trim())
       case 'boolean': return value && node.setAttribute(name, '')
-      case 'object': return Object.keys(value).forEach(slug => this.#setAttribute(node, `${name}-${slug}`, value[slug]))
-      default: throw new TypeError(`"${this.name}" rendering error: Invalid attribute value type "${type ?? typeof value}"`)
+      
+      case 'object': return Object.keys(value).forEach(slug => {
+        name = `${name}-${slug}`
+        const existing = getExistingAttributeValue(node, name)
+        return this.#setAttribute(node, name, `${existing.join(' ')} ${value[slug]}`.trim())
+      })
+
+      default: throw new TypeError(`"${this.#parent.name}" rendering error: Invalid attribute value type "${typeof value}"`)
     }
   }
 }

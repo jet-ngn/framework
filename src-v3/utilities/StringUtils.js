@@ -1,11 +1,21 @@
+const textarea = document.createElement('textarea')
+
 export function escapeString (string) {
-  const textarea = document.createElement('textarea')
+  textarea.innerHTML = ''
   textarea.textContent = string
   return textarea.innerHTML
 }
 
 export function normalizeString (string) {
   return string.replace(/\r?\n|\r/g, '')
+}
+
+export function stripSpaces (string) {
+  return string.replace(/\s+/g, '').trim()
+}
+
+export function stripExtraSpaces (string) {
+  return string.replace(/\s+/g, ' ').trim()
 }
 
 export function sanitizeString (string, options) {

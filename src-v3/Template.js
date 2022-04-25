@@ -1,21 +1,19 @@
-import JetClass from './JetClass.js'
+import { NANOID } from '@ngnjs/libdata'
 
-export default class Template extends JetClass {
+export default class Template {
+  #id = NANOID()
   #type
   #strings
   #interpolations
 
   #attributes = null
+  #entityConfig = null
+  #boundListeners = null
   #listeners = null
-  
-  #bound = {
-    config: null,
-    listeners: null,
-    route: null
-  }
+  #routes = null
+  #routeCfg = null
 
   constructor ({ type, strings, interpolations }) {
-    super()
     this.#type = type
     this.#strings = strings
     this.#interpolations = interpolations
@@ -25,8 +23,16 @@ export default class Template extends JetClass {
     return this.#attributes
   }
 
-  get bound () {
-    return this.#bound
+  get boundListeners () {
+    return this.#boundListeners
+  }
+
+  get entityConfig () {
+    return this.#entityConfig
+  }
+
+  get id () {
+    return this.#id
   }
 
   get interpolations () {
@@ -37,6 +43,14 @@ export default class Template extends JetClass {
     return this.#listeners
   }
 
+  get routeCfg () {
+    return this.#routeCfg
+  }
+
+  get routes () {
+    return this.#routes
+  }
+
   get strings () {
     return this.#strings
   }
@@ -45,18 +59,20 @@ export default class Template extends JetClass {
     return this.#type
   }
 
-  attr (config) {
-    this.#attributes = { ...(this.#attributes ?? {}), ...config }
+  attr (cfg) {
+    this.#attributes = { ...(this.#attributes ?? {}), ...cfg }
     return this
   }
 
   bind (config = null, options = {}) {
-    this.#bound = {
-      config,
-      listeners: options.on ?? null,
-      route: options.route ?? null
-    }
-    
+    this.#entityConfig = config ?? null
+    this.#boundListeners = options.on ?? null
+    this.#routeCfg = options.route ?? null
+    return this
+  }
+
+  match (cfg) {
+    this.#routes = cfg
     return this
   }
 

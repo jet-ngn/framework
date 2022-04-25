@@ -1,37 +1,47 @@
-import NGN from 'NGN'
-import App from './App.js'
-import { html, svg } from './Tags.js'
-import { getChanges, track, Trackable } from './registries/TrackableRegistry.js'
-const { BUS, EventEmitter } = NGN
+import './lib/exceptions.js'
+import EntityRegistry from './EntityRegistry.js'
+import DefaultRoutes from './lib/routes.js'
+import Application from './Application.js'
+import { parseSearchParams } from './utilities/RouteUtils.js'
 
-window.addEventListener('popstate', evt => {
-  console.log(evt);
-  // if (!evt.state) {
-  //   return
-  // }
+let App
+let ready = false
+let started = false
+let appConfig
 
-  // let { hash, map, name, payload, query } = evt.state
-
-  // if (this.has(name)) {
-  //   return this.#execChange(this.getState(name), payload, { hash, map, query })
-  // }
-
-  // TODO: Throw Error
+document.addEventListener('DOMContentLoaded', evt => {
+  ready = true
+  started && initialize()
 })
 
-// BUS.on('*', function () {
-//   console.log(this.event);
-// })
+window.addEventListener('popstate', console.log)
 
-export {
-  App,
-  BUS as Bus,
-  EventEmitter,
-  html,
-  svg,
-  // css,
-  // md,
-  Trackable,
-  track,
-  getChanges
+function initialize () {
+  App = new Application(appConfig)
+  const { location } = window
+
+  let { mount } = EntityRegistry.register({
+    parent: App,
+    root: App.root,
+    config: App.routes.match(location.pathname) ?? App.routes.get(404) ?? DefaultRoutes[404]
+  })
+
+  mount(parseSearchParams(location.search))
 }
+
+export function start (config) {
+  if (started) {
+    throw new Error(`App has already started`)
+  }
+
+  appConfig = {
+    ...config,
+    baseURL: new URL(config.baseURL ?? '', window.location.origin),
+    routes: config.routes ?? {}
+  }
+
+  started = true
+  ready && initialize()
+}
+
+export { html, svg } from './lib/tags.js'
