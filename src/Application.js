@@ -4,11 +4,11 @@ import RouteManager from './RouteManager.js'
 export default class Application extends Base {
   #routeManager
 
-  constructor ({ baseURL, name, routes, selector }) {
+  constructor ({ baseURL, name, on, routes, selector }) {
     super({
       ...arguments[0],
       name: name ?? 'Unnamed Jet App',
-      root: document.querySelector(`:scope > ${selector ?? 'body'}`)
+      root: document.querySelector(selector ?? 'body')
     })
     
     this.#routeManager = new RouteManager(routes ?? {}, baseURL)

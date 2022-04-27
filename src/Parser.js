@@ -1,4 +1,6 @@
 import Template from './Template.js'
+import TrackableRegistry from './TrackableRegistry.js'
+import TrackingInterpolation from './TrackingInterpolation.js'
 import { sanitizeString } from './utilities/StringUtils.js'
 
 export default class Parser {
@@ -51,12 +53,11 @@ export default class Parser {
       return `<template class="template" id="${interpolation.id}"></template>`
     }
 
-    // if (interpolation instanceof TrackingInterpolation) {
-    //   console.log('HANDLE TRACKER')
-    //   // const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#parent)
-    //   // this.#trackers.push(tracker)
-    //   return `<template class="tracker" id="${tracker.id}"></template>`
-    // }
+    if (interpolation instanceof TrackingInterpolation) {
+      const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#parent)
+      this.#trackers.push(tracker)
+      return `<template class="tracker" id="${tracker.id}"></template>`
+    }
 
     switch (typeof interpolation) {
       case 'undefined':

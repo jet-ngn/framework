@@ -1,4 +1,5 @@
 import Route from './Route'
+import DefaultRoutes from './lib/routes.js'
 
 export default class RouteManager {
   #base
@@ -49,7 +50,7 @@ export default class RouteManager {
       return result
     }, null)
 
-    return match?.config ?? null
+    return match?.config ?? this.get(404) ?? DefaultRoutes[404]
   }
 
   #getSlugs (path) {

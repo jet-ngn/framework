@@ -1,12 +1,12 @@
-import { defineException } from 'NGN'
+// import { defineException } from 'NGN'
 
-defineException({
-  name: 'BaseURLMismatchError',
-  type: 'BaseURLMismatchError',
-  severity: 'critical',
-  category: 'user',
-  message: 'URL entered does not match the App base URL',
-})
+// defineException({
+//   name: 'BaseURLMismatchError',
+//   type: 'BaseURLMismatchError',
+//   severity: 'critical',
+//   category: 'user',
+//   message: 'URL entered does not match the App base URL',
+// })
 
 // defineException({
 //   name: 'AppStartError',

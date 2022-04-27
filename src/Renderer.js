@@ -103,55 +103,32 @@ export default class Renderer {
       }
     })
 
+    let { config } = bound
 
+    if (!!config) {
+      this.#bind('entity', node, hasMoreThanOneNode, () => {
+        if (!isChild) {
+          this.#parent.children.length = 0
+        }
 
-    return { content, tasks }
+        if (config instanceof TrackingInterpolation) {
+          const tracker = TrackableRegistry.registerBindingTracker(node, bound.config, this.#parent, bound)
+          config = tracker.value
+        }
 
-    // if (!!route && routes.length > 0) {
-    //   const { config, remaining } = template.routes.match(route)
-
-    //   const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
-    //   const { content } = renderer.render(template, { isChild: true, route }, tasks)
-    //   placeholder?.replaceWith(content)
-    //   console.log('RENDER', config)
-    //   console.log(root);
-
-    //   route = remaining
-    // } else {
-    //   
-
-
-    
-
-    
-
-    //   if (bound.config) {
-    //     if (content.childElementCount > 1) {
-    //       throw new Error(`Cannot bind entity to more than one node`)
-    //     }
-
-    //     if (!isChild) {
-    //       this.#parent.children.length = 0
-    //     }
-
-    //     // if (entityConfig instanceof TrackingInterpolation) {
-    //     //   const tracker = TrackableRegistry.registerBindingTracker(node, bound.config, this.#parent, bound)
-    //     //   config = tracker.value
-    //     // }
-
-    //     tasks.push(() => {
-    //       const { entity, mount } = EntityRegistry.register({
-    //         parent: this.#parent,
-    //         root: node,
-    //         config: bound.config,
-    //         options: bound
-    //       })
-
-    //       this.#parent.children.push(entity)
-    //       mount(route)
-    //     })
-    //   }
-    // }
+        tasks.push(() => {
+          const { entity, mount } = EntityRegistry.register({
+            parent: this.#parent,
+            root: node,
+            config,
+            options: bound
+          })
+  
+          this.#parent.children.push(entity)
+          mount()
+        })
+      })
+    }
 
     return { content, tasks }
   }
