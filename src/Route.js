@@ -1,23 +1,28 @@
 export default class Route {
+  #parent
   #path
-  #config
+  #view
   #middleware
 
-  constructor (path, config) {
+  constructor (path, config, parent) {
     this.#path = path
-    this.#config = config.config ?? config
-    this.#middleware = config.middleware ?? null
-  }
-
-  get config () {
-    return this.#config
+    this.#parent = parent ?? null
+    this.#view = config.view ?? config
   }
 
   get middleware () {
     return this.#middleware
   }
 
+  get parent () {
+    return this.#parent
+  }
+
   get path () {
     return this.#path
+  }
+
+  get view () {
+    return this.#view
   }
 }

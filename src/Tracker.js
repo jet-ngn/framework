@@ -1,4 +1,5 @@
 import Template from './Template.js'
+import Renderer from './Renderer.js'
 import { NANOID } from '@ngnjs/libdata'
 import { getOptions } from './Renderer.js'
 import { reconcileNodes } from './Reconciler.js'
@@ -122,15 +123,19 @@ export class BindingTracker extends Tracker {
   }
 
   reconcile () {
-    let current = EntityRegistry.getEntryByNode(this.#node)
+    let current = ViewRegistry.getEntryByNode(this.#node)
 
     current.unmount()
-    this.#listeners?.unmount && this.#listeners.unmount.call(current.entity)
+    this.#listeners?.unmount && this.#listeners.unmount.call(current.view)
     
-    let next = EntityRegistry.register(this.#node, this.value, this.parent)
+    let next = ViewRegistry.register({
+      parent: this.parent,
+      root: this.#node,
+      config: this.value
+    })
 
     next.mount()
-    this.#listeners?.mount && this.#listeners.mount.call(next.entity)
+    this.#listeners?.mount && this.#listeners.mount.call(next.view)
   }
 }
 
@@ -178,7 +183,7 @@ export class ContentTracker extends Tracker {
 
     if (value instanceof Template) {
       const renderer = new Renderer(this.parent, this.#options)
-      const { content, tasks } = renderer.render(value, true)
+      const { content, tasks } = renderer.render(value, [], true)
       tasks.forEach(task => task())
       return [...content.children]
     }
@@ -206,7 +211,7 @@ export class ContentTracker extends Tracker {
 export class ArrayContentTracker extends ContentTracker {
   pop () {
     const last = this.nodes.at(-1)
-    const { unmount } = EntityRegistry.getEntryByNode(last) ?? {}
+    const { unmount } = ViewRegistry.getEntryByNode(last) ?? {}
     
     if (unmount) {
       unmount()
@@ -239,7 +244,7 @@ export class ArrayContentTracker extends ContentTracker {
 
   shift () {
     const first = this.nodes[0]
-    const { unmount } = EntityRegistry.getEntryByNode(first) ?? {}
+    const { unmount } = ViewRegistry.getEntryByNode(first) ?? {}
     
     if (unmount) {
       unmount()

@@ -1,4 +1,4 @@
-import EntityRegistry from "./EntityRegistry"
+import ViewRegistry from "./ViewRegistry"
 
 export function reconcileNode (original, update) {
   switch (original.nodeType) {
@@ -27,7 +27,7 @@ function reconcileElementNode (original, update) {
     return update
   }
 
-  EntityRegistry.unmountByNode(original)
+  ViewRegistry.unmountByNode(original)
 
   if (update.attributes.length > 0) {
     reconcileAttributes(original, update)
@@ -85,6 +85,6 @@ export function reconcileNodes (original, update) {
 }
 
 function unmount (node) {
-  const { unmount } = EntityRegistry.getEntryByNode(node) ?? {}
+  const { unmount } = ViewRegistry.getEntryByNode(node) ?? {}
   unmount && unmount()
 }

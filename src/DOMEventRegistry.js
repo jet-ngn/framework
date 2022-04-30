@@ -3,12 +3,12 @@ import DOMEventListener from './DOMEventListener.js'
 class DOMEventRegistry {
   #listeners = new Map
 
-  add (entity, node, event, callback, options) {
+  add (view, node, event, callback, options) {
     const applyListeners = !this.#hasEvent(event)
     const listener = new DOMEventListener(...arguments)
 
     this.#listeners.set({
-      entity,
+      view,
       event,
       id: listener.id,
       node,
@@ -24,8 +24,8 @@ class DOMEventRegistry {
     return listener
   }
 
-  removeByEntity (entity) {
-    [...this.#listeners.keys()].filter(listener => listener.entity === entity).forEach(listener => this.#listeners.delete(listener))
+  removeByView (view) {
+    [...this.#listeners.keys()].filter(listener => listener.view === view).forEach(listener => this.#listeners.delete(listener))
   }
 
   removeByEvent (node, event, callback) {
@@ -46,7 +46,7 @@ class DOMEventRegistry {
 
       ;[...this.#listeners.values()]
         .filter(({ node, event }) => (target === node || node.contains(target)) && event === eventName)
-        .forEach(({ entity, handler }) => handler.call(entity, evt))
+        .forEach(({ view, handler }) => handler.call(view, evt))
     })
   }
 

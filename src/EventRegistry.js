@@ -1,7 +1,7 @@
 import { BUS } from 'NGN'
 import EventHandler from './EventHandler.js'
 
-const entities = new Map
+const views = new Map
 
 export default class EventRegistry {
   static get reservedNames () {
@@ -43,10 +43,10 @@ export default class EventRegistry {
       }
     }
 
-    const stored = entities.get(context)
+    const stored = views.get(context)
 
     if (!stored) {
-       entities.set(context, {
+       views.set(context, {
          [evt]: callback
        })
     } else {
@@ -56,15 +56,15 @@ export default class EventRegistry {
     return BUS.on(`${context.scope}.${evt}`, callback)
   }
 
-  static removeAllByEntity (entity) {
-    const stored = entities.get(entity)
+  static removeAllByView (view) {
+    const stored = views.get(view)
 
     if (!stored) {
       return
     }
 
     Object.keys(stored).forEach(evt => {
-      BUS.off(`${entity.scope}.${evt}`, stored[evt])
+      BUS.off(`${view.scope}.${evt}`, stored[evt])
     })
   }
 }

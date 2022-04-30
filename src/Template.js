@@ -7,9 +7,10 @@ export default class Template extends JetClass {
 
   #attributes = null
   #listeners = null
+  #routes = null
   
   #bound = {
-    config: null,
+    view: null,
     listeners: null,
     route: null
   }
@@ -37,6 +38,10 @@ export default class Template extends JetClass {
     return this.#listeners
   }
 
+  get routes () {
+    return this.#routes
+  }
+
   get strings () {
     return this.#strings
   }
@@ -45,14 +50,28 @@ export default class Template extends JetClass {
     return this.#type
   }
 
-  attr (config) {
+  attachRouter (routes) {
+    this.#routes = routes
+    return this
+  }
+
+  setAttribute (name, value) {
+    this.#attributes = {
+      ...(this.#attributes ?? {}),
+      [name]: value
+    }
+
+    return this
+  }
+
+  setAttributes (config) {
     this.#attributes = { ...(this.#attributes ?? {}), ...config }
     return this
   }
 
-  bind (config = null, options = {}) {
+  bindView (view = null, options = {}) {
     this.#bound = {
-      config,
+      view,
       listeners: options.on ?? null,
       route: options.route ?? null
     }

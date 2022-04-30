@@ -1,7 +1,7 @@
 import DOMEventHandler from './DOMEventHandler.js'
 
 export default class DOMEventListener {
-  #entity
+  #view
   #node
   #event
   #handler
@@ -9,11 +9,11 @@ export default class DOMEventListener {
   #abortController = null
   #id = Symbol('DOMEventListener')
 
-  constructor (entity, node, event, callback, options = null) {
-    this.#entity = entity
+  constructor (view, node, event, callback, options = null) {
+    this.#view = view
     this.#node = node
     this.#event = event
-    this.#handler = new DOMEventHandler(entity, event, callback, options)
+    this.#handler = new DOMEventHandler(view, event, callback, options)
     this.#options = this.#processOptions(options)
 
     if (!this.#options.hasOwnProperty('signal')) {

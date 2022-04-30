@@ -1,7 +1,10 @@
 import Parser from './Parser'
 import DOMEventRegistry from './DOMEventRegistry.js'
-import EntityRegistry from './EntityRegistry.js'
+import RouterRegistry from './RouterRegistry.js'
+import TrackableRegistry from './TrackableRegistry.js'
+import ViewRegistry from './ViewRegistry.js'
 import TrackingInterpolation from './TrackingInterpolation.js'
+import AttributeList from './AttributeList.js'
 
 function getExistingAttributeValue (node, name) {
   const value = node.getAttribute(name)
@@ -14,18 +17,23 @@ export function getOptions (options, node) {
   }
 }
 
+export function renderTemplate (view, template, tasks = []) {
+  const renderer = new Renderer(view, { retainFormatting: view.root.tagName === 'PRE' })
+  return renderer.render(template, tasks)
+}
+
 export default class Renderer {
-  #parent
+  #view
   #parser
   #options
 
-  constructor (parent, options) {
-    this.#parent = parent
+  constructor (view, options) {
+    this.#view = view
     this.#options = options
-    this.#parser = new Parser(parent)
+    this.#parser = new Parser(view)
   }
 
-  render (template, tasks, isChild) {
+  render (template, tasks = [], isChild = false) {
     if (Array.isArray(template)) {
       return console.log('Render Array of Templates')
     }
@@ -64,14 +72,13 @@ export default class Renderer {
     target.innerHTML = this.#parser.parse(template, this.#options)
 
     const { content } = target
+    const { attributes, bound, listeners, routes } = template
     const node = content.firstElementChild
     const hasMoreThanOneNode = content.children.length > 1
 
-    const { attributes, bound, listeners } = template
-
     if (!!attributes) {
       this.#bind('attributes', node, hasMoreThanOneNode, () => {
-        for (let attribute in attributes) {
+        for (let attribute in attributes ?? {}) {
           this.#setAttribute(node, attribute, attributes[attribute])
         }
       })
@@ -79,10 +86,16 @@ export default class Renderer {
 
     if (!!listeners) {
       this.#bind('listeners', node, hasMoreThanOneNode, () => {
-        for (let evt in listeners) {
+        for (let evt in listeners ?? {}) {
           listeners[evt].forEach(({ handler, cfg }) => DOMEventRegistry.add(this, node, evt, handler, cfg))
         }
       })
+    }
+
+    let router = null
+
+    if (!!routes) {
+      router = RouterRegistry.register(this.#view, node, routes) 
     }
 
     const { interpolations, templates, trackers } = this.#parser
@@ -97,52 +110,50 @@ export default class Renderer {
 
     this.#renderCollection(content, templates, (template, placeholder) => {
       if (placeholder) {
-        const renderer = new Renderer(this.#parent, getOptions(this.#options, placeholder))
+        const renderer = new Renderer(this.#view, getOptions(this.#options, placeholder))
         const { content } = renderer.render(template, tasks, true)
         placeholder?.replaceWith(content)
       }
     })
 
-    let { config } = bound
-
-    if (!!config) {
-      this.#bind('entity', node, hasMoreThanOneNode, () => {
+    if (!!bound.view) {
+      this.#bind('view', node, hasMoreThanOneNode, () => {
         if (!isChild) {
-          this.#parent.children.length = 0
+          this.#view.children.length = 0
         }
 
-        if (config instanceof TrackingInterpolation) {
-          const tracker = TrackableRegistry.registerBindingTracker(node, bound.config, this.#parent, bound)
-          config = tracker.value
+        if (bound.view instanceof TrackingInterpolation) {
+          const tracker = TrackableRegistry.registerBindingTracker(node, bound.view, this.#view, bound)
+          bound.view = tracker.value
         }
 
-        tasks.push(() => {
-          const { entity, mount } = EntityRegistry.register({
-            parent: this.#parent,
+        tasks.push(remainingPath => {
+          const { view, mount } = ViewRegistry.register({
+            parent: this.#view,
             root: node,
-            config,
+            config: bound.view,
             options: bound
           })
   
-          this.#parent.children.push(entity)
-          mount()
+          this.#view.children.push(view)
+          mount(remainingPath)
         })
       })
     }
 
-    return { content, tasks }
+    return { content, tasks, router }
   }
 
   #setAttribute (node, name, value) {
     if (value instanceof TrackingInterpolation) {
-      const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#parent)
+      const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
       return tracker.reconcile()
     }
 
     const existing = getExistingAttributeValue(node, name)
 
     if (Array.isArray(value)) {
-      const list = new AttributeList(node, name, value.concat(...(existing ?? [])), this.#parent)
+      const list = new AttributeList(node, name, value.concat(...(existing ?? [])), this.#view)
       return node.setAttribute(name, list.value)
     }
 
@@ -157,7 +168,7 @@ export default class Renderer {
         return this.#setAttribute(node, name, `${existing.join(' ')} ${value[slug]}`.trim())
       })
 
-      default: throw new TypeError(`"${this.#parent.name}" rendering error: Invalid attribute value type "${typeof value}"`)
+      default: throw new TypeError(`"${this.#view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
     }
   }
 }

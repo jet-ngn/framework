@@ -1,85 +1,113 @@
 // import './lib/``exceptions.js'
-import EntityRegistry from './EntityRegistry.js'
-import Application from './Application.js'
-import { parseSearchParams } from './utilities/RouteUtils.js'
+import { INTERNAL } from 'NGN'
+import RouterRegistry from './RouterRegistry.js'
+import ViewRegistry from './ViewRegistry.js'
 import history from 'history'
 import { INTERNAL_ACCESS_KEY } from './globals.js'
+import { BUS, EventEmitter } from 'NGN'
+import { NANOID } from '@ngnjs/libdata'
 
-let App
+import { html, svg } from './lib/tags.js'
+import { track, getChanges } from './TrackableRegistry.js'
+import { Trackable } from './Trackable.js'
+
+let RootView
+let RootElementSelector
+let RootConfig
 let ready = false
-let started = false
-let appConfig
-let current = {}
+let initialized = false
 let args = []
+const createID = NANOID
 
 // TODO: Possibly make current a trackable
 
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
-  started && initialize()
+  initialized && start()
 })
 
 history.listen(({ action, location }) => {
-  console.log(action);
-  const { pathname } = location
-  let aborted = false
+  // const { pathname } = location
+  // let aborted = false
+  
+  // let previous = {
+  //   path: current.path
+  // }
 
-  App.emit(INTERNAL_ACCESS_KEY, 'route.change', {
-    from: current.path,
-    to: pathname,
-    abort: () => aborted = true
-  }, ...args)
+  INTERNAL(`route.change`, { action, location })
 
-  if (!aborted) {
-    current.unmount()
-    mountEntity(App.routes.match(pathname))
-    current.path = pathname
-  }
+  // App.emit(INTERNAL_ACCESS_KEY, 'route.change', {
+  //   from: current.path,
+  //   to: pathname,
+  //   abort: () => aborted = true
+  // }, ...args)
 
-  args = []
+  // console.log(App.routes.match(pathname));
+
+  // if (!aborted) {
+  //   current.unmount()
+  //   mountView(App.routes.match(pathname))
+  //   current.path = pathname
+  // }
+
+  // App.emit(INTERNAL_ACCESS_KEY, 'route.changed', {
+  //   from: previous.path,
+  //   to: pathname
+  // }, ...args)
+
+  // args = []
 })
 
-function initialize () {
-  App = new Application(appConfig)
-  current.path = location.pathname
-  mountEntity(App.routes.match(current.path))
-}
+function start () {
+  const nodes = document.querySelectorAll(RootElementSelector)
 
-function mountEntity (config, ...args) {
-  current = {
-    ...current,
-    
-    ...EntityRegistry.register({
-      parent: App,
-      root: App.root,
-      config
-    })
+  if (nodes.length > 1) {
+    throw new Error(`Invalid root element selector: "${RootElementSelector}" returned multiple nodes.`)
   }
 
-  current.mount(parseSearchParams(location.search), ...args)
+  const { view, mount } = ViewRegistry.register({
+    root: nodes[0],
+    config: RootConfig
+  })
+
+  RootView = view
+  mount()
 }
 
-export function createApp ({ baseURL, routes }) {
-  if (started) {
-    throw new Error(`App has already started`)
+function initialize (selector, config) {
+  if (initialized) {
+    throw new Error(`App has already been initialized`)
   }
 
-  appConfig = {
-    ...arguments[0],
-    baseURL: new URL(baseURL ?? '', location.origin),
-    routes: routes ?? {}
-  }
-
-  started = true
-  ready && initialize()
+  RootConfig = config
+  RouterRegistry.baseURL = new URL(config.baseURL ?? '', location.origin)
+  RootElementSelector = selector
+  initialized = true
+  ready && start()
 }
 
-export function navigate (to, ...rest) {
-  console.log('NAV')
+const Plugins = {}
+
+function installPlugins (...plugins) {
+  plugins.forEach(plugin => plugin.install({ createID, html, svg, track, getChanges, Trackable }, Plugins))
+}
+
+function navigate (to, ...rest) {
   args = rest
   history.push(to)
 }
 
-export { html, svg } from './lib/tags.js'
-export { track, getChanges } from './TrackableRegistry.js'
-export { Trackable } from './Trackable.js'
+export {
+  BUS as Bus,
+  EventEmitter,
+  Plugins,
+  Trackable,
+  createID,
+  getChanges,
+  html,
+  initialize,
+  installPlugins,
+  navigate,
+  svg,
+  track
+}

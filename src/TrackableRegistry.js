@@ -11,7 +11,7 @@ import {
 } from './Tracker.js'
 
 const trackables = new Map
-const entities = new Map
+const views = new Map
 
 export default class TrackableRegistry {
   static getChanges (proxy) {
@@ -66,15 +66,15 @@ export default class TrackableRegistry {
       : this.#register(new ContentTracker(...arguments), true)
   }
 
-  static removeContentTrackersByEntity (entity) {
-    const registeredEntity = entities.get(entity)
+  static removeContentTrackersByView (view) {
+    const registeredView = views.get(view)
     
-    if (!registeredEntity) {
+    if (!registeredView) {
       return
     }
 
-    registeredEntity.trackers.forEach(tracker => {
-      registeredEntity.trackables.forEach(trackable => {
+    registeredView.trackers.forEach(tracker => {
+      registeredView.trackables.forEach(trackable => {
         const { trackers } = trackable
         trackable.trackers = trackers.filter(registeredTracker => registeredTracker !== tracker)
       })
@@ -83,6 +83,11 @@ export default class TrackableRegistry {
 
   static track (target, property, transform) {
     return new TrackingInterpolation(...arguments)
+  }
+
+  static untrack (target) {
+    target = this.get(target)
+    console.log(target);
   }
 
   static #getArrayMethodHandler (target, property, reconcile = false) {
@@ -184,7 +189,7 @@ export default class TrackableRegistry {
     return revocable.proxy
   }
 
-  static #register (tracker, storeEntity = false) {
+  static #register (tracker, storeView = false) {
     const trackable = this.getProxy(tracker.target)
 
     if (!trackable) {
@@ -193,17 +198,17 @@ export default class TrackableRegistry {
 
     trackable.trackers.push(tracker)
 
-    if (storeEntity) {
+    if (storeView) {
       const { parent } = tracker
-      const registeredEntity = entities.get(parent)
+      const registeredView = views.get(parent)
 
-      if (!registeredEntity) {
-        entities.set(parent, { trackers: [tracker], trackables: [trackable] })
+      if (!registeredView) {
+        views.set(parent, { trackers: [tracker], trackables: [trackable] })
       } else {
-        registeredEntity.trackers.push(tracker)
+        registeredView.trackers.push(tracker)
 
-        if (!registeredEntity.trackables.includes(trackable)) {
-          registeredEntity.trackables.push(trackable)
+        if (!registeredView.trackables.includes(trackable)) {
+          registeredView.trackables.push(trackable)
         }
       }
     }

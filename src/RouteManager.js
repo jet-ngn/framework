@@ -29,7 +29,10 @@ export default class RouteManager {
   match (path) {
     path = this.#combinePaths(path)
     const route = this.#routes[path]
-    return route?.config ?? this.#dynamicMatch(path)
+
+    console.log(route)
+
+    return route?.view ?? this.#dynamicMatch(path)
   }
 
   #combinePaths (...paths) {
@@ -50,19 +53,19 @@ export default class RouteManager {
       return result
     }, null)
 
-    return match?.config ?? this.get(404) ?? DefaultRoutes[404]
+    return match?.view ?? this.get(404) ?? DefaultRoutes[404]
   }
 
   #getSlugs (path) {
     return this.#removeSlashes(path).split('/').filter(Boolean)
   }
 
-  #processRoute (path, config) {
-    const route = new Route(this.#combinePaths(this.#base.pathname, path), config)
+  #processRoute (path, config, parent) {
+    const route = new Route(this.#combinePaths(this.#base.pathname, path), config, parent)
     this.#routes[route.path] = route
 
     const { routes } = config
-    Object.keys(routes ?? {}).forEach(child => this.#processRoute(this.#combinePaths(path, child), routes[child]))
+    Object.keys(routes ?? {}).forEach(child => this.#processRoute(this.#combinePaths(path, child), routes[child], route))
   }
 
   #removeSlashes (path) {
