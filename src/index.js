@@ -19,43 +19,9 @@ let initialized = false
 let args = []
 const createID = NANOID
 
-// TODO: Possibly make current a trackable
-
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
   initialized && start()
-})
-
-history.listen(({ action, location }) => {
-  // const { pathname } = location
-  // let aborted = false
-  
-  // let previous = {
-  //   path: current.path
-  // }
-
-  INTERNAL(`route.change`, { action, location })
-
-  // App.emit(INTERNAL_ACCESS_KEY, 'route.change', {
-  //   from: current.path,
-  //   to: pathname,
-  //   abort: () => aborted = true
-  // }, ...args)
-
-  // console.log(App.routes.match(pathname));
-
-  // if (!aborted) {
-  //   current.unmount()
-  //   mountView(App.routes.match(pathname))
-  //   current.path = pathname
-  // }
-
-  // App.emit(INTERNAL_ACCESS_KEY, 'route.changed', {
-  //   from: previous.path,
-  //   to: pathname
-  // }, ...args)
-
-  // args = []
 })
 
 function start () {
@@ -71,7 +37,7 @@ function start () {
   })
 
   RootView = view
-  mount()
+  mount(location.pathname)
 }
 
 function initialize (selector, config) {

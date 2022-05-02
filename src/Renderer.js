@@ -17,9 +17,9 @@ export function getOptions (options, node) {
   }
 }
 
-export function renderTemplate (view, template, tasks = []) {
+export function renderTemplate (view, template) {
   const renderer = new Renderer(view, { retainFormatting: view.root.tagName === 'PRE' })
-  return renderer.render(template, tasks)
+  return renderer.render(template)
 }
 
 export default class Renderer {
@@ -33,7 +33,7 @@ export default class Renderer {
     this.#parser = new Parser(view)
   }
 
-  render (template, tasks = [], isChild = false) {
+  render (template, isChild = false) {
     if (Array.isArray(template)) {
       return console.log('Render Array of Templates')
     }
@@ -67,12 +67,12 @@ export default class Renderer {
     cb()
   }
 
-  #renderHTML (template, tasks = [], isChild = false) {
+  #renderHTML (template, isChild = false) {
     const target = document.createElement('template')
     target.innerHTML = this.#parser.parse(template, this.#options)
 
     const { content } = target
-    const { attributes, bound, listeners, routes } = template
+    const { attributes, bound, listeners } = template
     const node = content.firstElementChild
     const hasMoreThanOneNode = content.children.length > 1
 
@@ -92,12 +92,6 @@ export default class Renderer {
       })
     }
 
-    let router = null
-
-    if (!!routes) {
-      router = RouterRegistry.register(this.#view, node, routes) 
-    }
-
     const { interpolations, templates, trackers } = this.#parser
 
     this.#renderCollection(content, interpolations, (interpolation, placeholder) => {
@@ -111,7 +105,7 @@ export default class Renderer {
     this.#renderCollection(content, templates, (template, placeholder) => {
       if (placeholder) {
         const renderer = new Renderer(this.#view, getOptions(this.#options, placeholder))
-        const { content } = renderer.render(template, tasks, true)
+        const content = renderer.render(template, true)
         placeholder?.replaceWith(content)
       }
     })
@@ -127,21 +121,29 @@ export default class Renderer {
           bound.view = tracker.value
         }
 
-        tasks.push(remainingPath => {
-          const { view, mount } = ViewRegistry.register({
-            parent: this.#view,
-            root: node,
-            config: bound.view,
-            options: bound
-          })
-  
-          this.#view.children.push(view)
-          mount(remainingPath)
+        const child = ViewRegistry.register({
+          parent: this.#view,
+          root: node,
+          config: bound.view,
+          options: bound
         })
+
+        this.#view.children.push(child.view)
+        // tasks.push(path => {
+        //   const { view, mount } = ViewRegistry.register({
+        //     parent: this.#view,
+        //     root: node,
+        //     config: bound.view,
+        //     options: bound
+        //   })
+  
+        //   this.#view.children.push(view)
+        //   mount(path)
+        // })
       })
     }
 
-    return { content, tasks, router }
+    return content
   }
 
   #setAttribute (node, name, value) {

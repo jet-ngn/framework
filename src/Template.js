@@ -7,7 +7,6 @@ export default class Template extends JetClass {
 
   #attributes = null
   #listeners = null
-  #routes = null
   
   #bound = {
     view: null,
@@ -38,21 +37,12 @@ export default class Template extends JetClass {
     return this.#listeners
   }
 
-  get routes () {
-    return this.#routes
-  }
-
   get strings () {
     return this.#strings
   }
 
   get type () {
     return this.#type
-  }
-
-  attachRouter (routes) {
-    this.#routes = routes
-    return this
   }
 
   setAttribute (name, value) {

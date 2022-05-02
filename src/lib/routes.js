@@ -5,14 +5,8 @@ export default {
     name: '404 Not Found',
     scope: '404',
 
-    on: {
-      mount () {
-        this.root.classList.add('404')
-      }
-    },
-
     render () {
-      return html`404 Not Found`
+      return html`<div class="404 not_found message">404 Not Found</div>`
     }
   }
 }

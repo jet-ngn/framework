@@ -1,4 +1,3 @@
-// import { LEDGER, INTERNAL_EVENT } from 'NGN'
 import ViewRegistry from './ViewRegistry.js'
 import Router from './Router.js'
 import history from 'history'
@@ -10,13 +9,64 @@ const views = new Map
 export default class RouterRegistry {
   baseURL = null
 
-  static register (view, node, routes) {
+  static combinePaths (...paths) {
+    const chunks = paths.map(this.removeSlashes).filter(Boolean)
+    return `/${chunks.join('/')}`
+  }
+
+  static getRemainingPath (path, matched) { 
+    console.log(path, matched);
+  }
+  
+  static getSlugs (path) {
+    return this.removeSlashes(path).split('/').filter(Boolean)
+  }
+
+  static register (view, routes) {
     const router = new Router(...arguments, this.baseURL)
     routers.push(router)
     views.set(view, router)
     return router
   }
+
+  static remove (router) {
+    routers.splice(routers.indexOf(router), 1)
+  }
+
+  static removeSlashes (path) {
+    return path.replace(/^\/+|\/+$/g, '')
+  }
 }
+
+history.listen(({ action, location }) => {
+  console.log(action, location)
+
+  // TODO: Check location against current route
+
+  // let previous
+
+  // for (let i = 0, { length } = routers; i < length; i++) {
+  //   const router = routers[i]
+  //   const { route, remaining } = router.match(location.pathname)
+
+  //   if (route) {
+  //     const { parent, root } = router.view
+  //     const custom404 = router.get(404) ?? previous?.get(404) ?? null
+
+  //     const registered = ViewRegistry.register({
+  //       parent,
+  //       root,
+  //       config: route?.view ?? custom404?.view ?? DefaultRoutes[404]
+  //     })
+
+  //     router.current.unmount()
+  //     router.current = registered
+  //     registered.mount(remaining)
+  //     previous = router
+  //     break
+  //   }
+  // }
+})
 
 // history.listen(({ action, location }) => {
 //   // const { pathname } = location
@@ -48,58 +98,4 @@ export default class RouterRegistry {
 //   // }, ...args)
 
 //   // args = []
-// })
-
-history.listen(({ action, location }) => {
-  console.log(action, location)
-
-  for (let i = 0, { length } = routers; i < length; i++) {
-    const router = routers[i]
-    const { route, remaining } = router.match(location.pathname)
-
-    if (route) {
-      const { parent, root } = router.view
-      const custom404 = router.get(404)
-
-      const { view, mount } = ViewRegistry.register({
-        parent,
-        root,
-        config: route?.view ?? custom404?.view ?? DefaultRoutes[404]
-      })
-
-      console.log(view);
-
-      mount(remaining, router)
-      break
-    }
-  }
-  
-  // routers.forEach(router => {
-  //   const { route, remaining } = router.match(location.pathname)
-
-  //   if (route) {
-  //     match = route
-  //     remainingSlugs.push(...remaining)
-  //   }
-  //   console.log(route, remaining)
-  // })
-})
-
-// LEDGER.on(INTERNAL_EVENT, (event, change) => {
-//   if (event === 'route.change') {
-//     const { action, location } = change
-
-//     // TODO: Loop through routers and match against the path
-//     // Return the portion of the path that is not matched, and attempt to match that against against the next router
-//     // Once the entire path is matched, stop the loop
-//     // If no path is matched, render 404
-//     // Try using a generator for this?
-
-//     console.log(location.pathname)
-
-//     routers.forEach(router => {
-//       const route = router.match(location.pathname)
-//       console.log(route)
-//     })
-//   }
 // })

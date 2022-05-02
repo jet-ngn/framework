@@ -1,34 +1,22 @@
 import JetClass from './JetClass.js'
+import RouterRegistry from './RouterRegistry.js'
 import Route from './Route'
-
-function combinePaths (...paths) {
-  const chunks = paths.map(removeSlashes).filter(Boolean)
-  return `/${chunks.join('/')}`
-}
-
-function getSlugs (path) {
-  return removeSlashes(path).split('/').filter(Boolean)
-}
-
-function removeSlashes (path) {
-  return path.replace(/^\/+|\/+$/g, '')
-}
 
 export default class Router extends JetClass {
   #baseURL
   #view
-  #root
+  // #root
   #routes = {}
   // TODO: Use this property to keep track of which route is currently active
   // This way, if it changes, the views attached to this route can be unmounted
   // before the new ones are mounted
-  #current = null
+  current = null
 
-  constructor (view, root, routes, baseURL) {
+  constructor (view, routes, baseURL) {
     super()
     this.#baseURL = baseURL ?? ''
     this.#view = view
-    this.#root = root ?? view.root
+    // this.#root = view.root
     this.#processRoutes(routes, this.#routes)
   }
 
@@ -36,9 +24,9 @@ export default class Router extends JetClass {
     return this.#view
   }
 
-  get root () {
-    return this.#root
-  }
+  // get root () {
+  //   return this.#root
+  // }
 
   get routes () {
     return this.#routes
@@ -49,46 +37,50 @@ export default class Router extends JetClass {
   }
 
   get (name) {
-    return this.#routes[name]
+    const config = this.#routes[name]
+    return config ? new Route(name, config) : null
   }
 
   match (path) {
-    const pathSlugs = getSlugs(combinePaths(path.trim()))
-    let remaining = []
+    const pathSlugs = RouterRegistry.getSlugs(RouterRegistry.combinePaths(path.trim()))
 
     if (pathSlugs.length === 0) {
-      return { route: this.#routes['/'], remaining }
+      return { route: this.get('/'), remaining: '' }
     }
 
-    const output = { route: null, remaining }
+    let output = { route: null, remaining: '' }
     let bestScore = 0
 
     Object.keys(this.#routes).forEach(route => {
-      const routeSlugs = getSlugs(route)
-      let scores = new Array(routeSlugs.length).fill(0)
-      let neededScore = routeSlugs.reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
+      const routeSlugs = RouterRegistry.getSlugs(route)
+      const scores = new Array(routeSlugs.length).fill(0)
+      const neededScore = routeSlugs.reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
+      const props = {}
 
-      // ENHANCEMENT: This may reduce calculations when there are a lot of routes
-      // if (neededScore < bestScore) {
-      //   return
-      // }
+      if (neededScore < bestScore) {
+        return
+      }
       
       pathSlugs.forEach((pathSlug, i) => {
         const routeSlug = routeSlugs[i]
 
         if (scores.length >= i + 1) {
-          scores[i] = pathSlug === routeSlug ? 2 : routeSlug?.startsWith(':') ? 1 : 0
+          if (routeSlug?.startsWith(':')) {
+            scores[i] = 1
+            props[routeSlug.substring(1)] = pathSlug
+          } else {
+            scores[i] = pathSlug === routeSlug ? 2 : 0
+          }
         }
       })
 
-      let remainingSlugs = pathSlugs.slice(routeSlugs.length)
-
-      const finalScore = scores.reduce((result, score) => result += score, 0) - remainingSlugs.length
-
+      const finalScore = scores.reduce((result, score) => result += score, 0)
+      
       if (finalScore === neededScore && finalScore > bestScore) {
         bestScore = finalScore
-        output.route = this.#routes[route]
-        remaining = remainingSlugs
+        output.route = new Route(route, this.#routes[route], props)
+        let remainingSlugs = pathSlugs.slice(routeSlugs.length)
+        output.remaining = remainingSlugs.length === 0 ? '' : `/${remainingSlugs.join('/')}`
       }
     })
 
@@ -101,10 +93,9 @@ export default class Router extends JetClass {
 
   #processRoute (path, config, parent) {
     const number = parseInt(path)
-    const route = new Route(isNaN(parseInt(number)) ? combinePaths(this.#baseURL.pathname, path) : number, config, parent)
-    parent[route.path] = route
+    parent[path === 'default' ? path : isNaN(number) ? RouterRegistry.combinePaths(this.#baseURL.pathname, path) : number] = config
 
-    const { routes } = config
-    this.#processRoutes(routes, route)
+    // const { routes } = config
+    // this.#processRoutes(routes, route)
   }
 }

@@ -2,15 +2,15 @@ import { renderTemplate } from './Renderer.js'
 import View from './View.js'
 import TrackableRegistry from './TrackableRegistry.js'
 import EventRegistry from './EventRegistry.js'
-import { html } from './lib/tags.js'
 import { INTERNAL_ACCESS_KEY } from './globals.js'
 import RouterRegistry from './RouterRegistry.js'
 import DefaultRoutes from './lib/routes.js'
+import Route from './Route.js'
 
 const views = {}
 const nodes = new Map
 
-export default class viewsViewRegistry {
+export default class ViewRegistry {
   static get (id) {
     return views[id] ?? null
   }
@@ -19,68 +19,71 @@ export default class viewsViewRegistry {
     return nodes.get(node)
   }
 
-  static register ({ parent, root, config, options }) {
-    const view = new View(parent, root, config)
-    const { render, routes } = config
+  static #render (router, parent, root, route, path) {
+    const registered = this.register({
+      parent,
+      root,
+      config: route.viewConfig,
+      route
+    })
+
+    if (router) {
+      router.current && router.current.unmount()
+      router.current = registered
+    }
+
+    return registered.mount(path)
+  }
+
+  static register ({ parent, root, config, route, options }) {
+    const view = new View(parent, root, config, route)
     // const { listeners, route } = options ?? {}
+    let { routes } = config
+    let router
     
     const record = {
       view,
       
-      mount: (remainingPath = [], parentRouter = null) => {
-        console.log(`MOUNT VIEW "${view.name}"`)
-        const template = render?.apply(view) ?? html``
-        let { content, tasks, router } = renderTemplate(view, template, [])
+      mount: path => {
+        let template = config.render?.call(view)
 
-        if (!router) {
-          console.log('TEMPLATE DOES NOT HAVE ROUTER')
-
-          if (!!routes) {
-            console.log('...BUT PARENT VIEW DOES. RENDER ROOT-LEVEL ROUTES')
-            router = RouterRegistry.register(view, view.root, routes ?? {})
-            const { route, remaining } = router.match(location.pathname)
-            const custom404 = router.get(404)
-
-            const { mount } = this.register({
-              parent,
-              root,
-              config: route?.view ?? custom404?.view ?? DefaultRoutes[404]
-            })
-
-            mount(remaining, router)
-            return view.emit(INTERNAL_ACCESS_KEY, 'mount')
+        if (!!routes) {
+          router = RouterRegistry.register(view, routes)
+          const { route, remaining } = router.match(path)
+          
+          if (route) {
+            return this.#render(router, parent, root, route, remaining)
           }
 
-          console.log('...AND NEITHER DOES PARENT VIEW. RENDER TEMPLATE: DONE')
-          tasks.forEach(task => task(remainingPath))
-
-          if (remainingPath.length > 0) {
-            console.log('THE FULL PATH DID NOT MATCH. RENDER 404')
-            const custom404 = parentRouter?.get(404)
-
-            const { mount } = this.register({
-              parent,
-              root,
-              config: custom404?.view ?? DefaultRoutes[404]
-            })
-
-            mount()
-          } else {
-            console.log('THE FULL PATH MATCHED. RENDER & FIRE MOUNT EVENT')
-            root.replaceChildren(content)
-            // listeners?.mount && listeners.mount.call(view)
-            return view.emit(INTERNAL_ACCESS_KEY, 'mount')
-          }
+          path = this.#render(router, parent, root, router.get(404) ?? new Route(404, DefaultRoutes[404]), path)
         }
 
-        console.log('TEMPLATE HAS ROUTER. RENDER AND MATCH AGAINST CHILD ROUTES')
+        if (template) {
+          let content = renderTemplate(view, template)
+          
+          view.children.forEach(child => {
+            const result = this.mount(child.id, path)
+            path = path === '' ? path : result
+          })
+          
+          if (path !== '') {
+            console.log('|  RENDER 404: ', view.name);
+            content = renderTemplate(view, (router?.get(404) ?? DefaultRoutes[404]).render.call(view))
+          }
+
+          root.replaceChildren(content)
+          view.emit(INTERNAL_ACCESS_KEY, 'mount')
+        }
+
+        return path
       },
 
       unmount: () => {
         const { children, id, root } = view
 
-        // TODO: de-init router
-        // router.stop()
+        if (router) {
+          RouterRegistry.remove(router)
+        }
 
         EventRegistry.removeAllByView(view)
 
@@ -96,7 +99,6 @@ export default class viewsViewRegistry {
 
         // listeners?.unmount && listeners.unmount.call(view)
         view.emit(INTERNAL_ACCESS_KEY, 'unmount')
-        // config.view.on?.unmount?.call(view)
       }
     }
 
@@ -104,9 +106,9 @@ export default class viewsViewRegistry {
     return record
   }
 
-  static mount (id) {
+  static mount (id, path, isChild) {
     const { mount } = views[id] ?? {}
-    mount && mount()
+    return mount && mount(path, isChild)
   }
 
   static unmount (id) {
