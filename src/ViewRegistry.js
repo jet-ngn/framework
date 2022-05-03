@@ -45,7 +45,7 @@ export default class ViewRegistry {
     const record = {
       view,
       
-      mount: path => {
+      mount: (path = null) => {
         let template = config.render?.call(view) ?? html``
 
         if (!!routes) {
@@ -67,7 +67,7 @@ export default class ViewRegistry {
             path = path === '' ? path : result
           })
           
-          if (path !== '') {
+          if (!!path && path !== '') {
             content = renderTemplate(view, (router?.get(404) ?? DefaultRoutes[404]).render?.call(view))
           }
 
@@ -102,6 +102,7 @@ export default class ViewRegistry {
       }
     }
 
+    nodes.set(view.root, record)
     views[view.id] = record
     return record
   }
