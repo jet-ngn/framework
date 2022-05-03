@@ -3,7 +3,6 @@ import JetClass from './JetClass.js'
 import { Trackable } from './Trackable.js'
 import EventRegistry from './EventRegistry.js'
 import { INTERNAL_ACCESS_KEY } from './globals.js'
-import RouterRegistry from './RouterRegistry.js'
 
 export default class View extends JetClass {
   #children = []

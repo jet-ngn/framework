@@ -61,7 +61,7 @@ export default class RouteManager {
   }
 
   #processRoute (path, config, parent) {
-    const route = new Route(this.#combinePaths(this.#base.pathname, path), config, parent)
+    const route = new Route(this.#view, this.#combinePaths(this.#base.pathname, path), config, parent)
     this.#routes[route.path] = route
 
     const { routes } = config

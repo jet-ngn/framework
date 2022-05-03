@@ -38,7 +38,7 @@ export default class Router extends JetClass {
 
   get (name) {
     const config = this.#routes[name]
-    return config ? new Route(name, config) : null
+    return config ? new Route(this.#view, name, config) : null
   }
 
   match (path) {
@@ -78,7 +78,7 @@ export default class Router extends JetClass {
       
       if (finalScore === neededScore && finalScore > bestScore) {
         bestScore = finalScore
-        output.route = new Route(route, this.#routes[route], props)
+        output.route = new Route(this.#view, route, this.#routes[route], props)
         let remainingSlugs = pathSlugs.slice(routeSlugs.length)
         output.remaining = remainingSlugs.length === 0 ? '' : `/${remainingSlugs.join('/')}`
       }

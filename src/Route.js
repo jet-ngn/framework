@@ -1,11 +1,13 @@
 export default class Route {
+  #parent
   #hash
   #path
   #props
   #query
   #viewConfig
 
-  constructor (path, config, props) {
+  constructor (parent, path, config, props) {
+    this.#parent = parent
     this.#path = path
     this.#props = props ?? {}
     this.#viewConfig = config.view ?? config
@@ -13,6 +15,10 @@ export default class Route {
 
   get hash () {
     return this.#hash
+  }
+
+  get parent () {
+    return this.#parent
   }
 
   get path () {
@@ -25,6 +31,10 @@ export default class Route {
 
   get query () {
     return this.#query
+  }
+
+  get root () {
+    return this.#parent.root
   }
 
   get viewConfig () {

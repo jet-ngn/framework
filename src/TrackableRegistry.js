@@ -178,7 +178,9 @@ export default class TrackableRegistry {
         target[property] = value
 
         for (let tracker of trackers) {
-          tracker.property === property && tracker.reconcile()
+          if (tracker.property === property || tracker.property === parseInt(property) || !tracker.property) {
+            tracker.reconcile()
+          }
         }
 
         return true

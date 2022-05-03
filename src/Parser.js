@@ -35,7 +35,7 @@ export default class Parser {
 
       const interpolation = interpolations[index]
       result += this.#parseInterpolation(interpolation)
-
+      
       return result
     }, '')
   }

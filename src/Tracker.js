@@ -4,6 +4,7 @@ import { NANOID } from '@ngnjs/libdata'
 import { getOptions } from './Renderer.js'
 import { reconcileNodes } from './Reconciler.js'
 import { sanitizeString } from './utilities/StringUtils.js'
+import ViewRegistry from './ViewRegistry.js'
 
 class Tracker {
   #id = NANOID()
@@ -61,7 +62,7 @@ export class AttributeTracker extends Tracker {
   reconcile () {
     const { value } = this
 
-    if (typeof this.value === 'boolean') {
+    if (typeof value === 'boolean') {
       return value ? this.#node.setAttribute(this.#name, '') : this.#node.removeAttribute(this.#name)
     }
 
@@ -147,7 +148,7 @@ export class ContentTracker extends Tracker {
 
   constructor () {
     super(...arguments)
-    this.#currentValue = this.value
+    // this.#currentValue = this.value
   }
 
   get placeholder () {
@@ -155,11 +156,13 @@ export class ContentTracker extends Tracker {
   }
 
   reconcile () {
-    if ([this.#currentValue, this.value].every(item => item instanceof Template)) {
-      return this.replaceWith(this.getNodes(this.value))
+    const { value } = this
+
+    if (!this.#currentValue || [this.#currentValue, value].every(item => item instanceof Template)) {
+      return this.replaceWith(this.getNodes(value))
     }
 
-    this.nodes = reconcileNodes(this.nodes, this.getNodes(this.value))
+    this.nodes = reconcileNodes(this.nodes, this.getNodes(value))
   }
 
   render (node, options) {
@@ -182,9 +185,11 @@ export class ContentTracker extends Tracker {
     }
 
     if (value instanceof Template) {
+      console.log('CHILD IS TEMPLATE. CHECK CODE!');
       const renderer = new Renderer(this.parent, this.#options)
-      const { content, tasks } = renderer.render(value, [], true)
-      tasks.forEach(task => task())
+      const content = renderer.render(value, [], true)
+      // this.parent.children.forEach(child => ViewRegistry.mount(child.id))
+      // tasks.forEach(task => task())
       return [...content.children]
     }
 

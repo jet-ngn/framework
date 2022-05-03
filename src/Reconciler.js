@@ -1,4 +1,4 @@
-import ViewRegistry from "./ViewRegistry"
+import ViewRegistry from './ViewRegistry.js'
 
 export function reconcileNode (original, update) {
   switch (original.nodeType) {

@@ -1,11 +1,12 @@
-import { renderTemplate } from './Renderer.js'
 import View from './View.js'
 import TrackableRegistry from './TrackableRegistry.js'
 import EventRegistry from './EventRegistry.js'
-import { INTERNAL_ACCESS_KEY } from './globals.js'
 import RouterRegistry from './RouterRegistry.js'
 import DefaultRoutes from './lib/routes.js'
 import Route from './Route.js'
+import { INTERNAL_ACCESS_KEY } from './globals.js'
+import { renderTemplate } from './Renderer.js'
+import { html } from './lib/tags.js'
 
 const views = {}
 const nodes = new Map
@@ -45,7 +46,7 @@ export default class ViewRegistry {
       view,
       
       mount: path => {
-        let template = config.render?.call(view)
+        let template = config.render?.call(view) ?? html``
 
         if (!!routes) {
           router = RouterRegistry.register(view, routes)
@@ -55,7 +56,7 @@ export default class ViewRegistry {
             return this.#render(router, parent, root, route, remaining)
           }
 
-          path = this.#render(router, parent, root, router.get(404) ?? new Route(404, DefaultRoutes[404]), path)
+          path = this.#render(router, parent, root, router.get(404) ?? new Route(view, 404, DefaultRoutes[404]), path)
         }
 
         if (template) {
@@ -67,8 +68,7 @@ export default class ViewRegistry {
           })
           
           if (path !== '') {
-            console.log('|  RENDER 404: ', view.name);
-            content = renderTemplate(view, (router?.get(404) ?? DefaultRoutes[404]).render.call(view))
+            content = renderTemplate(view, (router?.get(404) ?? DefaultRoutes[404]).render?.call(view))
           }
 
           root.replaceChildren(content)
@@ -106,9 +106,9 @@ export default class ViewRegistry {
     return record
   }
 
-  static mount (id, path, isChild) {
+  static mount (id, path) {
     const { mount } = views[id] ?? {}
-    return mount && mount(path, isChild)
+    return mount && mount(path)
   }
 
   static unmount (id) {

@@ -1,6 +1,5 @@
 import Parser from './Parser'
 import DOMEventRegistry from './DOMEventRegistry.js'
-import RouterRegistry from './RouterRegistry.js'
 import TrackableRegistry from './TrackableRegistry.js'
 import ViewRegistry from './ViewRegistry.js'
 import TrackingInterpolation from './TrackingInterpolation.js'
