@@ -62,11 +62,15 @@ export class AttributeTracker extends Tracker {
   reconcile () {
     const { value } = this
 
+    if (this.#node.matches('[type="checkbox"]') && this.#name === 'checked') {
+      return ((this.#node.checked && !value) || (!this.#node.checked && !!value)) && this.#node.click()
+    }
+
     if (typeof value === 'boolean') {
       return value ? this.#node.setAttribute(this.#name, '') : this.#node.removeAttribute(this.#name)
     }
 
-    this.#node.setAttribute(this.#name, typeof value === 'boolean' ? '' : value)
+    this.#node.setAttribute(this.#name, value)
   }
 }
 
