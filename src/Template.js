@@ -7,6 +7,7 @@ export default class Template extends JetClass {
 
   #attributes = null
   #listeners = null
+  #properties = null
   
   #bound = {
     view: null,
@@ -45,20 +46,6 @@ export default class Template extends JetClass {
     return this.#type
   }
 
-  setAttribute (name, value) {
-    this.#attributes = {
-      ...(this.#attributes ?? {}),
-      [name]: value
-    }
-
-    return this
-  }
-
-  setAttributes (config) {
-    this.#attributes = { ...(this.#attributes ?? {}), ...config }
-    return this
-  }
-
   bindView (view = null, options = {}) {
     this.#bound = {
       view,
@@ -82,6 +69,34 @@ export default class Template extends JetClass {
       this.#listeners[evt] = [{ handler, cfg }]
     }
 
+    return this
+  }
+
+  setAttribute (name, value) {
+    this.#attributes = {
+      ...(this.#attributes ?? {}),
+      [name]: value
+    }
+
+    return this
+  }
+
+  setAttributes (config) {
+    this.#attributes = { ...(this.#attributes ?? {}), ...config }
+    return this
+  }
+
+  setProperty (name, value) {
+    this.#properties = {
+      ...(this.#properties ?? {}),
+      [name]: value
+    }
+
+    return this
+  }
+
+  setProperties (config) {
+    this.#properties = { ...(this.#properties ?? {}), ...config }
     return this
   }
 }

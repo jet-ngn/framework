@@ -37,8 +37,7 @@ export default class ViewRegistry {
   }
 
   static register ({ parent, root, config, route, options }) {
-    const view = new View(parent, root, config, route)
-    // const { listeners, route } = options ?? {}
+    const view = new View(parent, root, config, route, options)
     let { routes } = config
     let router
     

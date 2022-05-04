@@ -54,7 +54,7 @@ function initialize (selector, config) {
 
 const Plugins = {}
 
-function installPlugins (...plugins) {
+function install (...plugins) {
   plugins.forEach(plugin => plugin.install({ createID, html, svg, track, getChanges, Trackable }, Plugins))
 }
 
@@ -72,7 +72,7 @@ export {
   getChanges,
   html,
   initialize,
-  installPlugins,
+  install,
   navigate,
   svg,
   track

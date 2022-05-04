@@ -189,11 +189,9 @@ export class ContentTracker extends Tracker {
     }
 
     if (value instanceof Template) {
-      console.log('CHILD IS TEMPLATE. CHECK CODE!');
       const renderer = new Renderer(this.parent, this.#options)
       const content = renderer.render(value, [], true)
-      // this.parent.children.forEach(child => ViewRegistry.mount(child.id))
-      // tasks.forEach(task => task())
+      this.parent.children.forEach(child => ViewRegistry.mount(child.id))
       return [...content.children]
     }
 

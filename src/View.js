@@ -16,7 +16,7 @@ export default class View extends JetClass {
   #scope
   #version
 
-  constructor (parent, root, { data, description, name, on, routes, scope, version }, route) {
+  constructor (parent, root, { data, description, name, on, routes, scope, version }, route, options) {
     super()
     this.#data = !!data ? new Trackable(data) : {}
     this.#description = description ?? null
@@ -28,6 +28,7 @@ export default class View extends JetClass {
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
     Object.keys(on ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, on[evt]))
+    Object.keys(options?.listeners ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, options.listeners[evt]))
   }
 
   get children () {
