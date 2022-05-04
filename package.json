@@ -8,8 +8,8 @@
     "jet": "./cli.js"
   },
   "scripts": {
-    "setup": "rm -rf ./.dist && rm -rf ./node_modules && npm install && npm link && echo \"\n\nWARNING: Using local copy of ProductionLine. This should be moved into it's own npm package before final release.\n\n\" && npm link productionline && cd ../test && npm run setup && cd ../src && npm run setup",
-    "update": "npm update && npm link && echo \"\n\nWARNING: Using local copy of ProductionLine. This should be moved into it's own npm package before final release.\n\n\" && npm link productionline && cd ../test && npm update && cd ../src && npm update",
+    "setup": "rm -rf ./.dist && rm -rf ./node_modules && npm install && npm link && echo \"\n\nWARNING: Using local copy of ProductionLine. This should be moved into it's own npm package before final release.\n\n\" && npm link productionline && cd ./test && npm run setup && cd ../src && npm run setup",
+    "update": "npm update && npm link && echo \"\n\nWARNING: Using local copy of ProductionLine. This should be moved into it's own npm package before final release.\n\n\" && npm link productionline && cd ./test && npm update && cd ../src && npm update",
     "test": "cd test && node index.js"
   },
   "repository": {
