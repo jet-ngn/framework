@@ -49,13 +49,16 @@ export default class ViewRegistry {
 
         if (!!routes) {
           router = RouterRegistry.register(view, routes)
-          const { route, remaining } = router.match(path)
+          let { route, remaining } = router.match(path)
           
           if (route) {
+            RouterRegistry.currentRoute = route
             return this.#render(router, parent, root, route, remaining)
           }
 
-          path = this.#render(router, parent, root, router.get(404) ?? new Route(view, 404, DefaultRoutes[404]), path)
+          route = router.get(404) ?? new Route(view, 404, DefaultRoutes[404])
+          RouterRegistry.currentRoute = route
+          path = this.#render(router, parent, root, route, path)
         }
 
         if (template) {

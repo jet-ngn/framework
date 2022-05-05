@@ -41,6 +41,9 @@ const shell = new Shell({
           aliases: [{
             filter: /^history/,
             path: path.join(source, 'node_modules', 'history', 'browser.js')
+          }, {
+            filter: /^IAM/,
+            path: path.join(source, 'node_modules', '@author.io', 'iam', 'index.js')
           }]
         }
 

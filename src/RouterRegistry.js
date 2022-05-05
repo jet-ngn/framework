@@ -14,10 +14,6 @@ export default class RouterRegistry {
     const chunks = paths.map(this.removeSlashes).filter(Boolean)
     return `/${chunks.join('/')}`
   }
-
-  static getRemainingPath (path, matched) { 
-    console.log(path, matched);
-  }
   
   static getSlugs (path) {
     return this.removeSlashes(path).split('/').filter(Boolean)
@@ -40,8 +36,6 @@ export default class RouterRegistry {
 }
 
 history.listen(({ action, location }) => {
-  console.log(action, location)
-
   const router = routers[0]
   const { route, remaining } = router.match(location.pathname)
   let aborted = false
@@ -54,7 +48,7 @@ history.listen(({ action, location }) => {
   })
 
   if (aborted) {
-    return
+    return history.push(previous)
   }
 
   const registered = ViewRegistry.register({
@@ -74,35 +68,3 @@ history.listen(({ action, location }) => {
     to: route ?? location
   })
 })
-
-// history.listen(({ action, location }) => {
-//   // const { pathname } = location
-//   // let aborted = false
-  
-//   // let previous = {
-//   //   path: current.path
-//   // }
-
-//   console.log(action, location);
-
-//   // App.emit(INTERNAL_ACCESS_KEY, 'route.change', {
-//   //   from: current.path,
-//   //   to: pathname,
-//   //   abort: () => aborted = true
-//   // }, ...args)
-
-//   // console.log(App.routes.match(pathname));
-
-//   // if (!aborted) {
-//   //   current.unmount()
-//   //   mountView(App.routes.match(pathname))
-//   //   current.path = pathname
-//   // }
-
-//   // App.emit(INTERNAL_ACCESS_KEY, 'route.changed', {
-//   //   from: previous.path,
-//   //   to: pathname
-//   // }, ...args)
-
-//   // args = []
-// })

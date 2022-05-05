@@ -39,7 +39,7 @@ export default class Renderer {
 
     switch (template.type) {
       case 'html': return this.#renderHTML(...arguments)
-      case 'svg': return console.log(`RENDER SVG`)
+      case 'svg': return this.#renderSVG(template)
       default: throw new TypeError(`Invalid template type "${template.type}"`)
     }
   }
@@ -128,21 +128,20 @@ export default class Renderer {
         })
 
         this.#view.children.push(child.view)
-        // tasks.push(path => {
-        //   const { view, mount } = ViewRegistry.register({
-        //     parent: this.#view,
-        //     root: node,
-        //     config: bound.view,
-        //     options: bound
-        //   })
-  
-        //   this.#view.children.push(view)
-        //   mount(path)
-        // })
       })
     }
 
     return content
+  }
+
+  #renderSVG (template) {
+    const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
+    target.innerHTML = this.#parser.parse(template, this.#options)
+    const fragment = document.createDocumentFragment()
+    fragment.append(...target.children)
+
+    return fragment
   }
 
   #setAttribute (node, name, value) {

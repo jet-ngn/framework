@@ -1,0 +1,11 @@
+{
+  "name": "jet-components",
+  "version": "0.0.1-alpha.1",
+  "description": "UI Components for Jet Framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Graham Butler",
+  "license": "ISC"
+}

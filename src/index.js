@@ -1,9 +1,7 @@
-// import './lib/``exceptions.js'
-import { INTERNAL } from 'NGN'
+import Session from './Session.js'
 import RouterRegistry from './RouterRegistry.js'
 import ViewRegistry from './ViewRegistry.js'
 import history from 'history'
-import { INTERNAL_ACCESS_KEY } from './globals.js'
 import { BUS, EventEmitter } from 'NGN'
 import { NANOID } from '@ngnjs/libdata'
 
@@ -11,13 +9,15 @@ import { html, svg } from './lib/tags.js'
 import { track, getChanges } from './TrackableRegistry.js'
 import { Trackable } from './Trackable.js'
 
+const createID = NANOID
+const Bus = BUS
+
 let RootView
 let RootElementSelector
 let RootConfig
 let ready = false
 let initialized = false
 let args = []
-const createID = NANOID
 
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
@@ -51,11 +51,22 @@ function initialize (selector, config) {
   initialized = true
   ready && start()
 }
+const Components = {}
 
-const Plugins = {}
+function install ({ components }) {
+  const jet = {
+    Bus,
+    EventEmitter,
+    createID,
+    html,
+    navigate,
+    svg,
+    track,
+    getChanges,
+    Trackable
+  }
 
-function install (...plugins) {
-  plugins.forEach(plugin => plugin.install({ createID, html, svg, track, getChanges, Trackable }, Plugins))
+  ;(components ?? []).forEach(({ install }) => install(jet, Components))
 }
 
 function navigate (to, ...rest) {
@@ -64,9 +75,10 @@ function navigate (to, ...rest) {
 }
 
 export {
-  BUS as Bus,
+  Bus,
+  Components,
   EventEmitter,
-  Plugins,
+  Session,
   Trackable,
   createID,
   getChanges,
