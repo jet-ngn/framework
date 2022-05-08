@@ -35,7 +35,7 @@ const shell = new Shell({
             'ngn-data',
             'crypto',
             'http',
-            'https'
+            'https',
           ],
 
           aliases: [{

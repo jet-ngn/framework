@@ -8,6 +8,6 @@ export function normalizeString (string) {
   return string.replace(/\r?\n|\r/g, '')
 }
 
-export function sanitizeString (string) {
-  return escapeString(normalizeString(string))
+export function sanitizeString (string, options) {
+  return escapeString(options?.retainFormatting === true ? string : normalizeString(string))
 }

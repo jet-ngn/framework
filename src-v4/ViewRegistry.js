@@ -45,11 +45,14 @@ export default class ViewRegistry {
       view,
       
       mount: (path = null) => {
+        console.log('MOUNT', view.name);
         let template = config.render?.call(view) ?? html``
 
         if (!!routes) {
           router = RouterRegistry.register(view, routes)
           let { route, remaining } = router.match(path)
+          console.log(path)
+          console.log(route, remaining);
           
           if (route) {
             RouterRegistry.currentRoute = route

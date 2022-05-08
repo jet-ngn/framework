@@ -1,91 +1,43 @@
-import Session from './Session.js'
-import RouterRegistry from './RouterRegistry.js'
-import ViewRegistry from './ViewRegistry.js'
-import history from 'history'
-import { BUS, EventEmitter } from 'NGN'
-import { NANOID } from '@ngnjs/libdata'
+import App from './App.js'
 
-import { html, svg } from './lib/tags.js'
-import { track, getChanges } from './TrackableRegistry.js'
-import { Trackable } from './Trackable.js'
-
-const createID = NANOID
-const Bus = BUS
-
-let RootView
-let RootElementSelector
-let RootConfig
-let ready = false
+let config = {}
 let initialized = false
-let args = []
+let ready = false
 
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
-  initialized && start()
+  initialized && initialize()
 })
 
-function start () {
-  const nodes = document.querySelectorAll(RootElementSelector)
-
-  if (nodes.length > 1) {
-    throw new Error(`Invalid root element selector: "${RootElementSelector}" returned multiple nodes.`)
-  }
-
-  const { view, mount } = ViewRegistry.register({
-    root: nodes[0],
-    config: RootConfig
-  })
-
-  RootView = view
-  mount(location.pathname)
-}
-
-function initialize (selector, config) {
+function createApp (cfg) {
   if (initialized) {
     throw new Error(`App has already been initialized`)
   }
 
-  RootConfig = config
-  RouterRegistry.baseURL = new URL(config.baseURL ?? '', location.origin)
-  RootElementSelector = selector
+  config = cfg
+  config.baseURL = new URL(cfg.baseURL ?? '', location.origin)
   initialized = true
-  ready && start()
+  ready && initialize()
 }
-const Components = {}
 
-function install ({ components }) {
-  const jet = {
-    Bus,
-    EventEmitter,
-    createID,
-    html,
-    navigate,
-    svg,
-    track,
-    getChanges,
-    Trackable
+function initialize () {
+  const nodes = document.querySelectorAll(config.selector ?? 'body')
+  
+  if (nodes.length > 1) {
+    throw new Error(`Invalid root element selector: "${config.selector}" returned multiple nodes.`)
   }
 
-  ;(components ?? []).forEach(({ install }) => install(jet, Components))
-}
-
-function navigate (to, ...rest) {
-  args = rest
-  history.push(to)
+  const app = new App(nodes[0], config)
+  app.render(location.pathname)
 }
 
 export {
-  Bus,
-  Components,
-  EventEmitter,
-  Session,
-  Trackable,
-  createID,
-  getChanges,
   html,
-  initialize,
-  install,
-  navigate,
-  svg,
-  track
+  svg
+} from './lib/tags.js'
+
+export { Router } from './Router.js'
+
+export {
+  createApp
 }

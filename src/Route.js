@@ -1,43 +1,32 @@
+import { parseSearch } from './utilities/RouteUtils'
+
 export default class Route {
-  #parent
   #hash
   #path
-  #props
   #query
-  #viewConfig
+  #config
 
-  constructor (parent, path, config, props) {
-    this.#parent = parent
-    this.#path = path
-    this.#props = props ?? {}
-    this.#viewConfig = config.view ?? config
+  constructor (url, config) {
+    this.#config = config ?? null
+    this.#hash = url.hash ?? null
+    this.#path = url.pathname ?? null
+    this.#query = parseSearch(url.search)
+
+  }
+
+  get config () {
+    return this.#config
   }
 
   get hash () {
     return this.#hash
   }
 
-  get parent () {
-    return this.#parent
-  }
-
   get path () {
     return this.#path
   }
 
-  get props () {
-    return this.#props
-  }
-
   get query () {
     return this.#query
-  }
-
-  get root () {
-    return this.#parent.root
-  }
-
-  get viewConfig () {
-    return this.#viewConfig
   }
 }

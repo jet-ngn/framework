@@ -1,5 +1,5 @@
 import { NANOID } from '@ngnjs/libdata'
-import IAM from 'IAM'
+// import IAM from 'IAM'
 
 export default class User {
   // #controller = IAM.User()
@@ -24,12 +24,4 @@ export default class User {
   get roles () {
     return this.#roles
   }
-
-  // get isValid () {
-  //   return this.#model.valid
-  // }
-
-  // get invalidFields () {
-  //   return this.#model.invalidDataAttributes
-  // }
 }

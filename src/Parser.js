@@ -1,73 +1,55 @@
-import Template from './Template.js'
-import TrackableRegistry from './TrackableRegistry.js'
-import TrackingInterpolation from './TrackingInterpolation.js'
-import { sanitizeString } from './utilities/StringUtils.js'
+import Template from './Template'
+import { sanitizeString } from './utilities/StringUtils'
 
 export default class Parser {
-  #parent
-  #options
-  #interpolations = []
-  #templates = []
-  #trackers = []
+  #retainFormatting
+  #routers = {}
+  #templates = {}
+  #trackers = {}
 
-  constructor (parent, options) {
-    this.#parent = parent
-    this.#options = options
-  }
-
-  get interpolations () {
-    return this.#interpolations
+  constructor (retainFormatting) {
+    this.#retainFormatting = retainFormatting
   }
 
   get templates () {
     return this.#templates
   }
 
-  get trackers () {
-    return this.#trackers
-  }
-
-  parse (template, { retainFormatting }) {
+  parse (template) {
     const { strings, interpolations } = template
 
-    return interpolations.length === 0 ? strings[0] : strings.reduce((result, string, index) => {
-      result += string
-
-      const interpolation = interpolations[index]
-      result += this.#parseInterpolation(interpolation)
-      
-      return result
-    }, '')
-  }
-
-  #parseInterpolation (interpolation) {
-    if (Array.isArray(interpolation)) {
-      return interpolation.reduce((result, item) => {
-        result += this.#parseInterpolation(item)
+    return interpolations.length === 0
+      ? strings[0] // TODO: May want to sanitize and convert back to html
+      : strings.reduce((result, string, i) => {
+        result += string
+        result += this.#parseInterpolation(interpolations[i])
         return result
       }, '')
-    }
+  }
 
+  // TODO: Handle other data structures, like maps, sets, etc
+  #parseInterpolation (interpolation) {
+    // if (Array.isArray(interpolation)) {
+    //   return console.log('PARSE ARRAY')
+    // }
+  
     if (interpolation instanceof Template) {
-      this.#templates.push(interpolation)
-      return `<template class="template" id="${interpolation.id}"></template>`
+      const { id, type } = interpolation
+      this.#templates[id] = interpolation
+      return `<template id="${id}" class="${type} template">`
     }
 
-    if (interpolation instanceof TrackingInterpolation) {
-      const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#parent)
-      this.#trackers.push(tracker)
-      return `<template class="tracker" id="${tracker.id}"></template>`
-    }
+    // if (interpolation instanceof EmbeddedRouter) {
+    //   return this.#router
+    // }
 
     switch (typeof interpolation) {
       case 'undefined':
       case 'boolean': return ''
 
       case 'string':
-      case 'number': return `${sanitizeString(`${interpolation}`, this.#options)}`
+      case 'number': return this.#retainFormatting ? interpolation : sanitizeString(interpolation)
     
-      // TODO: Handle other data structures, like maps, sets, etc
-
       default: throw new TypeError(`Invalid template string interpolation type "${typeof interpolation}"`)
     }
   }
