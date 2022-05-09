@@ -17,26 +17,22 @@ function generateRoutes (routes, baseURL) {
   }, null)
 }
 
-function get404 (view, routes) {
-  return !!routes?.[404]
-    ? Reflect.get(routes[404], 'template', view)
-    : Reflect.get(DefaultRoutes[404], 'template', view)
-}
-
 export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) {
-  console.log('RENDER', view.name, path);
   const renderer = new Renderer(view, retainFormatting)
   const routes = generateRoutes(cfg.routes, baseURL)
-  let template = Reflect.get(cfg, 'template', view)
   let content
 
-  function render () {
+  function render (template) {
+    if (!template) {
+      return
+    }
+
     const result = renderer.render(template, path, baseURL)
     content = result.content
     path = result.remaining
   }
 
-  template && render()
+  render(Reflect.get(cfg, 'template', view))
 
   if (!!path && routes) {
     const { route, remaining } = matchPath(path, routes)
@@ -51,8 +47,10 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) 
   }
 
   if (!!path && path !== '/') {
-    template = get404(view, routes)
-    render()
+    render(!!routes?.[404]
+      ? Reflect.get(routes[404], 'template', view)
+      : Reflect.get(DefaultRoutes[404], 'template', view)
+    )
   }
 
   return { content, remaining: path }
@@ -90,7 +88,6 @@ export default class Renderer {
     const { viewConfig } = template
 
     if (viewConfig) {
-      console.log('YEP');
       const view = new View(this.#parent, root, viewConfig)
       
       const result = getViewContent(view, viewConfig, {
