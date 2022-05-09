@@ -5,7 +5,7 @@ export default class Template extends IdentifiableClass {
   #strings
   #interpolations
 
-  #view = null
+  #viewConfig = null
 
   constructor (type, strings, ...interpolations) {
     super('template')
@@ -26,12 +26,12 @@ export default class Template extends IdentifiableClass {
     return this.#type
   }
 
-  get view () {
-    return this.#view
+  get viewConfig () {
+    return this.#viewConfig
   }
 
-  bindView (view) {
-    this.#view = view
+  bindView (config) {
+    this.#viewConfig = config
     return this
   }
 }

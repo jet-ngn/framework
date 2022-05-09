@@ -6,7 +6,6 @@ export default class View extends IdentifiableClass {
   #parent
   #root
   #scope
-  // #template
   #version
 
   constructor (parent, root, { data, description, name, routes, scope, version }, prefix) {
@@ -16,15 +15,8 @@ export default class View extends IdentifiableClass {
     this.#name = name ?? 'Unnamed Node'
     this.#parent = parent ?? null
     this.#root = root ?? null
-    this.#scope = scope ?? this.id
-    // this.#template = Reflect.get(cfg, 'template', this) ?? html``
+    this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
-    
-    // const template = Reflect.get(arguments[2], 'template', this)
-    // const parser = new Parser(this)
-    // const renderer = new Renderer(parser.parse(template))
-    // const output = parser.parse(template)
-    // root.replaceChildren(output)
   }
 
   // get data () {

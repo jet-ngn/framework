@@ -1,10 +1,13 @@
 import View from './View'
 import Parser from './Parser'
-import Route from './Route'
+// import Route from './Route'
+import { getViewContent } from './App'
+import { html } from './lib/tags'
+import { generateASTEntry } from './utilities/ASTUtils'
 
-export function initializeView (view, config, baseURL) {
+export function renderView (view, config, baseURL, data) {
   const renderer = new Renderer(view, view.root.tagName === 'PRE')
-  return renderer.render(Reflect.get(config, 'template', view), baseURL, data.children)
+  return renderer.render(Reflect.get(config, 'template', view) ?? html``, baseURL, data)
 }
 
 export default class Renderer {
@@ -16,7 +19,7 @@ export default class Renderer {
     this.#retainFormatting = retainFormatting
   }
 
-  render (template, baseURL, children) {
+  render (template, baseURL) {
     if (Array.isArray(template)) {
       return console.log('Render Array of Templates')
     }
@@ -28,13 +31,17 @@ export default class Renderer {
     }
   }
 
-  #processChildView (root, config, baseURL, children) {
-    const view = new View(this.#parent, root, config)
-    children.set(view, {})
-    return initializeView(view, config, baseURL, children.get(view))
+  // #processChildView (root, config, baseURL, data) {
+  //   const view = new View(this.#parent, root, config)
+  //   data.children.set(view, generateASTEntry(config.routes, baseURL))
+  //   return renderView(view, config, baseURL, data.children.get(view))
+  // }
+
+  #initializeChildView (root, config, baseURL, data) {
+    initializeView(view, config, baseURL, path)
   }
 
-  #renderHTML (template, baseURL, children) {
+  #renderHTML (template, path, baseURL) {
     const parser = new Parser(this.#retainFormatting)
     const target = document.createElement('template')
     target.innerHTML = parser.parse(template)
@@ -45,13 +52,14 @@ export default class Renderer {
     
     // Recurse
     Object.keys(templates).forEach(template => {
-      content.getElementById(template).replaceWith(this.render(templates[template], baseURL, children))
+      content.getElementById(template).replaceWith(this.render(templates[template], path, baseURL))
     })
 
-    const { view } = template
+    let { viewConfig } = template
 
-    if (view) {
-      root.replaceChildren(this.#processChildView(root, view, baseURL, children))
+    if (viewConfig) {
+      const view = new View(this.#parent, root, viewConfig)
+      root.replaceChildren(getViewContent(view, viewConfig, { baseURL, path, retainFormatting: this.#retainFormatting }))
     }
 
     return content
