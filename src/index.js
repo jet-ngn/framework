@@ -36,8 +36,6 @@ export {
   svg
 } from './lib/tags.js'
 
-export { Router } from './Router.js'
-
 export {
   createApp
 }

@@ -1,13 +1,61 @@
 import View from './View'
 import Parser from './Parser'
-// import Route from './Route'
-import { getViewContent } from './App'
-import { html } from './lib/tags'
-import { generateASTEntry } from './utilities/ASTUtils'
+import Route from './Route'
+import DefaultRoutes from './lib/routes'
+import { matchPath } from './utilities/RouteUtils'
 
-export function renderView (view, config, baseURL, data) {
-  const renderer = new Renderer(view, view.root.tagName === 'PRE')
-  return renderer.render(Reflect.get(config, 'template', view) ?? html``, baseURL, data)
+function generateRoutes (routes, baseURL) {
+  return Object.keys(routes ?? {}).reduce((result, route) => {
+    if (!result) {
+      result = {}
+    }
+
+    const config = routes[route]
+    route = route.trim()
+    result[route] = new Route(new URL(route, baseURL), config)
+    return result
+  }, null)
+}
+
+function get404 (view, routes) {
+  return !!routes?.[404]
+    ? Reflect.get(routes[404], 'template', view)
+    : Reflect.get(DefaultRoutes[404], 'template', view)
+}
+
+export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) {
+  console.log('RENDER', view.name, path);
+  const renderer = new Renderer(view, retainFormatting)
+  const routes = generateRoutes(cfg.routes, baseURL)
+  let template = Reflect.get(cfg, 'template', view)
+  let content
+
+  function render () {
+    const result = renderer.render(template, path, baseURL)
+    content = result.content
+    path = result.remaining
+  }
+
+  template && render()
+
+  if (!!path && routes) {
+    const { route, remaining } = matchPath(path, routes)
+    path = remaining
+
+    if (route) {
+      const { config } = route
+      const result = getViewContent(new View(view, view.root, config), config, { baseURL, path, retainFormatting })
+      content = result.content
+      path = result.remaining
+    }
+  }
+
+  if (!!path && path !== '/') {
+    template = get404(view, routes)
+    render()
+  }
+
+  return { content, remaining: path }
 }
 
 export default class Renderer {
@@ -31,16 +79,6 @@ export default class Renderer {
     }
   }
 
-  // #processChildView (root, config, baseURL, data) {
-  //   const view = new View(this.#parent, root, config)
-  //   data.children.set(view, generateASTEntry(config.routes, baseURL))
-  //   return renderView(view, config, baseURL, data.children.get(view))
-  // }
-
-  #initializeChildView (root, config, baseURL, data) {
-    initializeView(view, config, baseURL, path)
-  }
-
   #renderHTML (template, path, baseURL) {
     const parser = new Parser(this.#retainFormatting)
     const target = document.createElement('template')
@@ -49,20 +87,30 @@ export default class Renderer {
     const { content } = target
     const root = content.firstElementChild
     const { templates } = parser
-    
-    // Recurse
-    Object.keys(templates).forEach(template => {
-      content.getElementById(template).replaceWith(this.render(templates[template], path, baseURL))
-    })
-
-    let { viewConfig } = template
+    const { viewConfig } = template
 
     if (viewConfig) {
+      console.log('YEP');
       const view = new View(this.#parent, root, viewConfig)
-      root.replaceChildren(getViewContent(view, viewConfig, { baseURL, path, retainFormatting: this.#retainFormatting }))
+      
+      const result = getViewContent(view, viewConfig, {
+        baseURL,
+        path,
+        retainFormatting: this.#retainFormatting
+      })
+      
+      root.replaceChildren(result.content)
+      path = result.remaining
+    } else {
+      // Recurse
+      Object.keys(templates).forEach(template => {
+        const result = this.render(templates[template], path, baseURL)
+        content.getElementById(template).replaceWith(result.content)
+        path = result.remaining
+      })
     }
 
-    return content
+    return { content, remaining: path }
   }
 
   #renderSVG () {

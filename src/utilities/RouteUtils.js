@@ -11,7 +11,7 @@ export function matchPath (path, routes) {
   const pathSlugs = getSlugs(path)
 
   if (!pathSlugs.length) {
-    return { route: routes['/'] ?? null, remaining: null }
+    return { route: routes['/'] ?? null, remaining: '/' }
   }
 
   let bestScore = -1
@@ -49,54 +49,9 @@ export function matchPath (path, routes) {
     return match
   }, {
     route: null,
-    remaining: null
+    remaining: path
   })
 }
-
-// export function matchPath (path, routes) {
-//   const pathSlugs = getSlugs(path)
-  
-//   if (!pathSlugs.length) {
-//     return routes['/'] ?? null
-//   }
-
-//   let bestScore = 0
-
-//   return Object.keys(routes ?? {}).reduce((match, route) => {
-//     if (route !== '/') {
-//       const routeSlugs = getSlugs(route)
-//       const scores = new Array(routeSlugs.length).fill(0)
-//       const neededScore = routeSlugs.reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
-//       const props = {}
-
-//       if (neededScore < bestScore) {
-//         return
-//       }
-
-//       pathSlugs.forEach((pathSlug, i) => {
-//         const routeSlug = routeSlugs[i]
-
-//         if (scores.length >= i + 1) {
-//           if (routeSlug?.startsWith(':')) {
-//             scores[i] = 1
-//             props[routeSlug.substring(1)] = pathSlug
-//           } else {
-//             scores[i] = pathSlug === routeSlug ? 2 : 0
-//           }
-//         }
-//       })
-
-//       const finalScore = scores.reduce((result, score) => result += score, 0)
-      
-//       if (finalScore === neededScore && finalScore > bestScore) {
-//         bestScore = finalScore
-//         match = routes[route]
-//       }
-//     }
-
-//     return match
-//   }, null)
-// }
 
 export function parseSearch (search) {
   return search
