@@ -17,6 +17,12 @@ function generateRoutes (routes, baseURL) {
   }, null)
 }
 
+function get404 (view, routes) {
+  return !!routes?.[404]
+    ? Reflect.get(routes[404], 'template', view)
+    : Reflect.get(DefaultRoutes[404], 'template', view)
+}
+
 export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) {
   const renderer = new Renderer(view, retainFormatting)
   const routes = generateRoutes(cfg.routes, baseURL)
@@ -43,14 +49,13 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) 
       const result = getViewContent(new View(view, view.root, config), config, { baseURL, path, retainFormatting })
       content = result.content
       path = result.remaining
+    } else {
+      render(get404(view, routes))
     }
   }
 
   if (!!path && path !== '/') {
-    render(!!routes?.[404]
-      ? Reflect.get(routes[404], 'template', view)
-      : Reflect.get(DefaultRoutes[404], 'template', view)
-    )
+    render(get404(view, routes))
   }
 
   return { content, remaining: path }

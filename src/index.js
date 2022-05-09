@@ -1,12 +1,21 @@
 import App from './App.js'
+import history from 'history'
 
+let app
 let config = {}
 let initialized = false
 let ready = false
+let currentPath = location.pathname
 
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
   initialized && initialize()
+})
+
+history.listen(({ location }) => {
+  const path = location.pathname
+  app.render(path, currentPath)
+  currentPath = path
 })
 
 function createApp (cfg) {
@@ -27,8 +36,12 @@ function initialize () {
     throw new Error(`Invalid root element selector: "${config.selector}" returned multiple nodes.`)
   }
 
-  const app = new App(nodes[0], config)
-  app.render(location.pathname)
+  app = new App(nodes[0], config)
+  app.render(currentPath)
+}
+
+function navigate (path) {
+  history.push(path)
 }
 
 export {
@@ -37,5 +50,6 @@ export {
 } from './lib/tags.js'
 
 export {
-  createApp
+  createApp,
+  navigate
 }

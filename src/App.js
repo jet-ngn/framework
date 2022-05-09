@@ -11,10 +11,11 @@ export default class App extends View {
     this.#cfg = cfg
   }
 
-  render (path) {
+  render (path, previous = null) {
     this.root.replaceChildren(getViewContent(this, this.#cfg, {
       baseURL: this.#baseURL,
       path,
+      previous,
       retainFormatting: this.root.tagName === 'PRE'
     }).content)
   }
