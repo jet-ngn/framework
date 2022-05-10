@@ -1,6 +1,12 @@
 import App from './App.js'
 import history from 'history'
 
+import { BUS as Bus, EventEmitter } from 'NGN'
+import { html, svg } from './lib/tags.js'
+
+import { Trackable } from './registries/TrackableRegistry'
+import TrackingInterpolation from './TrackingInterpolation'
+
 let app
 let config = {}
 let initialized = false
@@ -18,7 +24,7 @@ history.listen(({ location }) => {
   currentPath = path
 })
 
-function createApp (cfg) {
+export function createApp (cfg) {
   if (initialized) {
     throw new Error(`App has already been initialized`)
   }
@@ -40,16 +46,38 @@ function initialize () {
   app.render(currentPath)
 }
 
-function navigate (path) {
+const Components = {}
+
+export function install ({ components }) {
+  const jet = {
+    Bus,
+    EventEmitter,
+    html,
+    navigate,
+    svg,
+    track,
+    // getChanges,
+    Trackable
+  }
+
+  ;(components ?? []).forEach(({ install }) => install(jet, Components))
+}
+
+export function navigate (path) {
   history.push(path)
 }
 
-export {
-  html,
-  svg
-} from './lib/tags.js'
+export function track (target, property, transform) {
+  return new TrackingInterpolation(...arguments)
+}
 
 export {
-  createApp,
-  navigate
+  Bus,
+  Components,
+  EventEmitter,
+  Trackable,
+  html,
+  svg
 }
+
+export { default as Session } from './Session.js'

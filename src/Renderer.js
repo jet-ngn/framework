@@ -2,7 +2,12 @@ import View from './View'
 import Parser from './Parser'
 import Route from './Route'
 import DefaultRoutes from './lib/routes'
+import DOMEventRegistry from './registries/DOMEventRegistry'
+import TrackableRegistry from './registries/TrackableRegistry'
+import TrackingInterpolation from './TrackingInterpolation'
+import AttributeList from './AttributeList'
 import { matchPath } from './utilities/RouteUtils'
+import { INTERNAL_ACCESS_KEY } from './globals'
 
 function generateRoutes (routes, baseURL) {
   return Object.keys(routes ?? {}).reduce((result, route) => {
@@ -19,11 +24,20 @@ function generateRoutes (routes, baseURL) {
 
 function get404 (view, routes) {
   return !!routes?.[404]
-    ? Reflect.get(routes[404], 'template', view)
+    ? Reflect.get(routes[404].config, 'template', view)
     : Reflect.get(DefaultRoutes[404], 'template', view)
 }
 
-export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) {
+function getExistingAttributeValue (node, name) {
+  const value = node.getAttribute(name)
+  return value ? value.trim().split(' ').map(item => item.trim()) : []
+}
+
+export function shouldRetainFormatting (retainFormatting, node) {
+  return retainFormatting || !!node.closest('pre')
+}
+
+export function getViewContent (view, cfg, { baseURL, path, retainFormatting }, tasks) {
   const renderer = new Renderer(view, retainFormatting)
   const routes = generateRoutes(cfg.routes, baseURL)
   let content
@@ -33,7 +47,7 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) 
       return
     }
 
-    const result = renderer.render(template, path, baseURL)
+    const result = renderer.render(template, path, baseURL, tasks)
     content = result.content
     path = result.remaining
   }
@@ -46,7 +60,8 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) 
 
     if (route) {
       const { config } = route
-      const result = getViewContent(new View(view, view.root, config), config, { baseURL, path, retainFormatting })
+      const child = new View(view, view.root, config)
+      const result = getViewContent(child, config, { baseURL, path, retainFormatting }, tasks)
       content = result.content
       path = result.remaining
     } else {
@@ -58,19 +73,22 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }) 
     render(get404(view, routes))
   }
 
+  tasks.push(() => view.emit(INTERNAL_ACCESS_KEY, 'mount'))
   return { content, remaining: path }
 }
 
 export default class Renderer {
-  #parent
+  #parser
+  #view
   #retainFormatting
 
-  constructor (parent, retainFormatting) {
-    this.#parent = parent
+  constructor (view, retainFormatting) {
+    this.#parser = new Parser(this.#view, this.#retainFormatting)
+    this.#view = view
     this.#retainFormatting = retainFormatting
   }
 
-  render (template, baseURL) {
+  render (template, path, baseURL, tasks) {
     if (Array.isArray(template)) {
       return console.log('Render Array of Templates')
     }
@@ -82,32 +100,66 @@ export default class Renderer {
     }
   }
 
-  #renderHTML (template, path, baseURL) {
-    const parser = new Parser(this.#retainFormatting)
+  #bind (item, node, hasMultipleRoots, cb) {
+    if (!node) {
+      throw new Error(`Cannot bind ${item} to non-element nodes`)
+    }
+
+    if (hasMultipleRoots) {
+      throw new Error(`Cannot bind ${item} to more than one node`)
+    }
+
+    cb()
+  }
+
+  #renderHTML (template, path, baseURL, tasks) {
     const target = document.createElement('template')
-    target.innerHTML = parser.parse(template)
+    target.innerHTML = this.#parser.parse(template)
 
     const { content } = target
     const root = content.firstElementChild
-    const { templates } = parser
-    const { viewConfig } = template
+    const hasMultipleRoots = content.children.length > 1
+    const { templates, trackers } = this.#parser
+    const { attributes, listeners, viewConfig } = template
+
+    if (!!attributes) {
+      this.#bind('attributes', root, hasMultipleRoots, () => {
+        for (let attribute in attributes ?? {}) {
+          this.#setAttribute(root, attribute, attributes[attribute])
+        }
+      })
+    }
+
+    if (!!listeners) {
+      this.#bind('listeners', root, hasMultipleRoots, () => {
+        for (let evt in listeners ?? {}) {
+          listeners[evt].forEach(({ handler, cfg }) => DOMEventRegistry.add(this.#view, root, evt, handler, cfg))
+        }
+      })
+    }
 
     if (viewConfig) {
-      const view = new View(this.#parent, root, viewConfig)
+      const view = new View(this.#view, root, viewConfig)
       
       const result = getViewContent(view, viewConfig, {
         baseURL,
         path,
         retainFormatting: this.#retainFormatting
-      })
+      }, tasks)
       
       root.replaceChildren(result.content)
       path = result.remaining
+      tasks.push(() => view.emit(INTERNAL_ACCESS_KEY, 'mount'))
     } else {
-      // Recurse
-      Object.keys(templates).forEach(template => {
-        const result = this.render(templates[template], path, baseURL)
-        content.getElementById(template).replaceWith(result.content)
+      Object.keys(trackers ?? {}).forEach(id => {
+        const placeholder = content.getElementById(id)
+        path = trackers[id].render(placeholder, shouldRetainFormatting(this.#retainFormatting, placeholder), path, baseURL)
+      })
+
+      Object.keys(templates ?? {}).forEach(id => {
+        const renderer = new Renderer(this.#view, shouldRetainFormatting(this.#retainFormatting, root))
+        const result = renderer.render(templates[id], path, baseURL, tasks)
+        content.getElementById(id).replaceWith(result.content)
         path = result.remaining
       })
     }
@@ -117,5 +169,33 @@ export default class Renderer {
 
   #renderSVG () {
     console.log('RENDER SVG')
+  }
+
+  #setAttribute (node, name, value) {
+    if (value instanceof TrackingInterpolation) {
+      const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
+      return tracker.reconcile()
+    }
+
+    const existing = getExistingAttributeValue(node, name)
+
+    if (Array.isArray(value)) {
+      const list = new AttributeList(node, name, value.concat(...(existing ?? [])), this.#view)
+      return node.setAttribute(name, list.value)
+    }
+
+    switch (typeof value) {
+      case 'string':
+      case 'number': return node.setAttribute(name, `${existing.join(' ')} ${value}`.trim())
+      case 'boolean': return value && node.setAttribute(name, '')
+      
+      case 'object': return Object.keys(value).forEach(slug => {
+        name = `${name}-${slug}`
+        const existing = getExistingAttributeValue(node, name)
+        return this.#setAttribute(node, name, `${existing.join(' ')} ${value[slug]}`.trim())
+      })
+
+      default: throw new TypeError(`"${this.#view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
+    }
   }
 }

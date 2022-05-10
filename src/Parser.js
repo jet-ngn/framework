@@ -1,18 +1,26 @@
 import Template from './Template'
+import TrackableRegistry from './registries/TrackableRegistry'
+import TrackingInterpolation from './TrackingInterpolation'
 import { sanitizeString } from './utilities/StringUtils'
 
 export default class Parser {
+  #view
   #retainFormatting
   #routers = {}
   #templates = {}
   #trackers = {}
 
-  constructor (retainFormatting) {
+  constructor (view, retainFormatting) {
+    this.#view = view
     this.#retainFormatting = retainFormatting
   }
 
   get templates () {
     return this.#templates
+  }
+
+  get trackers () {
+    return this.#trackers
   }
 
   parse (template) {
@@ -36,12 +44,15 @@ export default class Parser {
     if (interpolation instanceof Template) {
       const { id, type } = interpolation
       this.#templates[id] = interpolation
-      return `<template id="${id}" class="${type} template">`
+      return `<template id="${id}" class="${type} template"></template>`
     }
 
-    // if (interpolation instanceof EmbeddedRouter) {
-    //   return this.#router
-    // }
+    if (interpolation instanceof TrackingInterpolation) {
+      const { id } = interpolation
+      const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#view)
+      this.#trackers[id] = tracker
+      return `<template class="tracker" id="${id}"></template>`
+    }
 
     switch (typeof interpolation) {
       case 'undefined':

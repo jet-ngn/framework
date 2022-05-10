@@ -1,7 +1,13 @@
+let id = 0
+
+function createID () {
+  return id++
+}
+
 export const InputControl = {
   name: 'Jet Input Control',
   
-  install ({ html, createID }, Components) {
+  install ({ html }, Components) {
     Components.InputControl = cfg => {
       const {
         label,
@@ -68,7 +74,7 @@ export const InputControl = {
 export const ToggleControl = {
   name: 'Jet Toggle Control',
   
-  install ({ html, createID }, Components) {
+  install ({ html }, Components) {
     Components.ToggleControl = cfg => {
       const {
         label,
@@ -131,7 +137,7 @@ export const ToggleControl = {
 export const SelectControl = {
   name: 'Jet Select Control',
   
-  install ({ html, createID }, Components) {
+  install ({ html }, Components) {
     Components.SelectControl = cfg => {
       const {
         label,
