@@ -1,7 +1,6 @@
 import IdentifiableClass from '../IdentifiableClass'
 import Renderer from '../Renderer'
 import Template from '../Template'
-import { shouldRetainFormatting } from '../Renderer'
 import { sanitizeString } from '../utilities/StringUtils'
 
 class Tracker extends IdentifiableClass {
@@ -124,13 +123,9 @@ export class ContentTracker extends Tracker {
     return this.#placeholder
   }
 
-  reconcile (path, baseURL) {
+  reconcile () {
     // const { value } = this
-
-    const { nodes, remaining } = this.getNodes(this.value, path, baseURL)
-    this.replaceWith(nodes)
-
-    return remaining
+    this.replaceWith(this.getNodes(this.value))
 
     // if (!this.#currentValue || [this.#currentValue, value].every(item => item instanceof Template)) {
     //   return this.replaceWith(this.getNodes(value))
@@ -139,14 +134,14 @@ export class ContentTracker extends Tracker {
     // this.nodes = reconcileNodes(this.nodes, this.getNodes(value))
   }
 
-  render (node, retainFormatting, path, baseURL) {
+  render (node, retainFormatting) {
     this.#placeholder = node
     this.nodes = [node]
-    this.#retainFormatting = shouldRetainFormatting(retainFormatting, node)
-    return this.reconcile(path, baseURL)
+    this.#retainFormatting = retainFormatting
+    return this.reconcile()
   }
 
-  getNodes (value, path, baseURL) {
+  getNodes (value) {
     if (Array.isArray(value)) {
       const nodes = []
 
@@ -155,18 +150,14 @@ export class ContentTracker extends Tracker {
         nodes.push(...output)
       }
 
-      return { nodes, remaining: path }
+      return nodes
     }
 
     if (value instanceof Template) {
-      const renderer = new Renderer(this.parent, this.#retainFormatting)
-      const tasks = []
-      const { content, remaining } = renderer.render(value, path, baseURL, tasks)
-      tasks.forEach(task => task())
-      return {
-        nodes: [...content.children],
-        remaining
-      }
+      const renderer = new Renderer(this.parent, { retainFormatting: this.#retainFormatting })
+      const content = renderer.render(value)
+
+      return [...content.children]
     }
 
     switch (typeof value) {
@@ -174,10 +165,8 @@ export class ContentTracker extends Tracker {
       case 'number':
       case 'boolean': 
         value !== false ? `${value}` : ''
-        return {
-          nodes: [document.createTextNode(this.#retainFormatting ? value : sanitizeString(value))],
-          remaining: path
-        }
+        return [document.createTextNode(this.#retainFormatting ? value : sanitizeString(value))]
+
       // case 'object': return [document.createTextNode(sanitizeString(JSON.stringify(value, null, 2), { retainFormatting: true }))]
 
       default: throw new TypeError(`Invalid tracker value type "${typeof value}"`)

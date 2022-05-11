@@ -13,7 +13,7 @@ export default class View extends IdentifiableClass {
   #scope
   #version
 
-  constructor (parent, root, { data, description, name, on, routes, scope, version }, prefix) {
+  constructor (parent, root, { data, description, name, scope, version }, prefix) {
     super(prefix ?? 'view')
     this.#data = new Trackable(data ?? {})
     this.#description = description ?? null
@@ -22,8 +22,6 @@ export default class View extends IdentifiableClass {
     this.#root = root ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
-
-    Object.keys(on ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, on[evt]))
   }
 
   get data () {
