@@ -68,6 +68,47 @@ export class AttributeTracker extends Tracker {
   }
 }
 
+export class AttributeListTracker extends AttributeTracker {
+  #currentValue
+
+  constructor () {
+    super(...arguments)
+    this.#currentValue = this.value
+  }
+
+  reconcile () {
+    const { name, node, value } = this
+
+    if (name === 'class') {
+      this.#currentValue ? node.classList.replace(this.#currentValue, value) : node.classList.add(value)
+    } else {
+      this.#currentValue ? node.setAttribute(name, node.getAttribute(name).replace(this.#currentValue, value)) : node.setAttribute(name, `${node.getAttribute(name)} ${value}`)
+    }
+
+    this.#currentValue = value
+  }
+}
+
+export class BooleanAttributeListTracker extends AttributeTracker {
+  #attribute
+
+  constructor (node, name, attribute, cfg, parent) {
+    super(node, name, cfg, parent)
+    this.#attribute = attribute
+  }
+
+  reconcile () {
+    const { value } = this
+    
+    if (this.name === 'class') {
+      return value ? this.node.classList.add(this.#attribute) : this.node.classList.remove(this.#attribute)      
+    }
+
+    const current = this.node.getAttribute(this.name)
+    this.node.setAttribute(this.name, value ? `${current} ${this.#attribute}` : current.replace(this.#attribute, ''))
+  }
+}
+
 export class ContentTracker extends Tracker {
   #placeholder
   nodes

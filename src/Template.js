@@ -45,8 +45,15 @@ export default class Template extends IdentifiableClass {
     return this.#viewConfig
   }
 
-  bindView (config) {
-    this.#viewConfig = config
+  bind (cfg) {
+    cfg.view && this.bindView(cfg.view)
+    cfg.on && this.on(cfg.on)
+    cfg.attributes && this.setAttributes(cfg.attributes)
+    return this
+  }
+
+  bindView (cfg) {
+    this.#viewConfig = cfg
     return this
   }
 
@@ -75,8 +82,8 @@ export default class Template extends IdentifiableClass {
     return this
   }
 
-  setAttributes (config) {
-    this.#attributes = { ...(this.#attributes ?? {}), ...config }
+  setAttributes (cfg) {
+    this.#attributes = { ...(this.#attributes ?? {}), ...cfg }
     return this
   }
 
@@ -86,6 +93,11 @@ export default class Template extends IdentifiableClass {
       [name]: value
     }
 
+    return this
+  }
+
+  setProperties (cfg) {
+    this.#properties = { ...(this.#properties ?? {}), ...cfg }
     return this
   }
 }

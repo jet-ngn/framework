@@ -54,7 +54,7 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }, 
 
   render(Reflect.get(cfg, 'template', view))
 
-  if (!!path && routes) {
+  if (!!path && !!routes) {
     const { route, remaining } = matchPath(path, routes)
     path = remaining
 
@@ -64,12 +64,16 @@ export function getViewContent (view, cfg, { baseURL, path, retainFormatting }, 
       const result = getViewContent(child, config, { baseURL, path, retainFormatting }, tasks)
       content = result.content
       path = result.remaining
+      tasks.push(() => view.emit(INTERNAL_ACCESS_KEY, 'route.change', {
+        from: 'FIX THIS',
+        to: route
+      }))
     } else {
       render(get404(view, routes))
     }
   }
-
-  if (!!path && path !== '/') {
+  
+  if (!!routes && !!path && path !== '/') {
     render(get404(view, routes))
   }
 
@@ -149,17 +153,20 @@ export default class Renderer {
       
       root.replaceChildren(result.content)
       path = result.remaining
-      tasks.push(() => view.emit(INTERNAL_ACCESS_KEY, 'mount'))
     } else {
       Object.keys(trackers ?? {}).forEach(id => {
         const placeholder = content.getElementById(id)
-        path = trackers[id].render(placeholder, shouldRetainFormatting(this.#retainFormatting, placeholder), path, baseURL)
+
+        if (placeholder) {
+          path = trackers[id].render(placeholder, shouldRetainFormatting(this.#retainFormatting, placeholder), path, baseURL)
+        }
       })
 
       Object.keys(templates ?? {}).forEach(id => {
         const renderer = new Renderer(this.#view, shouldRetainFormatting(this.#retainFormatting, root))
         const result = renderer.render(templates[id], path, baseURL, tasks)
-        content.getElementById(id).replaceWith(result.content)
+        const placeholder = content.getElementById(id)
+        placeholder && placeholder.replaceWith(result.content)
         path = result.remaining
       })
     }
@@ -167,8 +174,14 @@ export default class Renderer {
     return { content, remaining: path }
   }
 
-  #renderSVG () {
-    console.log('RENDER SVG')
+  #renderSVG (template, path, baseURL, tasks) {
+    const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
+    target.innerHTML = this.#parser.parse(template)
+    const fragment = document.createDocumentFragment()
+    fragment.append(...target.children)
+
+    return { content: fragment, remaining: path }
   }
 
   #setAttribute (node, name, value) {

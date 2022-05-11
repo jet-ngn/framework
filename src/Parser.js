@@ -37,9 +37,12 @@ export default class Parser {
 
   // TODO: Handle other data structures, like maps, sets, etc
   #parseInterpolation (interpolation) {
-    // if (Array.isArray(interpolation)) {
-    //   return console.log('PARSE ARRAY')
-    // }
+    if (Array.isArray(interpolation)) {
+      return interpolation.reduce((result, item) => {
+        result += this.#parseInterpolation(item)
+        return result
+      }, '')
+    }
   
     if (interpolation instanceof Template) {
       const { id, type } = interpolation
@@ -60,6 +63,8 @@ export default class Parser {
 
       case 'string':
       case 'number': return this.#retainFormatting ? interpolation : sanitizeString(interpolation)
+
+      // TODO: Handle other data structures, like maps, sets, etc
     
       default: throw new TypeError(`Invalid template string interpolation type "${typeof interpolation}"`)
     }

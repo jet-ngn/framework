@@ -36,10 +36,10 @@ export default class AttributeList {
   }
 
   #processListItem (item) {
-    // if (item instanceof TrackingInterpolation) {
-    //   const tracker = TrackableRegistry.registerAttributeListTracker(this.#node, this.#name, item, this.#parent)
-    //   return [tracker.value]
-    // }
+    if (item instanceof TrackingInterpolation) {
+      const tracker = TrackableRegistry.registerAttributeListTracker(this.#node, this.#name, item, this.#parent)
+      return [tracker.value]
+    }
 
     switch (typeOf(item)) {
       case 'string':
@@ -53,10 +53,10 @@ export default class AttributeList {
     return Object.keys(obj).reduce((result, name) => {
       const value = obj[name]
       
-      /*if (value instanceof TrackingInterpolation) {
+      if (value instanceof TrackingInterpolation) {
         const tracker = TrackableRegistry.registerBooleanAttributeListTracker(this.#node, this.#name, name, value, this.#parent)
         tracker.value === true && result.push(name)
-      } else */if (typeof value !== 'boolean') {
+      } else if (typeof value !== 'boolean') {
         throw new TypeError(`Invalid list entry. Expected "boolean", received "${typeOf(value)}"`)
       } else if (value === true) {
         result.push(name)

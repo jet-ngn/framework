@@ -1,7 +1,6 @@
 import View from './View'
 import EventRegistry from './registries/EventRegistry'
 import { getViewContent } from './Renderer'
-import { INTERNAL_ACCESS_KEY } from './globals'
 
 export default class App extends View {
   #baseURL
