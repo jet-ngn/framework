@@ -22,7 +22,7 @@ export default class Renderer {
   #config
 
   constructor (view, config) {
-    this.#parser = new Parser(this.#view, config.retainFormatting)
+    this.#parser = new Parser(view, config.retainFormatting)
     this.#view = view
     this.#config = config ?? {}
   }

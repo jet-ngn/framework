@@ -1,6 +1,7 @@
 import IdentifiableClass from '../IdentifiableClass'
 import Renderer from '../Renderer'
 import Template from '../Template'
+import { reconcileNodes } from '../Reconciler'
 import { sanitizeString } from '../utilities/StringUtils'
 
 class Tracker extends IdentifiableClass {
@@ -116,7 +117,7 @@ export class ContentTracker extends Tracker {
 
   constructor () {
     super(...arguments)
-    // this.#currentValue = this.value
+    this.#currentValue = this.value
   }
 
   get placeholder () {
@@ -124,14 +125,13 @@ export class ContentTracker extends Tracker {
   }
 
   reconcile () {
-    // const { value } = this
-    this.replaceWith(this.getNodes(this.value))
+    const { value } = this
 
-    // if (!this.#currentValue || [this.#currentValue, value].every(item => item instanceof Template)) {
-    //   return this.replaceWith(this.getNodes(value))
-    // }
+    if (!this.#currentValue || [this.#currentValue, value].every(item => item instanceof Template)) {
+      return this.replaceWith(this.getNodes(value))
+    }
 
-    // this.nodes = reconcileNodes(this.nodes, this.getNodes(value))
+    this.nodes = reconcileNodes(this.nodes, this.getNodes(value))
   }
 
   render (node, retainFormatting) {
@@ -180,5 +180,68 @@ export class ContentTracker extends Tracker {
     
     this.nodes.at(0).replaceWith(...nodes)
     this.nodes = nodes
+  }
+}
+
+export class ArrayContentTracker extends ContentTracker {
+  pop () {
+    const last = this.nodes.at(-1)
+    const { unmount } = ViewRegistry.getEntryByNode(last) ?? {}
+    
+    if (unmount) {
+      unmount()
+    }
+
+    last.remove()
+    this.nodes.pop()
+  }
+
+  push (...args) {
+    const newNodes = this.getNodes(this.value.slice(args.length * -1))
+    const last = this.nodes.at(-1)
+
+    if (!last || last === this.placeholder) {
+      this.placeholder.replaceWith(...newNodes)
+      this.nodes = newNodes
+    } else {
+      last.after(...newNodes)
+      this.nodes.push(...newNodes)
+    }
+  }
+
+  reconcile () {
+    if (this.value.length === 0) {
+      return this.replaceWith([this.placeholder])
+    }
+
+    super.reconcile()
+  }
+
+  shift () {
+    console.log(this);
+    const first = this.nodes[0]
+    const { unmount } = ViewRegistry.getEntryByNode(first) ?? {}
+    // TODO: Figure out how to add child views to the AST so they can be
+    // unmounted on route changes
+    
+    if (unmount) {
+      unmount()
+    }
+
+    first.remove()
+    this.nodes.shift()
+  }
+
+  unshift (...args) {
+    const newNodes = this.getNodes(this.value.slice(0, args.length))
+    const first = this.nodes[0]
+
+    if (!first || first === this.placeholder) {
+      this.placeholder.replaceWith(...newNodes)
+      this.nodes = newNodes
+    } else {
+      first.before(...newNodes)
+      this.nodes.unshift(...newNodes)
+    }
   }
 }

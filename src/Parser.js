@@ -6,7 +6,6 @@ import { sanitizeString } from './utilities/StringUtils'
 export default class Parser {
   #view
   #retainFormatting
-  #routers = {}
   #templates = {}
   #trackers = {}
 
@@ -35,7 +34,6 @@ export default class Parser {
       }, '')
   }
 
-  // TODO: Handle other data structures, like maps, sets, etc
   #parseInterpolation (interpolation) {
     if (Array.isArray(interpolation)) {
       return interpolation.reduce((result, item) => {
@@ -62,7 +60,7 @@ export default class Parser {
       case 'boolean': return ''
 
       case 'string':
-      case 'number': return this.#retainFormatting ? interpolation : sanitizeString(interpolation)
+      case 'number': return this.#retainFormatting ? interpolation : sanitizeString(`${interpolation}`)
 
       // TODO: Handle other data structures, like maps, sets, etc
     

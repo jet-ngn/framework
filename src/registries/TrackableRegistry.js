@@ -3,7 +3,7 @@ import {
   AttributeListTracker,
   BooleanAttributeListTracker,
   // BindingTracker,
-  // ArrayContentTracker,
+  ArrayContentTracker,
   ContentTracker
 } from '../lib/trackers.js'
 
@@ -32,10 +32,9 @@ export default class TrackableRegistry {
   // }
 
   static registerContentTracker (cfg, parent) {
-    return this.#register(new ContentTracker(...arguments))
-    // return Array.isArray(cfg.target)
-    //   ? this.#register(new ArrayContentTracker(...arguments), true)
-    //   : this.#register(new ContentTracker(...arguments), true)
+    return Array.isArray(cfg.target)
+      ? this.#register(new ArrayContentTracker(...arguments), true)
+      : this.#register(new ContentTracker(...arguments), true)
   }
 
   static track (target) {
@@ -63,7 +62,7 @@ export default class TrackableRegistry {
         }
       }
 
-      const { trackers, changelog } = this.getTarget(target) ?? {}
+      const { trackers, changelog } = trackables.get(target)
       const output = method.apply(target, args)
 
       change.value.new = [...target]

@@ -49,6 +49,10 @@ history.listen(({ location }) => {
     return
   }
 
+  if (!!ast) {
+    unmount(ast)
+  }
+
   PATH.previous = PATH.current
   PATH.previousRoute = PATH.currentRoute
   PATH.current = pathname
@@ -115,8 +119,8 @@ function mount ({ view, children, config, activeRoute }) {
 
 function unmount ({ view, children }) {
   children.forEach(unmount)
-  EventRegistry.removeByView(view)
   view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+  EventRegistry.removeByView(view)
 }
 
 export function navigate (path) {
@@ -124,12 +128,6 @@ export function navigate (path) {
 }
 
 function render () {
-  if (!!ast) {
-    unmount(ast)
-  }
-
-  // console.log(PATH);
-
   PATH.activeRoutes = []
 
   ast = generateASTEntry(null, root, config)
