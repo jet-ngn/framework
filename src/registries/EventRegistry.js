@@ -71,4 +71,18 @@ export default class EventRegistry {
 
     views.clear()
   }
+
+  static removeByView (view) {
+    const stored = views.get(view)
+
+    if (!stored) {
+      return
+    }
+
+    Object.keys(stored).forEach(evt => {
+      BUS.off(`${view.scope}.${evt}`, stored[evt])
+    })
+
+    views.delete(stored)
+  }
 }

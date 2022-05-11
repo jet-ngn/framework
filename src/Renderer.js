@@ -1,32 +1,11 @@
 import View from './View'
 import Parser from './Parser'
-import Route from './Route'
-import DefaultRoutes from './lib/routes'
 import DOMEventRegistry from './registries/DOMEventRegistry'
 import TrackableRegistry from './registries/TrackableRegistry'
 import TrackingInterpolation from './TrackingInterpolation'
 import AttributeList from './AttributeList'
-import { matchPath } from './utilities/RouteUtils'
-import { INTERNAL_ACCESS_KEY } from './globals'
-
-function generateRoutes (routes, baseURL) {
-  return Object.keys(routes ?? {}).reduce((result, route) => {
-    if (!result) {
-      result = {}
-    }
-
-    const config = routes[route]
-    route = route.trim()
-    result[route] = new Route(new URL(route, baseURL), config)
-    return result
-  }, null)
-}
-
-function get404 (view, routes) {
-  return !!routes?.[404]
-    ? Reflect.get(routes[404].config, 'template', view)
-    : Reflect.get(DefaultRoutes[404], 'template', view)
-}
+import { generateASTEntry, generateChildren } from './utilities/ASTUtils'
+import { PATH } from './globals'
 
 function getExistingAttributeValue (node, name) {
   const value = node.getAttribute(name)
@@ -37,62 +16,18 @@ export function shouldRetainFormatting (retainFormatting, node) {
   return retainFormatting || !!node.closest('pre')
 }
 
-export function getViewContent (view, cfg, { baseURL, path, retainFormatting }, tasks) {
-  const renderer = new Renderer(view, retainFormatting)
-  const routes = generateRoutes(cfg.routes, baseURL)
-  let content
-
-  function render (template) {
-    if (!template) {
-      return
-    }
-
-    const result = renderer.render(template, path, baseURL, tasks)
-    content = result.content
-    path = result.remaining
-  }
-
-  render(Reflect.get(cfg, 'template', view))
-
-  if (!!path && !!routes) {
-    const { route, remaining } = matchPath(path, routes)
-    path = remaining
-
-    if (route) {
-      const { config } = route
-      const child = new View(view, view.root, config)
-      const result = getViewContent(child, config, { baseURL, path, retainFormatting }, tasks)
-      content = result.content
-      path = result.remaining
-      tasks.push(() => view.emit(INTERNAL_ACCESS_KEY, 'route.change', {
-        from: 'FIX THIS',
-        to: route
-      }))
-    } else {
-      render(get404(view, routes))
-    }
-  }
-  
-  if (!!routes && !!path && path !== '/') {
-    render(get404(view, routes))
-  }
-
-  tasks.push(() => view.emit(INTERNAL_ACCESS_KEY, 'mount'))
-  return { content, remaining: path }
-}
-
 export default class Renderer {
   #parser
   #view
-  #retainFormatting
+  #config
 
-  constructor (view, retainFormatting) {
-    this.#parser = new Parser(this.#view, this.#retainFormatting)
+  constructor (view, config) {
+    this.#parser = new Parser(this.#view, config.retainFormatting)
     this.#view = view
-    this.#retainFormatting = retainFormatting
+    this.#config = config ?? {}
   }
 
-  render (template, path, baseURL, tasks) {
+  render (template, ast) {
     if (Array.isArray(template)) {
       return console.log('Render Array of Templates')
     }
@@ -116,7 +51,7 @@ export default class Renderer {
     cb()
   }
 
-  #renderHTML (template, path, baseURL, tasks) {
+  #renderHTML (template, ast) {
     const target = document.createElement('template')
     target.innerHTML = this.#parser.parse(template)
 
@@ -142,46 +77,36 @@ export default class Renderer {
       })
     }
 
+    const { retainFormatting } = this.#config
+
     if (viewConfig) {
-      const view = new View(this.#view, root, viewConfig)
-      
-      const result = getViewContent(view, viewConfig, {
-        baseURL,
-        path,
-        retainFormatting: this.#retainFormatting
-      }, tasks)
-      
-      root.replaceChildren(result.content)
-      path = result.remaining
+      const child = generateASTEntry(this.#view, root, viewConfig)
+      root.replaceChildren(generateChildren(child))
+      ast.children.push(child)
     } else {
       Object.keys(trackers ?? {}).forEach(id => {
         const placeholder = content.getElementById(id)
-
-        if (placeholder) {
-          path = trackers[id].render(placeholder, shouldRetainFormatting(this.#retainFormatting, placeholder), path, baseURL)
-        }
+        placeholder && trackers[id].render(placeholder, shouldRetainFormatting(retainFormatting, placeholder))
       })
 
       Object.keys(templates ?? {}).forEach(id => {
-        const renderer = new Renderer(this.#view, shouldRetainFormatting(this.#retainFormatting, root))
-        const result = renderer.render(templates[id], path, baseURL, tasks)
+        const renderer = new Renderer(this.#view, shouldRetainFormatting(retainFormatting, root))
         const placeholder = content.getElementById(id)
-        placeholder && placeholder.replaceWith(result.content)
-        path = result.remaining
+        placeholder && placeholder.replaceWith(renderer.render(templates[id], ast))
       })
     }
 
-    return { content, remaining: path }
+    return content
   }
 
-  #renderSVG (template, path, baseURL, tasks) {
+  #renderSVG (template, ast) {
     const target = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 
     target.innerHTML = this.#parser.parse(template)
     const fragment = document.createDocumentFragment()
     fragment.append(...target.children)
 
-    return { content: fragment, remaining: path }
+    return fragment
   }
 
   #setAttribute (node, name, value) {

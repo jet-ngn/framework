@@ -1,5 +1,5 @@
-import App from './App.js'
 import history from 'history'
+import EventRegistry from './registries/EventRegistry'
 
 import { BUS as Bus, EventEmitter } from 'NGN'
 import { html, svg } from './lib/tags.js'
@@ -7,21 +7,56 @@ import { html, svg } from './lib/tags.js'
 import { Trackable } from './registries/TrackableRegistry'
 import TrackingInterpolation from './TrackingInterpolation'
 
-let app
+import { INTERNAL_ACCESS_KEY, PATH } from './globals'
+import { generateASTEntry, generateChildren } from './utilities/ASTUtils'
+
 let config = {}
+let root
 let initialized = false
 let ready = false
-let currentPath = location.pathname
+let ast
+
+const Components = {}
 
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
   initialized && initialize()
 })
 
+// function fireRouteChangeEvents ({ view, activeRoute, children }, evt) {
+//   if (!!activeRoute && PATH.activeRoutes.includes(activeRoute)) {
+//     console.log(PATH)
+//     console.log(activeRoute)
+//     console.log('--------------');
+//     // view.emit(INTERNAL_ACCESS_KEY, `route.${evt}`, {
+//     //   from: PATH.previous,
+//     //   to: PATH.current
+//     // })
+//   }
+//   // if (!!routes) {
+//   //   const route = routes[PATH.current]
+
+    
+//   // }
+
+//   children.forEach(child => fireRouteChangeEvents(child, evt))
+// }
+
 history.listen(({ location }) => {
-  const path = location.pathname
-  app.render(path, currentPath)
-  currentPath = path
+  const { pathname } = location
+  
+  if (PATH.current === pathname) {
+    return
+  }
+
+  PATH.previous = PATH.current
+  PATH.previousRoute = PATH.currentRoute
+  PATH.current = pathname
+  PATH.remaining = PATH.current
+
+  // fireRouteChangeEvents(ast, 'beforechange')
+  render()
+  // fireRouteChangeEvents(ast, 'afterchange')
 })
 
 export function createApp (cfg) {
@@ -30,8 +65,11 @@ export function createApp (cfg) {
   }
 
   config = cfg
-  config.baseURL = new URL(cfg.baseURL ?? '', location.origin)
+  PATH.base = new URL(cfg.baseURL ?? '', location.origin)
+  PATH.current = location.pathname
+  PATH.remaining = PATH.current
   initialized = true
+
   ready && initialize()
 }
 
@@ -42,11 +80,9 @@ function initialize () {
     throw new Error(`Invalid root element selector: "${config.selector}" returned multiple nodes.`)
   }
 
-  app = new App(nodes[0], config)
-  app.render(currentPath)
+  root = nodes[0]
+  render()
 }
-
-const Components = {}
 
 export function install ({ components }) {
   const jet = {
@@ -63,8 +99,43 @@ export function install ({ components }) {
   ;(components ?? []).forEach(({ install }) => install(jet, Components))
 }
 
+function mount ({ view, children, config, activeRoute }) {
+  Object.keys(config.on ?? {}).forEach(evt => EventRegistry.addHandler(view, evt, config.on[evt]))
+  
+  if (!!activeRoute && PATH.activeRoutes.includes(activeRoute)) {
+    view.emit(INTERNAL_ACCESS_KEY, 'route.change', {
+      from: PATH.previousRoute,
+      to: PATH.currentRoute
+    })
+  }
+
+  view.emit(INTERNAL_ACCESS_KEY, 'mount')
+  children.forEach(mount)
+}
+
+function unmount ({ view, children }) {
+  children.forEach(unmount)
+  EventRegistry.removeByView(view)
+  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+}
+
 export function navigate (path) {
   history.push(path)
+}
+
+function render () {
+  if (!!ast) {
+    unmount(ast)
+  }
+
+  // console.log(PATH);
+
+  PATH.activeRoutes = []
+
+  ast = generateASTEntry(null, root, config)
+  root.replaceChildren(generateChildren(ast))
+
+  mount(ast)
 }
 
 export function track (target, property, transform) {

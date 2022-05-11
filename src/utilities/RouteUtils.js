@@ -1,3 +1,5 @@
+import { PATH } from '../globals'
+
 export function combinePaths (...paths) {
   const chunks = paths.map(trimSlashes).filter(Boolean)
   return `/${chunks.join('/')}`
@@ -11,7 +13,8 @@ export function matchPath (path, routes) {
   const pathSlugs = getSlugs(path)
 
   if (!pathSlugs.length) {
-    return { route: routes['/'] ?? null, remaining: '/' }
+    PATH.remaining = null
+    return routes['/'] ?? null
   }
 
   let bestScore = -1
@@ -40,17 +43,14 @@ export function matchPath (path, routes) {
       
       if (finalScore === neededScore && finalScore > bestScore) {
         bestScore = finalScore
-        match.route = routes[route]
+        match = routes[route]
         let remainingSlugs = pathSlugs.slice(routeSlugs.length)
-        match.remaining = remainingSlugs.length === 0 ? '' : `/${remainingSlugs.join('/')}`
+        PATH.remaining = remainingSlugs.length === 0 ? '' : `/${remainingSlugs.join('/')}`
       }
     }
 
     return match
-  }, {
-    route: null,
-    remaining: path
-  })
+  }, null)
 }
 
 export function parseSearch (search) {
