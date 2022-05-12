@@ -1,4 +1,4 @@
-import { PATH } from '../globals'
+import { APP } from '../env'
 
 export function combinePaths (...paths) {
   const chunks = paths.map(trimSlashes).filter(Boolean)
@@ -13,7 +13,7 @@ export function matchPath (path, routes) {
   const pathSlugs = getSlugs(path)
 
   if (!pathSlugs.length) {
-    PATH.remaining = null
+    APP.remainingPath = null
     return routes['/'] ?? null
   }
 
@@ -45,7 +45,7 @@ export function matchPath (path, routes) {
         bestScore = finalScore
         match = routes[route]
         let remainingSlugs = pathSlugs.slice(routeSlugs.length)
-        PATH.remaining = remainingSlugs.length === 0 ? '' : `/${remainingSlugs.join('/')}`
+        APP.remainingPath = remainingSlugs.length === 0 ? '' : `/${remainingSlugs.join('/')}`
       }
     }
 

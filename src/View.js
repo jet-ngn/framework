@@ -2,7 +2,7 @@ import IdentifiableClass from './IdentifiableClass'
 import EventRegistry from './registries/EventRegistry'
 import { Trackable } from './registries/TrackableRegistry'
 import { BUS } from 'NGN'
-import { INTERNAL_ACCESS_KEY } from './globals'
+import { INTERNAL_ACCESS_KEY } from './env'
 
 export default class View extends IdentifiableClass {
   #data

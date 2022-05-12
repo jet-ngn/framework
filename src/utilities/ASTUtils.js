@@ -3,7 +3,7 @@ import View from '../View'
 import Route from '../Route'
 import DefaultRoutes from '../lib/routes'
 import { matchPath } from './RouteUtils'
-import { PATH } from '../globals'
+import { APP } from '../env'
 
 function generateRoutes (routes) {
   return Object.keys(routes ?? {}).reduce((result, route) => {
@@ -13,7 +13,7 @@ function generateRoutes (routes) {
 
     const config = routes[route]
     route = route.trim()
-    result[route] = new Route(new URL(route, PATH.base), config)
+    result[route] = new Route(new URL(route, APP.base), config)
     return result
   }, null)
 }
@@ -40,30 +40,31 @@ export function generateChildren (ast) {
   let child
 
   function generate404 () {
-    child = generateASTEntry(view, node, routes[404] ?? DefaultRoutes[404])
+    child = generateASTEntry(view, node, routes?.[404] ?? DefaultRoutes[404])
     const template = Reflect.get(child.config, 'template', view)
     content = template ? renderTemplate(renderer, template, ast) : content
   }
 
-  if (!!routes) {
-    if (!!PATH.remaining) {
-      const match = matchPath(PATH.remaining, routes)
+  if (!!routes && !!APP.remainingPath) {
+    const match = matchPath(APP.remainingPath, routes)
 
-      if (match) {
-        child = generateASTEntry(view, node, match.config)
-        ast.activeRoute = match
-        PATH.currentRoute = match
-        PATH.activeRoutes.push(match)
-        content = generateChildren(child)
-      } else {
-        generate404()
-      }
+    if (match) {
+      child = generateASTEntry(view, node, match.config)
+      ast.activeRoute = match
+      APP.currentRoute = match
+      content = generateChildren(child)
+    } else {
+      generate404()
     }
 
-    if (!!PATH.remaining) {
+    if (!!APP.remainingPath && !!APP.remainingPath !== '/') {
       generate404()
     }
   }
+
+  // if (!!APP.remainingPath && APP.remainingPath !== '/') {
+  //   generate404()
+  // }
 
   child && ast.children.push(child)
   return content

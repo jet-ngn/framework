@@ -1,11 +1,9 @@
-import View from './View'
 import Parser from './Parser'
 import DOMEventRegistry from './registries/DOMEventRegistry'
 import TrackableRegistry from './registries/TrackableRegistry'
 import TrackingInterpolation from './TrackingInterpolation'
 import AttributeList from './AttributeList'
 import { generateASTEntry, generateChildren } from './utilities/ASTUtils'
-import { PATH } from './globals'
 
 function getExistingAttributeValue (node, name) {
   const value = node.getAttribute(name)
