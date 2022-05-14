@@ -1,17 +1,15 @@
 import Template from './Template'
+import TrackableRegistry from './registries/TrackableRegistry'
+import TrackingInterpolation from './TrackingInterpolation'
 import { sanitizeString } from './utilities/StringUtils'
 
 export default class Parser {
   #retainFormatting
-  #templates = null
-  #trackers = null
+  #templates = {}
+  #trackers = {}
 
   constructor ({ retainFormatting }) {
     this.#retainFormatting = retainFormatting
-  }
-
-  get retainFormatting () {
-    return this.#retainFormatting
   }
 
   get templates () {
@@ -24,26 +22,14 @@ export default class Parser {
 
   parse (template) {
     const { strings, interpolations } = template
-    const target = this.#getTarget(template.type)
 
-    target.innerHTML = interpolations.length === 0
-    ? strings[0] // TODO: May want to sanitize and convert back to html
-    : strings.reduce((result, string, i) => {
-      result += string
-      result += this.#parseInterpolation(interpolations[i])
-      return result
-    }, '')
-
-    return target.content
-  }
-
-  #getTarget (type) {
-    switch (type) {
-      case 'html': return document.createElement('template')
-      case 'svg': return document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-
-      default: throw new Error(`Templates of type "${type}" are not supported`)
-    }
+    return interpolations.length === 0
+      ? strings[0] // TODO: May want to sanitize and convert back to html
+      : strings.reduce((result, string, i) => {
+        result += string
+        result += this.#parseInterpolation(interpolations[i])
+        return result
+      }, '')
   }
 
   #parseInterpolation (interpolation) {
@@ -56,7 +42,6 @@ export default class Parser {
   
     if (interpolation instanceof Template) {
       const { id, type } = interpolation
-      this.#templates = this.#templates ?? {}
       this.#templates[id] = interpolation
       return `<template id="${id}" class="${type} template"></template>`
     }

@@ -1,11 +1,6 @@
-export const INTERNAL_ACCESS_KEY = Symbol()
-
-export const APP = {
-  base: null,
-  previousPath: null,
-  previousRoute: null,
-  currentPath: null,
-  currentRoute: null,
-  remainingPath: null,
-  ast: null
+export const PATH = class {
+  static base = null
+  static current = null
+  static previous = null
+  static remaining = null
 }

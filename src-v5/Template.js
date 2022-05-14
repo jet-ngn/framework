@@ -1,15 +1,14 @@
-import IdentifiedClass from './IdentifiedClass.js'
+import IdentifiableClass from './IdentifiableClass.js'
 
-export default class Template extends IdentifiedClass {
+export default class Template extends IdentifiableClass {
   #type
   #strings
   #interpolations
 
   #attributes = null
-  #config = null
   #listeners = null
   #properties = null
-  #routes = null
+  #viewConfig = null
 
   constructor (type, strings, ...interpolations) {
     super('template')
@@ -20,10 +19,6 @@ export default class Template extends IdentifiedClass {
 
   get attributes () {
     return this.#attributes
-  }
-
-  get config () {
-    return this.#config
   }
 
   get interpolations () {
@@ -38,10 +33,6 @@ export default class Template extends IdentifiedClass {
     return this.#properties
   }
 
-  get routes () {
-    return this.#routes
-  }
-
   get strings () {
     return this.#strings
   }
@@ -50,20 +41,19 @@ export default class Template extends IdentifiedClass {
     return this.#type
   }
 
+  get viewConfig () {
+    return this.#viewConfig
+  }
+
   bind (cfg) {
-    cfg.attributes && this.setAttributes(cfg.attributes)
-    cfg.config && this.bindConfig(cfg.config)
+    cfg.view && this.bindView(cfg.view)
     cfg.on && this.on(cfg.on)
+    cfg.attributes && this.setAttributes(cfg.attributes)
     return this
   }
 
-  bindConfig (cfg) {
-    this.#config = cfg
-    return this
-  }
-
-  bindRouter (routes) {
-    this.#routes = routes
+  bindView (cfg) {
+    this.#viewConfig = cfg
     return this
   }
 

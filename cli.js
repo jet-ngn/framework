@@ -44,7 +44,10 @@ const shell = new Shell({
           }, {
             filter: /^IAM/,
             path: path.join(source, 'node_modules', '@author.io', 'iam', 'index.js')
-          }]
+          }{
+            filter: /^nanoid/,
+            path: path.join(source, 'node_modules', 'nanoid', 'index.js')
+          }, ]
         }
 
         Builder.addTask('Cleaning output directory', async () => await Builder.clean())

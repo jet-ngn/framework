@@ -8,7 +8,6 @@ export default class View extends IdentifiableClass {
   #data
   #description
   #name
-  #parent
   #root
   #scope
   #version
@@ -18,7 +17,6 @@ export default class View extends IdentifiableClass {
     this.#data = new Trackable(data ?? {})
     this.#description = description ?? null
     this.#name = name ?? 'Unnamed Node'
-    this.#parent = parent ?? null
     this.#root = root ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
@@ -34,10 +32,6 @@ export default class View extends IdentifiableClass {
 
   get name () {
     return this.#name
-  }
-
-  get parent () {
-    return this.#parent
   }
 
   get root () {

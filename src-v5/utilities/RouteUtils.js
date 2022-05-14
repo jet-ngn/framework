@@ -1,5 +1,4 @@
 import Route from '../Route'
-import { PATH } from '../env'
 
 export function combinePaths (...paths) {
   const chunks = paths.map(trimSlashes).filter(Boolean)
@@ -8,17 +7,6 @@ export function combinePaths (...paths) {
 
 export function getSlugs (path) {
   return trimSlashes(path).split('/').filter(Boolean)
-}
-
-export function parseRoutes (routes) {
-  return Object.keys(routes).reduce((result, route) => {
-    route = route.trim()
-
-    return {
-      ...(result ?? {}),
-      [route]: new Route(new URL(route, PATH.base), routes[route])
-    }
-  }, null)
 }
 
 export function parseSearch (search) {

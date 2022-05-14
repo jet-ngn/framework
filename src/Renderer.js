@@ -1,31 +1,20 @@
 import Parser from './Parser'
-import DOMEventRegistry from './registries/DOMEventRegistry'
-import TrackableRegistry from './registries/TrackableRegistry'
-import TrackingInterpolation from './TrackingInterpolation'
-import AttributeList from './AttributeList'
-import { generateASTEntry, generateChildren } from './utilities/ASTUtils'
-
-function getExistingAttributeValue (node, name) {
-  const value = node.getAttribute(name)
-  return value ? value.trim().split(' ').map(item => item.trim()) : []
-}
-
-export function shouldRetainFormatting (retainFormatting, node) {
-  return retainFormatting || !!node.closest('pre')
-}
+import Entity from './Entity'
+import Router from './Router'
+import DefaultRoutes from './lib/routes'
+import { generateTreeNode } from './utilities/TreeUtils'
+import { PATH } from './env'
 
 export default class Renderer {
+  #entity
   #parser
-  #view
-  #config
 
-  constructor (view, config) {
-    this.#parser = new Parser(view, config.retainFormatting)
-    this.#view = view
-    this.#config = config ?? {}
+  constructor (entity, { retainFormatting }) {
+    this.#entity = entity
+    this.#parser = new Parser({ retainFormatting })
   }
 
-  render (template, ast) {
+  render (template, treenode) {
     if (Array.isArray(template)) {
       return console.log('Render Array of Templates')
     }
@@ -37,7 +26,7 @@ export default class Renderer {
     }
   }
 
-  #bind (item, node, hasMultipleRoots, cb) {
+  #validateBinding (item, node, hasMultipleRoots, cb) {
     if (!node) {
       throw new Error(`Cannot bind ${item} to non-element nodes`)
     }
@@ -49,51 +38,67 @@ export default class Renderer {
     cb()
   }
 
-  #renderHTML (template, ast) {
-    const target = document.createElement('template')
-    target.innerHTML = this.#parser.parse(template)
+  #bind (type, collection, root, hasMultipleRoots, cb) {
+    this.#validateBinding(type, root, hasMultipleRoots, () => {
+      for (let item in collection ?? {}) {
+        cb(root, item, collection[item])
+      }
+    })
+  }
 
-    const { content } = target
+  #bindListeners (listeners, root, hasMultipleRoots) {
+    this.#validateBinding('listeners', root, hasMultipleRoots, () => {
+      for (let evt in listeners ?? {}) {
+        listeners[evt].forEach(({ handler, cfg }) => DOMEventRegistry.add(this.#entity, root, evt, handler, cfg))
+      }
+    })
+  }
+
+  #renderHTML (template, treenode, parentRoutes) {
+    let content = this.#parser.parse(template)
     const root = content.firstElementChild
     const hasMultipleRoots = content.children.length > 1
-    const { templates, trackers } = this.#parser
-    const { attributes, listeners, viewConfig } = template
+    let { attributes, listeners, properties, config, routes } = template
+    const args = [root, hasMultipleRoots]
 
-    if (!!attributes) {
-      this.#bind('attributes', root, hasMultipleRoots, () => {
-        for (let attribute in attributes ?? {}) {
-          this.#setAttribute(root, attribute, attributes[attribute])
-        }
-      })
-    }
+    !!attributes && this.#bind('attributes', attributes, root, ...args, this.#setAttribute)
+    !!properties && this.#bind('properties', properties, root, ...args, this.#setProperty)
+    
+    !!listeners && this.#bindListeners(listeners, ...args)
 
-    if (!!listeners) {
-      this.#bind('listeners', root, hasMultipleRoots, () => {
-        for (let evt in listeners ?? {}) {
-          listeners[evt].forEach(({ handler, cfg }) => DOMEventRegistry.add(this.#view, root, evt, handler, cfg))
-        }
-      })
-    }
-
-    const { retainFormatting } = this.#config
-
-    if (viewConfig) {
-      const child = generateASTEntry(this.#view, root, viewConfig)
-      root.replaceChildren(generateChildren(child))
-      ast.children.push(child)
+    if (routes) {
+      const router = new Router(this.#entity, routes)
+      const childTreenode = generateTreeNode('router', router)
+      treenode.children.push(childTreenode)
+      root.replaceChildren(router.render(childTreenode.children))
+      return content
+      
+    } else if (config) {
+      console.log('HANDLE CONFIG')
     } else {
-      Object.keys(trackers ?? {}).forEach(id => {
-        const placeholder = content.getElementById(id)
-        placeholder && trackers[id].render(placeholder, shouldRetainFormatting(retainFormatting, placeholder))
-      })
+      const { templates, trackers } = this.#parser
 
-      Object.keys(templates ?? {}).forEach(id => {
-        const renderer = new Renderer(this.#view, shouldRetainFormatting(retainFormatting, root))
-        const placeholder = content.getElementById(id)
-        placeholder && placeholder.replaceWith(renderer.render(templates[id], ast))
-      })
+      console.log('HANDLE NESTED TEMPLATES')
+
+      // Object.keys(templates ?? {}).forEach(id => {
+      //   const renderer = new Renderer(this.#entity, shouldRetainFormatting(this.#parser.retainFormatting, root))
+      //   const placeholder = content.getElementById(id)
+      //   placeholder && placeholder.replaceWith(renderer.render(templates[id], treenode))
+      // })
     }
 
+    if (PATH.remaining) {
+      config = parentRoutes?.[404] ?? DefaultRoutes[404]
+      content = this.#parser.parse(Reflect.get(config, 'template', this.#entity))
+
+      treenode.children.push({
+        type: 'entity',
+        entity: new Entity(this.#entity, this.#entity.root, config),
+        route: null,
+        children: []
+      })
+    }
+    
     return content
   }
 
@@ -109,14 +114,15 @@ export default class Renderer {
 
   #setAttribute (node, name, value) {
     if (value instanceof TrackingInterpolation) {
-      const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
-      return tracker.reconcile()
+      return console.log('HANDLE ATTRIBUTE TRACKER')
+      // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
+      // return tracker.reconcile()
     }
 
     const existing = getExistingAttributeValue(node, name)
 
     if (Array.isArray(value)) {
-      const list = new AttributeList(node, name, value.concat(...(existing ?? [])), this.#view)
+      const list = new AttributeList(node, name, value.concat(...(existing ?? [])), this.#entity)
       return node.setAttribute(name, list.value)
     }
 
@@ -131,7 +137,26 @@ export default class Renderer {
         return this.#setAttribute(node, name, `${existing.join(' ')} ${value[slug]}`.trim())
       })
 
-      default: throw new TypeError(`"${this.#view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
+      default: throw new TypeError(`"${this.#entity.name}" rendering error: Invalid attribute value type "${typeof value}"`)
     }
   }
+
+  #setProperty (node, name, value) {
+    if (value instanceof TrackingInterpolation) {
+      return console.log('STORE PROPERTY TRACKER')
+      // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
+      // return tracker.reconcile()
+    }
+
+    node[name] = value
+  }
+}
+
+function getExistingAttributeValue (node, name) {
+  const value = node.getAttribute(name)
+  return value ? value.trim().split(' ').map(item => item.trim()) : []
+}
+
+export function shouldRetainFormatting (retainFormatting, node) {
+  return retainFormatting || !!node.closest('pre')
 }
