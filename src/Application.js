@@ -1,10 +1,20 @@
 import Entity from './Entity'
 import Router from './Router'
+import EventRegistry from './registries/EventRegistry'
 import { INTERNAL_ACCESS_KEY, PATH } from './env'
 
 function mount ({ type, target, children }) {
-  type === 'entity' && target.emit(INTERNAL_ACCESS_KEY, 'mount')
   children.forEach(mount)
+  type === 'entity' && target.emit(INTERNAL_ACCESS_KEY, 'mount')
+}
+
+function unmount ({ type, target, children }) {
+  children.forEach(unmount)
+
+  if (type === 'entity') {
+    target.emit(INTERNAL_ACCESS_KEY, 'unmount')
+    EventRegistry.removeByEntity(target)
+  }
 }
 
 export default class Application extends Entity {
@@ -26,6 +36,13 @@ export default class Application extends Entity {
 
   get routes () {
     return this.#router.routes
+  }
+
+  reconcile () {
+    this.emit(INTERNAL_ACCESS_KEY, 'unmount')
+    this.#children.forEach(unmount)
+    this.#children = []
+    this.render()
   }
 
   render () {

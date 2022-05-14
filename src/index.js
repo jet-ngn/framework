@@ -1,5 +1,6 @@
-import { PATH } from './env'
 import Application from './Application'
+import history from 'history'
+import { PATH } from './env'
 
 let App
 let initialized = false
@@ -8,6 +9,12 @@ let ready = false
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
   initialized && run()
+})
+
+history.listen(({ action, location }) => {
+  PATH.current = location.pathname
+  PATH.remaining = PATH.current
+  App.reconcile()
 })
 
 export function createApp ({ baseURL, selector }) {
@@ -23,6 +30,11 @@ export function createApp ({ baseURL, selector }) {
   ready && run()
 }
 
+export function navigate (to, payload) {
+  PATH.previous = PATH.current
+  history.push(...arguments)
+}
+
 function run () {
   const nodes = document.querySelectorAll(App.selector)
 
@@ -36,7 +48,7 @@ function run () {
   App = new Application(nodes[0], App)
   App.render()
 
-  console.log(App);
+  // console.log(App);
 }
 
 export { html, svg } from './lib/tags'

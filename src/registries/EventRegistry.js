@@ -5,7 +5,7 @@ const entities = new Map
 
 export default class EventRegistry {
   static get reservedNames () {
-    return ['mount', 'unmount', 'route.change']
+    return ['mount', 'unmount']
   }
 
   static addHandler (entity, evt, cb, cfg) {
@@ -72,17 +72,14 @@ export default class EventRegistry {
   //   entities.clear()
   // }
 
-  // static removeByView (entity) {
-  //   const stored = entities.get(entity)
+  static removeByEntity (entity) {
+    const stored = entities.get(entity)
 
-  //   if (!stored) {
-  //     return
-  //   }
+    if (!stored) {
+      return
+    }
 
-  //   Object.keys(stored).forEach(evt => {
-  //     BUS.off(`${entity.scope}.${evt}`, stored[evt])
-  //   })
-
-  //   entities.delete(stored)
-  // }
+    Object.keys(stored).forEach(evt => BUS.off(`${entity.scope}.${evt}`, stored[evt]))
+    entities.delete(stored)
+  }
 }

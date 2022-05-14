@@ -107,8 +107,8 @@ export default class Renderer {
 
     const { templates, trackers } = this.#parser
 
-    console.log('HANDLE NESTED TRACKERS')
-    
+    // console.log('HANDLE NESTED TRACKERS')
+
 
     Object.keys(templates ?? {}).forEach(id => {
       const renderer = new Renderer(this.#entity, shouldRetainFormatting(this.#parser.retainFormatting, root))
