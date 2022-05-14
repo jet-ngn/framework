@@ -2,8 +2,27 @@ import Parser from './Parser'
 import Entity from './Entity'
 import Router from './Router'
 import DefaultRoutes from './lib/routes'
+import DOMEventRegistry from './registries/DOMEventRegistry'
 import { generateTreeNode } from './utilities/TreeUtils'
 import { PATH } from './env'
+
+function getExistingAttributeValue (node, name) {
+  const value = node.getAttribute(name)
+  return value ? value.trim().split(' ').map(item => item.trim()) : []
+}
+
+export function renderEntity ({ parent, root, config, children, routes, route }) {
+  let template = Reflect.get(config, 'template', parent)
+  const child = generateTreeNode('entity', new Entity(parent, root, config), route)
+  const renderer = new Renderer(child.target, root.tagName === 'PRE')
+  
+  children.push(child)
+  return renderer.render(template, child, routes)
+}
+
+export function shouldRetainFormatting (retainFormatting, node) {
+  return retainFormatting || !!node.closest('pre')
+}
 
 export default class Renderer {
   #entity
@@ -61,20 +80,35 @@ export default class Renderer {
     let { attributes, listeners, properties, config, routes } = template
     const args = [root, hasMultipleRoots]
 
-    !!attributes && this.#bind('attributes', attributes, root, ...args, this.#setAttribute)
-    !!properties && this.#bind('properties', properties, root, ...args, this.#setProperty)
-    
+    !!attributes && this.#bind('attributes', attributes, ...args, this.#setAttribute)
+    !!properties && this.#bind('properties', properties, ...args, this.#setProperty)
     !!listeners && this.#bindListeners(listeners, ...args)
 
     if (routes) {
-      const router = new Router(this.#entity, routes)
+      const router = new Router(this.#entity, root, routes)
       const childTreenode = generateTreeNode('router', router)
       treenode.children.push(childTreenode)
       root.replaceChildren(router.render(childTreenode.children))
       return content
-      
+
     } else if (config) {
-      console.log('HANDLE CONFIG')
+      console.log('HANDLE CONFIG', config)
+      // const entity = new Entity(this.#entity, root, config)
+      // const childTreenode = generateTreeNode('entity', entity)
+      // treenode.children.push(childTreenode)
+      // { parent, config, children, routes, route }
+
+      root.replaceChildren(renderEntity({
+        parent: this.#entity,
+        root,
+        config,
+        children: treenode.children,
+        routes,
+        route: null
+      }))
+
+      return content
+
     } else {
       const { templates, trackers } = this.#parser
 
@@ -113,11 +147,11 @@ export default class Renderer {
   }
 
   #setAttribute (node, name, value) {
-    if (value instanceof TrackingInterpolation) {
-      return console.log('HANDLE ATTRIBUTE TRACKER')
-      // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
-      // return tracker.reconcile()
-    }
+    // if (value instanceof TrackingInterpolation) {
+    //   return console.log('HANDLE ATTRIBUTE TRACKER')
+    //   // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
+    //   // return tracker.reconcile()
+    // }
 
     const existing = getExistingAttributeValue(node, name)
 
@@ -142,21 +176,12 @@ export default class Renderer {
   }
 
   #setProperty (node, name, value) {
-    if (value instanceof TrackingInterpolation) {
-      return console.log('STORE PROPERTY TRACKER')
-      // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
-      // return tracker.reconcile()
-    }
+    // if (value instanceof TrackingInterpolation) {
+    //   return console.log('STORE PROPERTY TRACKER')
+    //   // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, this.#view)
+    //   // return tracker.reconcile()
+    // }
 
     node[name] = value
   }
-}
-
-function getExistingAttributeValue (node, name) {
-  const value = node.getAttribute(name)
-  return value ? value.trim().split(' ').map(item => item.trim()) : []
-}
-
-export function shouldRetainFormatting (retainFormatting, node) {
-  return retainFormatting || !!node.closest('pre')
 }

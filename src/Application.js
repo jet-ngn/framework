@@ -8,7 +8,7 @@ export default class Application extends Entity {
 
   constructor (root, { routes }) {
     super(null, ...arguments, 'app')
-    this.#router = new Router(this, routes)
+    this.#router = new Router(this, root, routes)
   }
 
   get baseURL () {

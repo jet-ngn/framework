@@ -1,6 +1,6 @@
 import IdentifiedClass from './IdentifiedClass'
 import Entity from './Entity'
-import Renderer from './Renderer'
+import { renderEntity } from './Renderer'
 import DefaultRoutes from './lib/routes'
 import { getSlugs, parseRoutes } from './utilities/RouteUtils'
 import { generateTreeNode } from './utilities/TreeUtils'
@@ -8,11 +8,13 @@ import { PATH } from './env'
 
 export default class Router extends IdentifiedClass {
   #parent
+  #root
   #routes
 
-  constructor (parent, routes) {
+  constructor (parent, root, routes) {
     super('router')
     this.#parent = parent
+    this.#root = root
     this.#routes = parseRoutes(routes ?? {})
   }
 
@@ -65,15 +67,13 @@ export default class Router extends IdentifiedClass {
   render (children) {
     const match = this.matchingRoute
     
-    let config = match?.config ?? this.#routes?.[404] ?? DefaultRoutes[404]
-    let route = match?.path ?? null
-    let template = Reflect.get(config, 'template', this.#parent)
-
-    const { root } = this.#parent
-    const child = generateTreeNode('entity', new Entity(this.#parent, root, config), route)
-    const renderer = new Renderer(child.target, root.tagName === 'PRE')
-    
-    children.push(child)
-    return renderer.render(template, child, this.#routes)
+    return renderEntity({
+      parent: this.#parent,
+      root: this.#root,
+      config: match?.config ?? this.#routes?.[404] ?? DefaultRoutes[404],
+      children,
+      routes: this.#routes,
+      route: match?.path ?? null
+    })
   }
 }
