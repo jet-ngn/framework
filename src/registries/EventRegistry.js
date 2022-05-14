@@ -37,20 +37,17 @@ export default class EventRegistry {
 
     const callback = function () {
       const valid = handler.call(this.event, ...arguments)
-
-      if (!valid) {
-        this.remove()
-      }
+      !valid && this.remove()
     }
 
     const stored = entities.get(entity)
 
-    if (!stored) {
+    if (stored) {
+      stored[evt] = callback
+    } else {
       entities.set(entity, {
         [evt]: callback
       })
-    } else {
-      stored[evt] = callback
     }
 
     return BUS.on(`${entity.scope}.${evt}`, callback)

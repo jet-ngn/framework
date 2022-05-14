@@ -1,9 +1,7 @@
 import IdentifiedClass from './IdentifiedClass'
-import Entity from './Entity'
-import { renderEntity } from './Renderer'
 import DefaultRoutes from './lib/routes'
+import { renderEntity } from './Renderer'
 import { getSlugs, parseRoutes } from './utilities/RouteUtils'
-import { generateTreeNode } from './utilities/TreeUtils'
 import { PATH } from './env'
 
 export default class Router extends IdentifiedClass {

@@ -48,16 +48,15 @@ export default class Parser {
 
   #parseInterpolation (interpolation) {
     if (Array.isArray(interpolation)) {
-      return interpolation.reduce((result, item) => {
-        result += this.#parseInterpolation(item)
-        return result
-      }, '')
+      return interpolation.reduce((result, item) => result += this.#parseInterpolation(item), '')
     }
   
     if (interpolation instanceof Template) {
-      const { id, type } = interpolation
       this.#templates = this.#templates ?? {}
+      
+      const { id, type } = interpolation
       this.#templates[id] = interpolation
+
       return `<template id="${id}" class="${type} template"></template>`
     }
 

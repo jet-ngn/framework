@@ -11,7 +11,7 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-export function renderEntity ({ parent, root, config, children, routes, route, retainFormatting }) {
+export function renderEntity ({ parent, root, config, children, routes, route }) {
   let template = Reflect.get(config, 'template', parent)
   const child = generateTreeNode('entity', new Entity(parent, root, config), route)
   const renderer = new Renderer(child.target, shouldRetainFormatting(root.tagName === 'PRE', root)) 
