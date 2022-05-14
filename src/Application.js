@@ -1,6 +1,11 @@
 import Entity from './Entity'
 import Router from './Router'
-import { PATH } from './env'
+import { INTERNAL_ACCESS_KEY, PATH } from './env'
+
+function mount ({ type, target, children }) {
+  type === 'entity' && target.emit(INTERNAL_ACCESS_KEY, 'mount')
+  children.forEach(mount)
+}
 
 export default class Application extends Entity {
   #children = []
@@ -25,7 +30,7 @@ export default class Application extends Entity {
 
   render () {
     this.root.replaceChildren(this.#router.render(this.#children))
-    
-    // TODO: loop through the tree and fire mount events
+    this.#children.forEach(mount)
+    this.emit(INTERNAL_ACCESS_KEY, 'mount')
   }
 }

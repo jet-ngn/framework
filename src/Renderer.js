@@ -11,10 +11,10 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-export function renderEntity ({ parent, root, config, children, routes, route }) {
+export function renderEntity ({ parent, root, config, children, routes, route, retainFormatting }) {
   let template = Reflect.get(config, 'template', parent)
   const child = generateTreeNode('entity', new Entity(parent, root, config), route)
-  const renderer = new Renderer(child.target, root.tagName === 'PRE')
+  const renderer = new Renderer(child.target, shouldRetainFormatting(root.tagName === 'PRE', root)) 
   
   children.push(child)
   return renderer.render(template, child, routes)
@@ -90,14 +90,9 @@ export default class Renderer {
       treenode.children.push(childTreenode)
       root.replaceChildren(router.render(childTreenode.children))
       return content
-
-    } else if (config) {
-      console.log('HANDLE CONFIG', config)
-      // const entity = new Entity(this.#entity, root, config)
-      // const childTreenode = generateTreeNode('entity', entity)
-      // treenode.children.push(childTreenode)
-      // { parent, config, children, routes, route }
-
+    }
+    
+    if (config) {
       root.replaceChildren(renderEntity({
         parent: this.#entity,
         root,
@@ -108,29 +103,23 @@ export default class Renderer {
       }))
 
       return content
-
-    } else {
-      const { templates, trackers } = this.#parser
-
-      console.log('HANDLE NESTED TEMPLATES')
-
-      // Object.keys(templates ?? {}).forEach(id => {
-      //   const renderer = new Renderer(this.#entity, shouldRetainFormatting(this.#parser.retainFormatting, root))
-      //   const placeholder = content.getElementById(id)
-      //   placeholder && placeholder.replaceWith(renderer.render(templates[id], treenode))
-      // })
     }
+
+    const { templates, trackers } = this.#parser
+
+    console.log('HANDLE NESTED TRACKERS')
+    
+
+    Object.keys(templates ?? {}).forEach(id => {
+      const renderer = new Renderer(this.#entity, shouldRetainFormatting(this.#parser.retainFormatting, root))
+      const placeholder = content.getElementById(id)
+      placeholder && placeholder.replaceWith(renderer.render(templates[id], treenode, parentRoutes))
+    })
 
     if (PATH.remaining) {
       config = parentRoutes?.[404] ?? DefaultRoutes[404]
       content = this.#parser.parse(Reflect.get(config, 'template', this.#entity))
-
-      treenode.children.push({
-        type: 'entity',
-        entity: new Entity(this.#entity, this.#entity.root, config),
-        route: null,
-        children: []
-      })
+      treenode.children.push(generateTreeNode('entity', new Entity(this.#entity, this.#entity.root, config)))
     }
     
     return content

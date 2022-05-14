@@ -1,4 +1,7 @@
+import { BUS } from 'NGN'
 import IdentifiedClass from './IdentifiedClass'
+import EventRegistry from './registries/EventRegistry'
+import { INTERNAL_ACCESS_KEY } from './env'
 
 export default class Entity extends IdentifiedClass {
   #name
@@ -7,7 +10,7 @@ export default class Entity extends IdentifiedClass {
   #scope
   #version
 
-  constructor (parent, root, { description, name, scope, version }, idPrefix = 'entity') {
+  constructor (parent, root, { description, name, on, scope, version }, idPrefix = 'entity') {
     super(idPrefix)
     
     this.#description = description ?? null
@@ -15,6 +18,8 @@ export default class Entity extends IdentifiedClass {
     this.#root = root ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
+
+    Object.keys(on ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, on[evt]))
   }
 
   get description () {
@@ -37,7 +42,24 @@ export default class Entity extends IdentifiedClass {
     return this.#version
   }
 
-  emit () {
-    console.log('TODO: WRITE EMIT FUNCTIONS')
+  emit (evt, ...args) {
+    let key = null
+
+    if (typeof evt === 'symbol') {
+      key = evt
+      evt = args[0]
+      args = args.slice(1)
+    }
+
+    if (!!EventRegistry.reservedNames.includes(evt) && key !== INTERNAL_ACCESS_KEY) {
+      throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
+    }
+    
+    BUS.emit(`${this.#scope}.${evt}`, ...args)
+  }
+
+  find (selector) {
+    selector = selector.trim()
+    return [...this.root.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]//.map(node => new Node(node))
   }
 }
