@@ -1,5 +1,6 @@
 import Application from './Application'
 import history from 'history'
+import Bus from './Bus'
 import { PATH } from './env'
 
 let App
@@ -42,13 +43,16 @@ function run () {
     throw new Error(`Invalid app root element selector: "${App.selector}" returned multiple nodes.`)
   }
 
-  PATH.current = location.pathname
+  const { pathname } = location
+  PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
 
   App = new Application(nodes[0], App)
-  App.render()
-
-  // console.log(App);
+  console.log(App)
 }
 
 export { html, svg } from './lib/tags'
+
+export {
+  Bus
+}

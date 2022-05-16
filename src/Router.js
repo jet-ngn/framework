@@ -1,18 +1,15 @@
-import IdentifiedClass from './IdentifiedClass'
+import { TreeNode } from './Tree'
 import DefaultRoutes from './lib/routes'
 import { renderEntity } from './Renderer'
 import { getSlugs, parseRoutes } from './utilities/RouteUtils'
 import { PATH } from './env'
+import Entity from './Entity'
 
-export default class Router extends IdentifiedClass {
-  #parent
-  #root
+export default class Router extends TreeNode {
   #routes
 
-  constructor (parent, root, routes) {
-    super('router')
-    this.#parent = parent
-    this.#root = root
+  constructor (parent, routes) {
+    super(parent, parent.root, 'router')
     this.#routes = parseRoutes(routes ?? {})
   }
 
@@ -20,13 +17,13 @@ export default class Router extends IdentifiedClass {
     return this.#routes
   }
 
-  get matchingRoute () {
+  getMatchingRoute (result) {
     if (!PATH.remaining) {
       return null
     }
 
     const pathSlugs = getSlugs(PATH.remaining)
-    let bestScore = -1
+    let bestScore = 0
   
     return Object.keys(this.#routes ?? {}).reduce((match, route) => {
       const routeSlugs = getSlugs(route)
@@ -57,21 +54,19 @@ export default class Router extends IdentifiedClass {
           PATH.remaining = remainingSlugs.length === 0 ? null : `/${remainingSlugs.join('/')}`
         }
       }
-  
+      
+      result.score = bestScore
       return match
     }, null)
   }
 
-  render (children) {
-    const match = this.matchingRoute
-    
-    return renderEntity({
-      parent: this.#parent,
-      root: this.#root,
-      config: match?.config ?? this.#routes?.[404] ?? DefaultRoutes[404],
-      children,
-      routes: this.#routes,
-      route: match?.path ?? null
-    })
+  render (result) {
+    const match = this.getMatchingRoute(result)
+
+    if (!match) {
+      return this.parent.children.push(new (Entity(undefined, true))(this.parent, this.root, this.#routes?.[404] ?? DefaultRoutes[404]))
+    }
+
+    this.parent.children.push(new (Entity())(this.parent, this.root, match?.config))
   }
 }

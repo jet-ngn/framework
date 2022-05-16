@@ -27,16 +27,10 @@ const shell = new Shell({
         const config = {
           entry: [path.join(source, `index.js`)],
 
-          external: [
-            'os',
-            '@ngnjs/libnet-node',
-            '@ngnjs/crypto',
-            '@ngnjs/net',
-            'ngn-data',
-            'crypto',
-            'http',
-            'https',
-          ],
+          // external: [
+          //   'os',
+          //   'crypto'
+          // ],
 
           aliases: [{
             filter: /^history/,
@@ -47,7 +41,7 @@ const shell = new Shell({
           }, {
             filter: /^nanoid/,
             path: path.join(source, 'node_modules', 'nanoid', 'index.js')
-          }, ]
+          }]
         }
 
         Builder.addTask('Cleaning output directory', async () => await Builder.clean())

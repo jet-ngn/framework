@@ -1,7 +1,9 @@
 import Entity from './Entity'
+import { TreeRoot } from './Tree'
 import Router from './Router'
-import EventRegistry from './registries/EventRegistry'
-import { INTERNAL_ACCESS_KEY, PATH } from './env'
+import { getSlugs } from './utilities/RouteUtils'
+import { renderTemplate } from './utilities/RenderUtils'
+import { PATH } from './env'
 
 function mount ({ type, target, children }) {
   children.forEach(mount)
@@ -17,37 +19,59 @@ function unmount ({ type, target, children }) {
   }
 }
 
-export default class Application extends Entity {
-  #children = []
-  #router
-
-  constructor (root, { routes }) {
+export default class Application extends Entity(TreeRoot) {
+  constructor (root, config) {
     super(null, ...arguments, 'app')
-    this.#router = new Router(this, root, routes)
+
+    console.log('=================================')
+    console.log('MOUNT ENTITIES')
   }
 
   get baseURL () {
     return PATH.base.pathname
   }
 
-  get children () {
-    return this.#children
-  }
+  // render (config) {
+  //   let meta = {
+  //     score: 0,
+  //     needed: getSlugs(PATH.current).length
+  //   }
 
-  get routes () {
-    return this.#router.routes
-  }
+  //   let { fragment, score } = renderTemplate(Reflect.get(this.#config, 'template', this), this.#children, { retainFormatting: this.root.tagName === 'PRE' })
 
-  reconcile () {
-    this.emit(INTERNAL_ACCESS_KEY, 'unmount')
-    this.#children.forEach(unmount)
-    this.#children = []
-    this.render()
-  }
+  //   console.log(meta)
+  //   console.log(fragment)
 
-  render () {
-    this.root.replaceChildren(this.#router.render(this.#children))
-    this.#children.forEach(mount)
-    this.emit(INTERNAL_ACCESS_KEY, 'mount')
-  }
+  //   if (!PATH.remaining) {
+  //     console.log('NO PATH. RENDER TEMPLATE')
+  //     return this.root.replaceChildren(fragment)
+  //   }
+
+  //   console.log('HAS PATH.')
+
+  //   if (!this.#router) {
+  //     console.log('...BUT NO ROUTER. RENDER TEMPLATE')
+  //     return this.root.replaceChildren(fragment)
+  //   }
+
+  //   // console.log('COMPARE ROUTES AND TEMPLATES FOR BEST MATCH')
+  //   // PATH.slugs = getSlugs(PATH.current)
+  //   // const fragment = document.createDocumentFragment()
+  //   // let bestScore = 0
+
+
+
+  //   // console.log('mount results')
+  //   // // this.#children.forEach(mount)
+  //   // // this.emit(INTERNAL_ACCESS_KEY, 'mount')
+  // }
+
+  // #renderTemplate () {
+  //   let template = Reflect.get(this.#config, 'template', this)
+  //   // const child = generateTreeNode('entity', new Entity(parent, root, config), route)
+  //   // const renderer = new Renderer(child.target, shouldRetainFormatting(root.tagName === 'PRE', root)) 
+
+  //   // children.push(child)
+  //   // return renderer.render(template, child, routes)
+  // }
 }

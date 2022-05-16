@@ -1,4 +1,4 @@
-import { BUS } from 'NGN'
+import Bus from '../Bus'
 import EventHandler from '../EventHandler'
 
 const entities = new Map
@@ -40,17 +40,17 @@ export default class EventRegistry {
       !valid && this.remove()
     }
 
-    const stored = entities.get(entity)
+    const storedEntity = entities.get(entity)
 
-    if (stored) {
-      stored[evt] = callback
+    if (storedEntity) {
+      storedEntity[evt] = handler
     } else {
       entities.set(entity, {
         [evt]: callback
       })
     }
 
-    return BUS.on(`${entity.scope}.${evt}`, callback)
+    return Bus.on(`${entity.scope}.${evt}`, callback)
   }
 
   // static removeAll ({ ignore }) {
@@ -62,7 +62,7 @@ export default class EventRegistry {
   //     }
 
   //     Object.keys(events).forEach(evt => {
-  //       BUS.off(`${entity.scope}.${evt}`, events[evt])
+  //       Bus.off(`${entity.scope}.${evt}`, events[evt])
   //     })
   //   }
 
@@ -76,7 +76,7 @@ export default class EventRegistry {
       return
     }
 
-    Object.keys(stored).forEach(evt => BUS.off(`${entity.scope}.${evt}`, stored[evt]))
+    Object.keys(stored).forEach(evt => Bus.off(`${entity.scope}.${evt}`, stored[evt]))
     entities.delete(stored)
   }
 }

@@ -2,27 +2,12 @@ import Template from './Template'
 import { sanitizeString } from './utilities/StringUtils'
 
 export default class Parser {
-  #retainFormatting
-  #templates = null
-  #trackers = null
+  static parse (template, retainFormatting) {
+    const output = {
+      templates: null,
+      trackers: null
+    }
 
-  constructor ({ retainFormatting }) {
-    this.#retainFormatting = retainFormatting
-  }
-
-  get retainFormatting () {
-    return this.#retainFormatting
-  }
-
-  get templates () {
-    return this.#templates
-  }
-
-  get trackers () {
-    return this.#trackers
-  }
-
-  parse (template) {
     const { strings, interpolations } = template
     const target = this.#getTarget(template.type)
 
@@ -30,14 +15,17 @@ export default class Parser {
     ? strings[0] // TODO: May want to sanitize and convert back to html
     : strings.reduce((result, string, i) => {
       result += string
-      result += this.#parseInterpolation(interpolations[i])
+      result += this.#parseInterpolation(interpolations[i], output, retainFormatting)
       return result
     }, '')
 
-    return target.content
+    return {
+      fragment: target.content,
+      ...output
+    }
   }
 
-  #getTarget (type) {
+  static #getTarget (type) {
     switch (type) {
       case 'html': return document.createElement('template')
       case 'svg': return document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -46,24 +34,25 @@ export default class Parser {
     }
   }
 
-  #parseInterpolation (interpolation) {
+  static #parseInterpolation (interpolation, { templates, trackers }, retainFormatting) {
     if (Array.isArray(interpolation)) {
-      return interpolation.reduce((result, item) => result += this.#parseInterpolation(item), '')
+      return interpolation.reduce((result, item) => result += this.#parseInterpolation(item, ...arguments.slice(1)), '')
     }
   
     if (interpolation instanceof Template) {
-      this.#templates = this.#templates ?? {}
+      templates = templates ?? {}
       
       const { id, type } = interpolation
-      this.#templates[id] = interpolation
+      templates[id] = interpolation
 
       return `<template id="${id}" class="${type} template"></template>`
     }
 
     // if (interpolation instanceof TrackingInterpolation) {
+    //   trackers = trackers ?? {}
     //   const { id } = interpolation
     //   const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#view)
-    //   this.#trackers[id] = tracker
+    //   trackers[id] = tracker
     //   return `<template class="tracker" id="${id}"></template>`
     // }
 
@@ -72,7 +61,7 @@ export default class Parser {
       case 'boolean': return ''
 
       case 'string':
-      case 'number': return this.#retainFormatting ? interpolation : sanitizeString(`${interpolation}`)
+      case 'number': return retainFormatting ? interpolation : sanitizeString(`${interpolation}`)
 
       // TODO: Handle other data structures, like maps, sets, etc
     
