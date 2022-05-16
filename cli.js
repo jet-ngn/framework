@@ -27,10 +27,9 @@ const shell = new Shell({
         const config = {
           entry: [path.join(source, `index.js`)],
 
-          // external: [
-          //   'os',
-          //   'crypto'
-          // ],
+          external: [
+            'crypto'
+          ],
 
           aliases: [{
             filter: /^history/,

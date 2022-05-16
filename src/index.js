@@ -1,6 +1,5 @@
 import Application from './Application'
 import history from 'history'
-import Bus from './Bus'
 import { PATH } from './env'
 
 let App
@@ -52,11 +51,9 @@ function run () {
   App = new Application(nodes[0], config)
   App.run(config)
 
-  console.log(App)
+  // console.log(App)
 }
 
 export { html, svg } from './lib/tags'
-
-export {
-  Bus
-}
+export { createID } from './utilities/IDUtils'
+export { default as Bus } from './Bus'

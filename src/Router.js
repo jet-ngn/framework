@@ -6,7 +6,7 @@ export default class Router extends TreeNode {
   #routes
 
   constructor (parent, routes) {
-    super(parent, parent.root, 'router')
+    super(parent.root, 'router')
     this.#routes = parseRoutes(routes ?? {})
   }
 
