@@ -50,15 +50,15 @@ export default class Template extends IdentifiedClass {
     return this.#type
   }
 
-  bind ({ attributes, config, on, routes }) {
+  bind ({ attributes, view, on, routes }) {
     attributes && this.setAttributes(attributes)
-    config && this.bindConfig(config)
+    view && this.bindView(view)
     on && this.on(on)
     routes && this.bindRoutes(routes)
     return this
   }
 
-  bindConfig (cfg) {
+  bindView (cfg) {
     this.#config = cfg
     return this
   }

@@ -5,8 +5,4 @@ export const PATH = class {
   static current = null
   static previous = null
   static remaining = null
-  static slugs = null
-  static score = 0
 }
-
-export const ROUTES = {}

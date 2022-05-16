@@ -1,4 +1,3 @@
-import Route from '../Route'
 import { PATH } from '../env'
 
 export function combinePaths (...paths) {
@@ -20,7 +19,10 @@ export function parseRoutes (routes) {
 
     return {
       ...(result ?? {}),
-      [route]: new Route(new URL(route, PATH.base), routes[route])
+      [route]: {
+        url: new URL(route, PATH.base),
+        config: routes[route]
+      }
     }
   }, null)
 }

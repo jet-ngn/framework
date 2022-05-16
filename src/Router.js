@@ -1,9 +1,6 @@
-import { TreeNode } from './Tree'
-import DefaultRoutes from './lib/routes'
-import { renderEntity } from './Renderer'
+import TreeNode from './TreeNode'
 import { getSlugs, parseRoutes } from './utilities/RouteUtils'
 import { PATH } from './env'
-import Entity from './Entity'
 
 export default class Router extends TreeNode {
   #routes
@@ -24,7 +21,7 @@ export default class Router extends TreeNode {
 
     const pathSlugs = getSlugs(PATH.remaining)
     let bestScore = 0
-  
+
     return Object.keys(this.#routes ?? {}).reduce((match, route) => {
       const routeSlugs = getSlugs(route)
       const scores = new Array(routeSlugs.length).fill(0)
@@ -50,6 +47,7 @@ export default class Router extends TreeNode {
         if (finalScore === neededScore && finalScore > bestScore) {
           bestScore = finalScore
           match = this.#routes[route]
+          match.props = props
           let remainingSlugs = pathSlugs.slice(routeSlugs.length)
           PATH.remaining = remainingSlugs.length === 0 ? null : `/${remainingSlugs.join('/')}`
         }
@@ -58,15 +56,5 @@ export default class Router extends TreeNode {
       result.score = bestScore
       return match
     }, null)
-  }
-
-  render (result) {
-    const match = this.getMatchingRoute(result)
-
-    if (!match) {
-      return this.parent.children.push(new (Entity(undefined, true))(this.parent, this.root, this.#routes?.[404] ?? DefaultRoutes[404]))
-    }
-
-    this.parent.children.push(new (Entity())(this.parent, this.root, match?.config))
   }
 }

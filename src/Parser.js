@@ -2,11 +2,12 @@ import Template from './Template'
 import { sanitizeString } from './utilities/StringUtils'
 
 export default class Parser {
+  static #templates
+  static #trackers
+  
   static parse (template, retainFormatting) {
-    const output = {
-      templates: null,
-      trackers: null
-    }
+    this.#templates = null
+    this.#trackers = null
 
     const { strings, interpolations } = template
     const target = this.#getTarget(template.type)
@@ -15,13 +16,14 @@ export default class Parser {
     ? strings[0] // TODO: May want to sanitize and convert back to html
     : strings.reduce((result, string, i) => {
       result += string
-      result += this.#parseInterpolation(interpolations[i], output, retainFormatting)
+      result += this.#parseInterpolation(interpolations[i], retainFormatting)
       return result
     }, '')
 
     return {
       fragment: target.content,
-      ...output
+      templates: this.#templates,
+      trackers: this.#trackers
     }
   }
 
@@ -34,22 +36,22 @@ export default class Parser {
     }
   }
 
-  static #parseInterpolation (interpolation, { templates, trackers }, retainFormatting) {
+  static #parseInterpolation (interpolation, retainFormatting) {
     if (Array.isArray(interpolation)) {
       return interpolation.reduce((result, item) => result += this.#parseInterpolation(item, ...arguments.slice(1)), '')
     }
   
     if (interpolation instanceof Template) {
-      templates = templates ?? {}
+      this.#templates = this.#templates ?? {}
       
       const { id, type } = interpolation
-      templates[id] = interpolation
+      this.#templates[id] = interpolation
 
       return `<template id="${id}" class="${type} template"></template>`
     }
 
     // if (interpolation instanceof TrackingInterpolation) {
-    //   trackers = trackers ?? {}
+    //   output.trackers = output.trackers ?? {}
     //   const { id } = interpolation
     //   const tracker = TrackableRegistry.registerContentTracker(interpolation, this.#view)
     //   trackers[id] = tracker

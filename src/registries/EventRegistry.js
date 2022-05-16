@@ -1,30 +1,30 @@
 import Bus from '../Bus'
 import EventHandler from '../EventHandler'
 
-const entities = new Map
+const views = new Map
 
 export default class EventRegistry {
   static get reservedNames () {
     return ['mount', 'unmount']
   }
 
-  static addHandler (entity, evt, cb, cfg) {
+  static addHandler (view, evt, cb, cfg) {
     if (typeof evt !== 'string') {
       throw new TypeError(`Event name must be of type "string". Received "${typeof evt}"`)
     }
   
     if (typeof cb === 'object') {
-      return this.pool(entity, evt, cb)
+      return this.pool(view, evt, cb)
     }
   
     return this.#registerHandler(...arguments)
   }
 
-  static pool (entity, namespace, cfg) {
-    Object.keys(cfg).forEach(evt => this.addHandler(entity, `${namespace}.${evt}`, cfg[evt]))
+  static pool (view, namespace, cfg) {
+    Object.keys(cfg).forEach(evt => this.addHandler(view, `${namespace}.${evt}`, cfg[evt]))
   }
 
-  static #registerHandler (entity, evt, cb, cfg = {}) {
+  static #registerHandler (view, evt, cb, cfg = {}) {
     if (typeof cb !== 'function') {
       throw new TypeError(`Event handler callback must be a "function". Received "${typeof cb}"`)
     }
@@ -33,50 +33,50 @@ export default class EventRegistry {
       throw new TypeError(`Event configuration must be an "object". Received "${typeof cfg}"`)
     }
 
-    const handler = new EventHandler(entity, evt, cb, cfg)
+    const handler = new EventHandler(view, evt, cb, cfg)
 
     const callback = function () {
       const valid = handler.call(this.event, ...arguments)
       !valid && this.remove()
     }
 
-    const storedEntity = entities.get(entity)
+    const storedView = views.get(view)
 
-    if (storedEntity) {
-      storedEntity[evt] = handler
+    if (storedView) {
+      storedView[evt] = handler
     } else {
-      entities.set(entity, {
+      views.set(view, {
         [evt]: callback
       })
     }
 
-    return Bus.on(`${entity.scope}.${evt}`, callback)
+    return Bus.on(`${view.scope}.${evt}`, callback)
   }
 
   // static removeAll ({ ignore }) {
   //   const ignoredViews = ignore ?? []
 
-  //   for (let [entity, events] of entities) {
-  //     if (ignoredViews.includes(entity)) {
+  //   for (let [view, events] of views) {
+  //     if (ignoredViews.includes(view)) {
   //       continue
   //     }
 
   //     Object.keys(events).forEach(evt => {
-  //       Bus.off(`${entity.scope}.${evt}`, events[evt])
+  //       Bus.off(`${view.scope}.${evt}`, events[evt])
   //     })
   //   }
 
-  //   entities.clear()
+  //   views.clear()
   // }
 
-  static removeByEntity (entity) {
-    const stored = entities.get(entity)
+  static removeByView (view) {
+    const stored = views.get(view)
 
     if (!stored) {
       return
     }
 
-    Object.keys(stored).forEach(evt => Bus.off(`${entity.scope}.${evt}`, stored[evt]))
-    entities.delete(stored)
+    Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
+    views.delete(stored)
   }
 }

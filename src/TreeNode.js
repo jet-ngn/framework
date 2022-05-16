@@ -1,11 +1,13 @@
 import IdentifiedClass from './IdentifiedClass'
 
-export class TreeRoot extends IdentifiedClass {
+export default class TreeNode extends IdentifiedClass {
   #children = []
+  #parent
   #root
-
+  
   constructor (parent, root, idPrefix) {
     super(idPrefix)
+    this.#parent = parent
     this.#root = root
   }
 
@@ -13,20 +15,11 @@ export class TreeRoot extends IdentifiedClass {
     return this.#children
   }
 
-  get root () {
-    return this.#root
-  }
-}
-
-export class TreeNode extends TreeRoot {
-  #parent
-  
-  constructor (parent, root, idPrefix) {
-    super(...arguments)
-    this.#parent = parent
-  }
-
   get parent () {
     return this.#parent
+  }
+
+  get root () {
+    return this.#root
   }
 }

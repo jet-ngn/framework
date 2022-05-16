@@ -3,19 +3,14 @@ import { parseSearch } from './utilities/RouteUtils'
 export default class Route {
   #hash
   #path
+  #props
   #query
-  #config
 
-  constructor (url, config) {
-    this.#config = config ?? null
+  constructor ({ url, props }) {
     this.#hash = url.hash ?? null
     this.#path = url.pathname ?? null
+    this.#props = props
     this.#query = parseSearch(url.search)
-
-  }
-
-  get config () {
-    return this.#config
   }
 
   get hash () {
@@ -24,6 +19,10 @@ export default class Route {
 
   get path () {
     return this.#path
+  }
+
+  get props () {
+    return this.#props
   }
 
   get query () {
