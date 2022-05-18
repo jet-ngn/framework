@@ -6,10 +6,9 @@ export default class Template extends IdentifiedClass {
   #interpolations
 
   #attributes = null
-  #config = null
   #listeners = null
   #properties = null
-  #routes = null
+  #viewConfig = null
 
   constructor (type, strings, ...interpolations) {
     super('template')
@@ -20,10 +19,6 @@ export default class Template extends IdentifiedClass {
 
   get attributes () {
     return this.#attributes
-  }
-
-  get config () {
-    return this.#config
   }
 
   get interpolations () {
@@ -38,10 +33,6 @@ export default class Template extends IdentifiedClass {
     return this.#properties
   }
 
-  get routes () {
-    return this.#routes
-  }
-
   get strings () {
     return this.#strings
   }
@@ -50,21 +41,20 @@ export default class Template extends IdentifiedClass {
     return this.#type
   }
 
-  bind ({ attributes, view, on, routes }) {
+  get viewConfig () {
+    return this.#viewConfig
+  }
+
+  attachView (config) {
+    this.#viewConfig = config
+    return this
+  }
+
+  config ({ attributes, properties, on, view }) {
     attributes && this.setAttributes(attributes)
-    view && this.bindView(view)
     on && this.on(on)
-    routes && this.bindRoutes(routes)
-    return this
-  }
-
-  bindView (cfg) {
-    this.#config = cfg
-    return this
-  }
-
-  bindRoutes (routes) {
-    this.#routes = routes
+    properties && this.setProperties(attributes)
+    view && this.attachView(view)
     return this
   }
 
@@ -82,6 +72,10 @@ export default class Template extends IdentifiedClass {
     }
 
     return this
+  }
+
+  set ({ attributes, properties }) {
+    return this.config(...arguments)
   }
 
   setAttribute (name, value) {

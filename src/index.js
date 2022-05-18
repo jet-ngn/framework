@@ -16,7 +16,7 @@ history.listen(({ action, location }) => {
   const { pathname } = location
   PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
-  App.reconcile()
+  App.reconcile(config)
 })
 
 export function createApp ({ baseURL, selector }) {
@@ -50,10 +50,9 @@ function run () {
 
   App = new Application(nodes[0], config)
   App.run(config)
-
-  // console.log(App)
 }
 
-export { html, svg } from './lib/tags'
+export { bind } from './registries/DataStoreRegistry'
 export { createID } from './utilities/IDUtils'
+export { html, svg } from './lib/tags'
 export { default as Bus } from './Bus'

@@ -43,7 +43,7 @@ export default class EventRegistry {
     const storedView = views.get(view)
 
     if (storedView) {
-      storedView[evt] = handler
+      storedView[evt] = callback
     } else {
       views.set(view, {
         [evt]: callback

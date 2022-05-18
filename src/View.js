@@ -1,18 +1,21 @@
 import TreeNode from './TreeNode'
 import EventRegistry from './registries/EventRegistry'
+import DataStore from './DataStore'
 import Bus from './Bus'
 import { INTERNAL_ACCESS_KEY } from './env'
 
 export default class View extends TreeNode {
+  #data
   #description
   #name
   #route
   #scope
   #version
 
-  constructor (parent, root, { description, name, on, scope, version }, route, idPrefix = 'view') {
+  constructor (parent, root, { data, description, name, on, scope, version }, route, idPrefix = 'view') {
     super(root, idPrefix)
-    
+
+    this.#data = new DataStore(data ?? {})
     this.#description = description ?? null
     this.#name = name ?? `${root.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#route = route ?? null
@@ -20,6 +23,10 @@ export default class View extends TreeNode {
     this.#version = version ?? null
 
     Object.keys(on ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, on[evt]))
+  }
+
+  get data () {
+    return this.#data
   }
 
   get description () {
@@ -60,6 +67,6 @@ export default class View extends TreeNode {
 
   find (selector) {
     selector = selector.trim()
-    return [...this.root.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]//.map(node => new Node(node))
+    return [...this.root.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]
   }
 }

@@ -28,6 +28,6 @@ export default class Bus {
       return listeners.delete(name)
     }
 
-    handlers = handlers.filter(storedHandler => storedHandler !== handler)
+    listeners.set(name, handlers.filter(storedHandler => storedHandler !== handler))
   }
 }
