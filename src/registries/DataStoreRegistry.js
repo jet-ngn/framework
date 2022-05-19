@@ -1,39 +1,17 @@
 import DataBindingInterpolation from '../DataBindingInterpolation'
 import { ContentBinding } from '../DataBinding'
 
-export function bind (targets, properties, transform) {
-  return new DataBindingInterpolation({ targets, properties, transform })
+const stores = new Map
+// const bindings = {}
+
+export function bind (...targets) {
+  let transform = targets.pop()
+  return new DataBindingInterpolation(targets, transform)
 }
 
-function processValue (value) {
-  if (Array.isArray(value)) {
-    return proxyArray(value)
-  }
+function getObjectProxy (obj) {
+  Object.keys(obj).forEach(key => obj[key] = processTarget(obj[key]))
 
-  if (value instanceof Map) {
-    return proxyMap(value)
-  }
-
-  if (value instanceof Set) {
-    return proxySet(value)
-  }
-
-  if (typeof value === 'object') {
-    return proxyObject(value)
-  }
-
-  return value
-}
-
-function proxyArray (arr) {
-  console.log('PROXY', arr)
-}
-
-function proxyMap (map) {
-  console.log('PROXY', map)
-}
-
-function proxyObject (obj) {
   return Proxy.revocable(obj, {
     get: (target, property) => target[property],
 
@@ -44,7 +22,7 @@ function proxyObject (obj) {
         return true
       }
 
-      const { bindings, changes } = stores.get(target)
+      const { bindings, changes, revocable } = stores.get(target)
 
       changes.push({
         timestamp: Date.now(),
@@ -55,43 +33,51 @@ function proxyObject (obj) {
         }
       })
 
-      target[property] = processValue(value)
+      target[property] = processTarget(value)
 
-      const { revocable } = stores.get(target)
+      bindings.forEach(binding => {
+        const { targets } = binding
 
-      for (let binding of bindings) {
-        const { targets, properties } = binding
-
-        if (targets.includes(revocable.proxy) && (properties.length === 0 || properties.includes(property))) {
-          binding.render()
+        if (targets.includes(revocable.proxy)) {
+          binding.reconcile()
         }
-      }
+      })
 
       return true
     }
   })
 }
 
-function proxySet (set) {
-  console.log('PROXY', set)
-}
-
-const stores = new Map
-const bindings = {}
-
 function getStoreByProxy (proxy) {
   return [...stores.values()].find(({ revocable }) => revocable.proxy === proxy)
 }
 
-export function registerContentBinding (parent, placeholder, interpolation) {
-  const binding = new ContentBinding(...arguments)
-  bindings[interpolation.id] = binding
+function processTarget (target) {
+  if (Array.isArray(target)) {
+    return getArrayProxy(target)
+  }
+  
+  if (target instanceof Map) {
+    return getMapProxy(target)
+  }
 
-  interpolation.targets.forEach(target => {
+  if (target instanceof Set) {
+    return getSetProxy(target)
+  }
+  
+  if (typeof target === 'object') {
+    return getObjectProxy(target)
+  }
+
+  return target
+}
+
+function registerBinding (binding) {
+  binding.targets.forEach(target => {
     const store = getStoreByProxy(target)
 
     if (!store) {
-      throw new Error(`Cannot bind to an unregistered DataStore`)
+      throw new ReferenceError(`Cannot bind to unregistered DataStore`)
     }
 
     store.bindings.push(binding)
@@ -100,24 +86,97 @@ export function registerContentBinding (parent, placeholder, interpolation) {
   return binding
 }
 
+export function registerContentBinding (parent, node, interpolation) {
+  return registerBinding(new ContentBinding(...arguments))
+}
+
 export function registerDataStore (target) {
-  if (Object.getPrototypeOf(target) !== Object.prototype) {
-    throw new TypeError(`DataStores can only be initialized on plain objects`)
+  if (typeof target !== 'object') {
+    throw new TypeError(`DataStores must be initialized on objects, arrays, maps or sets`)
   }
 
+  const revocable = processTarget(target)
   const store = stores.get(target)
 
   if (store) {
-    return store
+    return store.revocable.proxy
   }
-
-  const revocable = proxyObject(target)
 
   stores.set(target, {
     revocable,
     bindings: [],
     changes: []
   })
-  
+
   return revocable.proxy
 }
+
+// function getArrayMethodHandler (target, property, reconcile = false) {
+//   return (...args) => {
+//     const method = target[property]
+
+//     const change = {
+//       timestamp: Date.now(),
+//       action: property,
+
+//       value: {
+//         previous: [...target],
+//         current: null
+//       }
+//     }
+
+//     const { bindings, changes } = stores.get(target) ?? {}
+//     const output = method.apply(target, args)
+
+//     change.value.new = [...target]
+//     changes.push(change)
+
+//     console.log(stores);
+//     // for (let tracker of trackers) {
+//     //   if (tracker instanceof ArrayContentTracker && !reconcile) {
+//     //     tracker[property](...args)
+//     //   } else {
+//     //     tracker.reconcile()
+//     //   }
+//     // }
+
+//     return output
+//   }
+// }
+
+// function getArrayProxy (arr) {
+//   return Proxy.revocable(arr, {
+//     get: (target, property) => {
+//       switch (property) {
+//         case 'pop':
+//         case 'push':
+//         case 'shift':
+//         case 'unshift': return getArrayMethodHandler(target, property)
+
+//         case 'copyWithin':
+//         case 'fill':
+//         case 'reverse':
+//         case 'sort':
+//         case 'splice': return getArrayMethodHandler(target, property, true)
+      
+//         default: return target[property]
+//       }
+//     },
+
+//     set: () => {
+//       console.log('SET ARRAY')
+//       // TODO: Add logic here for setting properties like length:
+//       // arr.length = 0
+//       // This can clear the array without having to reassign
+//     }
+//   })
+// }
+
+// function getMapProxy (map) {
+//   console.log('PROXY', map)
+// }
+
+// function getSetProxy (set) {
+//   console.log('PROXY', set)
+// }`
+

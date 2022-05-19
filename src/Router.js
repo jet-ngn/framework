@@ -26,7 +26,7 @@ export default class Router extends TreeNode {
       const routeSlugs = getSlugs(route)
       const scores = new Array(routeSlugs.length).fill(0)
       const neededScore = routeSlugs.reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
-      const props = {}
+      const vars = {}
   
       if (neededScore >= bestScore) {
         pathSlugs.forEach((pathSlug, i) => {
@@ -35,7 +35,7 @@ export default class Router extends TreeNode {
           if (scores.length >= i + 1) {
             if (routeSlug?.startsWith(':')) {
               scores[i] = 1
-              props[routeSlug.substring(1)] = pathSlug
+              vars[routeSlug.substring(1)] = pathSlug
             } else {
               scores[i] = pathSlug === routeSlug ? 2 : 0
             }
@@ -47,7 +47,7 @@ export default class Router extends TreeNode {
         if (finalScore === neededScore && finalScore > bestScore) {
           bestScore = finalScore
           match = this.#routes[route]
-          match.props = props
+          match.vars = vars
           let remainingSlugs = pathSlugs.slice(routeSlugs.length)
           PATH.remaining = remainingSlugs.length === 0 ? null : `/${remainingSlugs.join('/')}`
         }

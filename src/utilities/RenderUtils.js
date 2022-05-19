@@ -114,8 +114,8 @@ export function parseTemplate (parent, template) {
     
   } else {
     Object.keys(bindings ?? {}).forEach(id => {
-      const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id], retainFormatting)
-      binding.render()
+      const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id]/*, retainFormatting*/)
+      result.children.push(...binding.reconcile())
     })
 
     Object.keys(templates ?? {}).forEach(id => {

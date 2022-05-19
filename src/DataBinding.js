@@ -1,122 +1,74 @@
+import DataBindingInterpolation from './DataBindingInterpolation'
 import Template from './Template'
 import { mount, parseTemplate, unmount } from './utilities/RenderUtils'
 import { reconcileNodes } from './utilities/ReconcileUtils'
 import { sanitizeString } from './utilities/StringUtils'
 
-class DataBinding {
-  #targets
-  #properties
-  #transform
-  #previousValue
-  #value
+class DataBinding extends DataBindingInterpolation {
   #parent
+  
+  #value = {
+    previous: null,
+    current: null
+  }
 
-  constructor (parent, { targets, properties, transform }) {
+  constructor (parent, { targets, transform }) {
+    super(targets, transform)
     this.#parent = parent
-    this.#targets = targets
-    this.#properties = properties
-    this.#transform = transform
   }
 
   get parent () {
     return this.#parent
   }
 
-  get properties () {
-    return this.#properties
-  }
-
-  get targets () {
-    return this.#targets
-  }
-
-  get previousValue () {
-    return this.#previousValue
-  }
-
   get value () {
     return this.#value
   }
 
-  render () {
-    this.#previousValue = this.#value
-    this.#value = this.#getValue()
-  }
-
-  #getValue () {
-    if (this.#targets.length > 1) {
-      if (this.#properties.length > 0) {
-        throw new Error(`Invalid Data Binding: Bindings with multiple targets cannot have properties`)
-      }
-
-      return this.#transform(...this.#targets)
+  reconcile () {
+    this.#value = {
+      previous: this.#value.current,
+      current: this.transform(...this.targets)
     }
-
-    const target = this.#targets[0]
-
-    if (this.#properties.length > 1) {
-      return this.#transform(...this.#properties.map(property => target[property]))
-    }
-
-    if (this.#properties.length === 1) {
-      return this.#transform(target[this.#properties[0]])
-    }
-
-    return this.#transform(target)
   }
 }
 
 export class ContentBinding extends DataBinding {
   #children = []
+  #initialized = false
   #nodes
-  #placeholder
   #retainFormatting
-  #shouldMountChildren = false
-  
-  constructor (parent, placeholder, config, retainFormatting) {
-    super(parent, config)
-    this.#nodes = [placeholder]
-    this.#placeholder = placeholder
+
+  constructor (parent, node, interpolation, retainFormatting) {
+    super(parent, interpolation)
+    this.#nodes = [node]
     this.#retainFormatting = retainFormatting
   }
-  
-  render () {
-    super.render()
 
-    const { previousValue, value } = this
-
-    if (!previousValue || [previousValue, value].every(item => item instanceof Template)) {
-      this.#replaceWith(this.#getNodes(value))
-    } else {
-      this.#nodes = reconcileNodes(this.#nodes, this.#getNodes(value))
-    }
-
-    this.#shouldMountChildren && this.#children.forEach(mount)
-
-    if (!this.#shouldMountChildren) {
-      this.#shouldMountChildren = true
-    }
-  }
-
-  #replaceWith (nodes) {
-    for (let i = 1, { length } = this.#nodes; i < length; i++) {
-      this.#nodes[i].remove()
-    }
+  reconcile () {
+    super.reconcile()
     
-    this.#nodes.at(0).replaceWith(...nodes)
-    this.#nodes = nodes
+    const { previous, current } = this.value
+    const update = this.#getNodes(current)
+
+    if (!previous || [previous, current].every(item => item instanceof Template)) {
+      this.#replace(update)
+    } else {
+      this.#nodes = reconcileNodes(this.#nodes, update)
+    }
+
+    if (this.#initialized) {
+      this.#children.forEach(mount)
+    } else {
+      this.#initialized = true
+    }
+
+    return this.#children
   }
 
   #getNodes (value) {
     if (Array.isArray(value)) {
-      const result = []
-
-      for (let item of value) {
-        const output = this.#getNodes(item)
-        result.push(...output)
-      }
-
-      return result
+      return current.map(item => this.#getNodes(item))
     }
 
     if (value instanceof Template) {
@@ -139,9 +91,19 @@ export class ContentBinding extends DataBinding {
       case 'boolean':
         value = value !== false ? `${value}` : ''  
         return [document.createTextNode(this.#retainFormatting ? sanitizeString(value) : value)]
+      
       // case 'object': return [document.createTextNode(sanitizeString(JSON.stringify(value, null, 2), { retainFormatting: true }))]
 
-      default: throw new TypeError(`Invalid tracker value type "${typeof value}"`)
+      default: throw new TypeError(`Invalid binding value type "${typeof value}"`)
     }
+  }
+
+  #replace (nodes) {
+    for (let i = 1, { length } = this.#nodes; i < length; i++) {
+      this.#nodes[i].remove()
+    }
+    
+    this.#nodes.at(0).replaceWith(...nodes)
+    this.#nodes = nodes
   }
 }

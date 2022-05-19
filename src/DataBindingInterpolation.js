@@ -2,29 +2,16 @@ import IdentifiedClass from './IdentifiedClass'
 
 export default class DataBindingInterpolation extends IdentifiedClass {
   #targets
-  #properties
-  #transform = (value => value)
+  #transform
 
-  constructor ({ targets, properties, transform }) {
+  constructor (targets, transform) {
     super('data-binding')
-
-    if (Array.isArray(targets)) {
-      this.#targets = targets
-      this.#properties = null
-      this.#transform = properties ?? this.#transform
-    } else {
-      this.#targets = [targets]
-      this.#properties = Array.isArray(properties) ? properties : [properties]
-      this.#transform = transform ?? this.#transform
-    }
+    this.#targets = targets
+    this.#transform = transform
   }
 
   get targets () {
     return this.#targets
-  }
-
-  get properties () {
-    return this.#properties
   }
 
   get transform () {
