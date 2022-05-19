@@ -6,3 +6,5 @@ export const PATH = class {
   static previous = null
   static remaining = null
 }
+
+export const Components = {}

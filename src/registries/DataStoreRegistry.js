@@ -90,6 +90,14 @@ export function registerContentBinding (parent, node, interpolation) {
   return registerBinding(new ContentBinding(...arguments))
 }
 
+export function registerAttributeListBinding () {
+  
+}
+  
+export function registerBooleanAttributeListBinding () {
+
+}
+
 export function registerDataStore (target) {
   if (typeof target !== 'object') {
     throw new TypeError(`DataStores must be initialized on objects, arrays, maps or sets`)
