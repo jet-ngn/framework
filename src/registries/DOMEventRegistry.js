@@ -34,5 +34,5 @@ export function addDOMEventHandler (view, node, name, callback, options) {
 }
 
 export function removeDOMEventsByView (target) {
-  ;[...listeners.keys()].filter(({ view }) => view === target).forEach(listener => listeners.delete(listener))
+  [...listeners.keys()].filter(({ view }) => view === target).forEach(listener => listeners.delete(listener))
 }

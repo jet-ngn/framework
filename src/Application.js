@@ -1,5 +1,4 @@
 import View from './View'
-import EventRegistry from './registries/EventRegistry'
 import { generateChildren, mount, unmount } from './utilities/RenderUtils'
 import { PATH, Components } from './env'
 import { html, svg } from './lib/tags'
