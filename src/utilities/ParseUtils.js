@@ -40,7 +40,7 @@ export function parse (template, retainFormatting) {
 
 function parseInterpolation (interpolation, result, retainFormatting) {
   if (Array.isArray(interpolation)) {
-    return interpolation.reduce((result, item) => result += parseInterpolation(item, ...arguments.slice(1)), '')
+    return interpolation.reduce((output, item) => output + parseInterpolation(item, result, retainFormatting), '')
   }
 
   if (interpolation instanceof Template) {
