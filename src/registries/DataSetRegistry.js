@@ -1,12 +1,26 @@
 import DataBindingInterpolation from '../DataBindingInterpolation'
-import { ContentBinding } from '../DataBinding'
 
-const stores = new Map
+import {
+  AttributeBinding,
+  ContentBinding,
+  PropertyBinding,
+  ViewBinding
+} from '../DataBinding'
+
+const sets = new Map
 // const bindings = {}
 
 export function bind (...targets) {
   let transform = targets.pop()
   return new DataBindingInterpolation(targets, transform)
+}
+
+function getArrayProxy (arr) {
+
+}
+
+function getMapProxy (map) {
+
 }
 
 function getObjectProxy (obj) {
@@ -22,7 +36,7 @@ function getObjectProxy (obj) {
         return true
       }
 
-      const { bindings, changes, revocable } = stores.get(target)
+      const { bindings, changes, revocable } = sets.get(target)
 
       changes.push({
         timestamp: Date.now(),
@@ -48,8 +62,12 @@ function getObjectProxy (obj) {
   })
 }
 
-function getStoreByProxy (proxy) {
-  return [...stores.values()].find(({ revocable }) => revocable.proxy === proxy)
+function getSetProxy (set) {
+  
+}
+
+function getSetByProxy (proxy) {
+  return [...sets.values()].find(({ revocable }) => revocable.proxy === proxy)
 }
 
 function processTarget (target) {
@@ -74,43 +92,47 @@ function processTarget (target) {
 
 function registerBinding (binding) {
   binding.targets.forEach(target => {
-    const store = getStoreByProxy(target)
+    const set = getSetByProxy(target)
 
-    if (!store) {
-      throw new ReferenceError(`Cannot bind to unregistered DataStore`)
+    if (!set) {
+      throw new ReferenceError(`Cannot bind to unregistered DataSet`)
     }
 
-    store.bindings.push(binding)
+    set.bindings.push(binding)
   })
 
   return binding
+}
+
+export function registerAttributeBinding (parent, node, name, interpolation) {
+  return registerBinding(new AttributeBinding(...arguments))
 }
 
 export function registerContentBinding (parent, node, interpolation) {
   return registerBinding(new ContentBinding(...arguments))
 }
 
-export function registerAttributeListBinding () {
-  
-}
-  
-export function registerBooleanAttributeListBinding () {
-
+export function registerPropertyBinding (parent, node, name, interpolation) {
+  return registerBinding(new PropertyBinding(...arguments))
 }
 
-export function registerDataStore (target) {
+export function registerViewBinding (parent, node, interpolation) {
+  return registerBinding(new ViewBinding(...arguments))
+}
+
+export function registerDataSet (target) {
   if (typeof target !== 'object') {
-    throw new TypeError(`DataStores must be initialized on objects, arrays, maps or sets`)
+    throw new TypeError(`DataSets must be initialized on objects, arrays, maps or sets`)
   }
 
   const revocable = processTarget(target)
-  const store = stores.get(target)
+  const set = sets.get(target)
 
-  if (store) {
-    return store.revocable.proxy
+  if (set) {
+    return set.revocable.proxy
   }
 
-  stores.set(target, {
+  sets.set(target, {
     revocable,
     bindings: [],
     changes: []
@@ -133,13 +155,13 @@ export function registerDataStore (target) {
 //       }
 //     }
 
-//     const { bindings, changes } = stores.get(target) ?? {}
+//     const { bindings, changes } = sets.get(target) ?? {}
 //     const output = method.apply(target, args)
 
 //     change.value.new = [...target]
 //     changes.push(change)
 
-//     console.log(stores);
+//     console.log(sets);
 //     // for (let tracker of trackers) {
 //     //   if (tracker instanceof ArrayContentTracker && !reconcile) {
 //     //     tracker[property](...args)

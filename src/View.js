@@ -1,6 +1,6 @@
 import TreeNode from './TreeNode'
 import EventRegistry from './registries/EventRegistry'
-import DataStore from './DataStore'
+import DataSet from './DataSet'
 import Bus from './Bus'
 import { INTERNAL_ACCESS_KEY } from './env'
 
@@ -15,7 +15,7 @@ export default class View extends TreeNode {
   constructor (parent, root, { data, description, name, on, scope, version }, route, idPrefix = 'view') {
     super(root, idPrefix)
 
-    this.#data = new DataStore(data ?? {})
+    this.#data = new DataSet(data ?? {})
     this.#description = description ?? null
     this.#name = name ?? `${root.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#route = route ?? null

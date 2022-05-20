@@ -1,8 +1,11 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 import Template from './Template'
-import { mount, parseTemplate, unmount } from './utilities/RenderUtils'
+import View from './View'
+import { generateChildren, mount, parseTemplate, unmount } from './utilities/RenderUtils'
 import { reconcileNodes } from './utilities/ReconcileUtils'
 import { sanitizeString } from './utilities/StringUtils'
+import { INTERNAL_ACCESS_KEY } from './env'
+import AttributeList from './AttributeList'
 
 class DataBinding extends DataBindingInterpolation {
   #parent
@@ -30,6 +33,37 @@ class DataBinding extends DataBindingInterpolation {
       previous: this.#value.current,
       current: this.transform(...this.targets)
     }
+
+    const { previous, current } = this.value
+    return current !== previous
+  }
+}
+
+export class AttributeBinding extends DataBinding {
+  #name
+  #node
+
+  constructor (parent, node, name, interpolation) {
+    super(parent, interpolation)
+    this.#name = name
+    this.#node = node
+  }
+
+  reconcile () {
+    const cont = super.reconcile()
+
+    if (!cont) {
+      return
+    }
+
+    let { current } = this.value
+
+    if (Array.isArray(current)) {
+      const list = new AttributeList(this.parent, this.#node, this.#name, current)
+      current = list.value
+    }
+
+    this.#node.setAttribute(this.#name, current)
   }
 }
 
@@ -46,8 +80,12 @@ export class ContentBinding extends DataBinding {
   }
 
   reconcile () {
-    super.reconcile()
+    const cont = super.reconcile()
     
+    if (!cont) {
+      return
+    }
+
     const { previous, current } = this.value
     const update = this.#getNodes(current)
 
@@ -107,3 +145,105 @@ export class ContentBinding extends DataBinding {
     this.#nodes = nodes
   }
 }
+
+export class PropertyBinding extends DataBinding {
+  #name
+  #node
+
+  constructor (parent, node, name, interpolation) {
+    super(parent, interpolation)
+    this.#name = name
+    this.#node = node
+  }
+
+  reconcile () {
+    const cont = super.reconcile()
+
+    if (cont) {
+      this.#node[this.#name] = current
+    }
+  }
+}
+
+export class ViewBinding extends DataBinding {
+  #children = []
+  #node
+  #view
+
+  constructor (parent, node, interpolation) {
+    super(parent, interpolation)
+    this.#node = node
+  }
+
+  reconcile () {
+    const cont = super.reconcile()
+
+    if (!cont) {
+      return
+    }
+
+    this.#children.forEach(unmount)
+    this.#view?.emit(INTERNAL_ACCESS_KEY, 'unmount')
+
+    const { current } = this.value
+    this.#view = new View(this.parent, this.#node, current)
+    const { children, fragment } = generateChildren(this.#view, current)
+
+    this.#children = children
+    this.#view.children.push(...children)
+    this.#node.replaceChildren(fragment)
+
+    children.forEach(mount)
+    this.#view.emit(INTERNAL_ACCESS_KEY, 'mount')
+    return children
+  }
+}
+
+// export class AttributeListBinding extends DataBinding {
+//   #initialized = false
+//   #list
+//   #name
+//   #node
+
+//   constructor (parent, node, name, list, interpolation) {
+//     super(parent, interpolation)
+//     this.#list = list
+//     this.#name = name
+//     this.#node = node
+//   }
+
+//   render () {
+//     console.log(this.#list.reduce((result, item) => {
+//       if (item instanceof DataBindingInterpolation) {
+//         result.push('WORKS')
+//       }
+
+//       return result
+//     }, []));
+
+//     return this.#list.reduce((result, item) => {
+//       if (item instanceof DataBindingInterpolation) {
+//         result.push('WORKS')
+//       }
+
+//       return result
+//     }, [])
+//   }
+
+//   reconcile () {
+//     const cont = super.reconcile()
+
+//     if (!cont) {
+//       return
+//     }
+
+//     const list = this.#getValue()
+//     console.log(this.#list);
+//     this.#node.setAttribute(this.#name, list.join(' '))
+//     return list
+//   }
+
+//   #getValue () {
+//     return this.#list.map(item => item instanceof DataBindingInterpolation ? 'WIP' : item)
+//   }
+// }

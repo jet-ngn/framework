@@ -52,8 +52,9 @@ function run () {
   App.run(config)
 }
 
-export { bind } from './registries/DataStoreRegistry'
+export { bind } from './registries/DataSetRegistry'
 export { createID } from './utilities/IDUtils'
 export { html, svg } from './lib/tags'
 export { default as Bus } from './Bus'
 export { Components } from './env'
+export { default as DataSet } from './DataSet'

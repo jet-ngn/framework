@@ -53,7 +53,7 @@ export default class Template extends IdentifiedClass {
   config ({ attributes, properties, on, view }) {
     attributes && this.setAttributes(attributes)
     on && this.on(on)
-    properties && this.setProperties(attributes)
+    properties && this.setProperties(properties)
     view && this.attachView(view)
     return this
   }

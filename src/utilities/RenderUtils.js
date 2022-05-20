@@ -3,11 +3,18 @@ import Route from '../Route'
 import Router from '../Router'
 import EventRegistry from '../registries/EventRegistry'
 import AttributeList from '../AttributeList'
-import { registerContentBinding } from '../registries/DataStoreRegistry'
+import DataBindingInterpolation from '../DataBindingInterpolation'
 import { addDOMEventHandler } from '../registries/DOMEventRegistry'
 import { parse } from './ParseUtils'
 import { getNeededScore } from './RouteUtils'
 import { INTERNAL_ACCESS_KEY, PATH } from '../env'
+
+import {
+  registerAttributeBinding,
+  registerContentBinding,
+  registerPropertyBinding,
+  registerViewBinding
+} from '../registries/DataSetRegistry'
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {
   validateBinding(type, root, hasMultipleRoots, () => {
@@ -106,16 +113,23 @@ export function parseTemplate (parent, template) {
   !!listeners && bindListeners(parent, listeners, ...args)
 
   if (viewConfig) {
-    const view = new View(parent, root, viewConfig)
-    const data = generateChildren(view, viewConfig)
-    view.children.push(...data.children)
-    result.children.push(view)
-    result.score += data.score
-    root.replaceChildren(data.fragment)
+    if (viewConfig instanceof DataBindingInterpolation) {
+      const binding = registerViewBinding(parent, root, viewConfig, retainFormatting)
+      result.children.push(...binding.reconcile())
+
+    } else {
+      const view = new View(parent, root, viewConfig)
+      const data = generateChildren(view, viewConfig)
+
+      view.children.push(...data.children)
+      result.children.push(view)
+      result.score += data.score
+      root.replaceChildren(data.fragment)
+    }
     
   } else {
     Object.keys(bindings ?? {}).forEach(id => {
-      const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id]/*, retainFormatting*/)
+      const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id], retainFormatting)
       result.children.push(...binding.reconcile())
     })
 
@@ -136,40 +150,43 @@ export function mount (view) {
 }
 
 function setAttribute (view, node, name, value) {
-  // if (value instanceof TrackingInterpolation) {
-  //   return console.log('HANDLE ATTRIBUTE TRACKER')
-  //   // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, view)
-  //   // return tracker.reconcile()
-  // }
+  if (value instanceof DataBindingInterpolation) {
+    const binding = registerAttributeBinding(view, node, name, value)
+    return binding.reconcile()
+  }
 
   const existing = getExistingAttributeValue(node, name)
 
   if (Array.isArray(value)) {
-    const list = new AttributeList(node, name, value.concat(...(existing ?? [])), view)
-    return node.setAttribute(name, list.value)
+    return console.log('HANDLE ARRAY')
+    // const list = new AttributeList(node, name, [...(existing ?? []), ...value], view)
+    // return console.log(list.value);
+    // return node.setAttribute(name, list.value)
   }
 
   switch (typeof value) {
     case 'string':
     case 'number': return node.setAttribute(name, `${existing.join(' ')} ${value}`.trim())
     case 'boolean': return value && node.setAttribute(name, '')
-    
-    case 'object': return Object.keys(value).forEach(slug => {
-      name = `${name}-${slug}`
-      const existing = getExistingAttributeValue(node, name)
-      return setAttribute(view, node, name, `${existing.join(' ')} ${value[slug]}`.trim())
-    })
+    case 'object': return setNamespacedAttribute(view, node, name, value)
 
     default: throw new TypeError(`"${view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
   }
 }
 
+function setNamespacedAttribute (view, node, name, cfg) {
+  if (typeof cfg === 'object') {
+    return Object.keys(cfg).forEach(slug => setAttribute(view, node, `${name}-${slug}`, cfg[slug]))
+  }
+
+  setAttribute(view, node, `${name}-${slug}`, cfg)
+}
+
 function setProperty (view, node, name, value) {
-  // if (value instanceof TrackingInterpolation) {
-  //   return console.log('STORE PROPERTY TRACKER')
-  //   // const tracker = TrackableRegistry.registerAttributeTracker(node, name, value, view)
-  //   // return tracker.reconcile()
-  // }
+  if (value instanceof DataBindingInterpolation) {
+    const binding = registerPropertyBinding(view, node, name, value)
+    return binding.reconcile()
+  }
 
   node[name] = value
 }
