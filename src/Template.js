@@ -58,7 +58,7 @@ export default class Template extends IdentifiedClass {
     return this
   }
 
-  on (evt, handler, cfg) {
+  on (evt, handler, cfg = null) {
     if (!this.#listeners) {
       this.#listeners = {}
     }

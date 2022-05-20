@@ -1,9 +1,10 @@
-// import DataBindingInterpolation from './DataBindingInterpolation'
+import DataBindingInterpolation from './DataBindingInterpolation'
+import { registerAttributeListBinding, registerAttributeListBooleanBinding } from './registries/DataSetRegistry'
 
 export default class AttributeList {
-  #node
-  #name
   #list
+  #name
+  #node
   #parent
 
   constructor (parent, node, name, list) {
@@ -25,15 +26,47 @@ export default class AttributeList {
     return this.#processList().join(' ')
   }
 
+  add (name) {
+    if (this.#name === 'class') {
+      return this.#node.classList.add(name)
+    }
+
+    const { slugs } = this
+    slugs.push(name)
+    this.#node.setAttribute(this.#name, slugs.join(' '))
+  }
+
+  get slugs () {
+    return this.#node.getAttribute(this.#name).split(' ')
+  }
+
+  reconcile ({ previous, current }) {
+    if (this.#name === 'class') {
+      return this.#node.classList.replace(previous, current)
+    }
+
+    this.#node.setAttribute(this.#name, this.#node.getAttribute.replace(previous, current))
+  }
+
+  remove (name) {
+    if (this.#name === 'class') {
+      return this.#node.classList.remove(name)
+    }
+      
+    const { slugs } = this
+    slugs.splice(slugs.indexOf(name), 1)
+    slugs.length === 0 ? this.#node.removeAttribute(this.#name) : this.#node.setAttribute(this.#name, slugs.join(' '))
+  }
+
   #processList () {
-    return this.#list.reduce((result, item) => [...result, ...this.#processListItem(item)], [])
+    return this.#list.reduce((result, item) => [...result, ...this.#processListItem(item)], []).filter(Boolean)
   }
 
   #processListItem (item) {
-    // if (item instanceof DataBindingInterpolation) {
-    //   const binding = registerAttributeListBinding(this.#parent, this.#node, this.#name, this.#list, item)
-    //   return [...binding.reconcile()]
-    // }
+    if (item instanceof DataBindingInterpolation) {
+      const binding = registerAttributeListBinding(this.#parent, this, item)
+      return [binding.initialValue]
+    }
 
     switch (typeof item) {
       case 'string':
@@ -47,13 +80,10 @@ export default class AttributeList {
     return Object.keys(obj).reduce((result, name) => {
       const value = obj[name]
       
-      // if (value instanceof DataBindingInterpolation) {
-      //   const binding = registerBinding(this.#node, this.#name, name, value, this.#parent)
-      //   console.log(binding)
-      //   // tracker.value === true && result.push(name)
-      // } else 
-      
-      if (typeof value !== 'boolean') {
+      if (value instanceof DataBindingInterpolation) {
+        const binding = registerAttributeListBooleanBinding(this.#parent, this, name, value)
+        binding.initialValue === true && result.push(name)
+      } else if (typeof value !== 'boolean') {
         throw new TypeError(`Invalid conditional attribute list entry. Expected "boolean" but received "${typeof value}"`)
       } else if (value === true) {
         result.push(name)

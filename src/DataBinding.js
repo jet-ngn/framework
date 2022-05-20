@@ -62,8 +62,54 @@ export class AttributeBinding extends DataBinding {
       const list = new AttributeList(this.parent, this.#node, this.#name, current)
       current = list.value
     }
+    
+    if (typeof current !== 'boolean') {
+      return this.#node.setAttribute(this.#name, current)
+    }
 
-    this.#node.setAttribute(this.#name, current)
+    if (!current) {
+      return this.#node.removeAttribute(this.#name)
+    }
+
+    this.#node.setAttribute(this.#name, '')
+  }
+}
+
+export class AttributeListBinding extends DataBinding {
+  #list
+
+  constructor (parent, list, interpolation) {
+    super(parent, interpolation)
+    this.#list = list
+  }
+
+  get initialValue () {
+    super.reconcile()
+    return this.value.current
+  }
+
+  reconcile () {
+    super.reconcile() && this.#list.reconcile(this.value)
+  }
+}
+
+export class AttributeListBooleanBinding extends DataBinding {
+  #list
+  #name
+
+  constructor (parent, list, name, interpolation) {
+    super(parent, interpolation)
+    this.#list = list
+    this.#name = name
+  }
+
+  get initialValue () {
+    super.reconcile()
+    return this.value.current
+  }
+
+  reconcile () {
+    super.reconcile() && this.#list[this.value.current === true ? 'add' : 'remove'](this.#name)
   }
 }
 

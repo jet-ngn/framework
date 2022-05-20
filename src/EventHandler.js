@@ -28,6 +28,10 @@ export default class EventHandler {
     // this.#ttl = ttl ?? -1
   }
 
+  get id () {
+    return this.#id
+  }
+
   async call (evt, ...args) {
     this.#calls++
 
