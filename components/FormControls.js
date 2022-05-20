@@ -151,9 +151,6 @@ export const SelectControl = {
 
       const id = createID({ prefix: 'select' })
       const attributes = cfg.attributes ?? {}
-      const type = attributes.type ?? 'text'
-
-      delete attributes.type
 
       return html`
         <div>
@@ -190,7 +187,6 @@ export const SelectControl = {
               </select>
             `.config({
               attributes: {
-                type,
                 autocomplete: attributes.autocomplete ?? 'off',
                 ...attributes
               },
@@ -204,7 +200,7 @@ export const SelectControl = {
           ${!!afterInputEnd && afterInputEnd}
         </div>
       `.setAttributes({
-        class: [cfg.class, type, 'input', 'control'].filter(Boolean),
+        class: [cfg.class, 'select', 'input', 'control'].filter(Boolean),
         disabled: attributes.disabled ?? false,
         invalid: attributes.invalid ?? false
       })   

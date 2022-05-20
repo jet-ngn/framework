@@ -2,6 +2,8 @@ import DataBindingInterpolation from '../DataBindingInterpolation'
 
 import {
   AttributeBinding,
+  AttributeListBinding,
+  AttributeListBooleanBinding,
   ContentBinding,
   PropertyBinding,
   ViewBinding
@@ -106,6 +108,14 @@ function registerBinding (binding) {
 
 export function registerAttributeBinding (parent, node, name, interpolation) {
   return registerBinding(new AttributeBinding(...arguments))
+}
+
+export function registerAttributeListBinding (parent, list, interpolation) {
+  return registerBinding(new AttributeListBinding(...arguments))
+}
+
+export function registerAttributeListBooleanBinding (parent, list, name, interpolation) {
+  return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
 export function registerContentBinding (parent, node, interpolation) {

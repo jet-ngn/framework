@@ -12,27 +12,27 @@ function applyListeners (eventName) {
   })
 }
 
-export function addDOMEventHandler (view, node, event, callback, options) {
+export function addDOMEventHandler (view, node, name, callback, options) {
   const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name)
   const listener = new DOMEventListener(...arguments)
 
   listeners.set({
     view,
-    event,
+    event: name,
     id: listener.id,
     node,
     handler: listener.handler.id
   }, listener)
 
-  if (['blur', 'focus'].includes(event)) {
-    return node.addEventListener(event, evt => listener.handler.call(event))
+  if (['blur', 'focus'].includes(name)) {
+    return node.addEventListener(name, evt => listener.handler.call(name))
   } else if (shouldApplyListeners) {
-    applyListeners(event)
+    applyListeners(name)
   }
 
   return listener
 }
 
-// export function removeByView (target) {
-//   [...listeners.keys()].filter(({ view }) => view === target).forEach(listeners.delete)
-// }
+export function removeDOMEventsByView (target) {
+  [...listeners.keys()].filter(({ view }) => view === target).forEach(listener => listeners.delete(listener))
+}

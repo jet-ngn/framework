@@ -1,5 +1,6 @@
 import Application from './Application'
 import history from 'history'
+import { unmount } from './utilities/RenderUtils'
 import { PATH } from './env'
 
 let App
@@ -14,9 +15,17 @@ document.addEventListener('DOMContentLoaded', evt => {
 
 history.listen(({ action, location }) => {
   const { pathname } = location
+
+  if (PATH.previous === pathname) {
+    return
+  }
+
   PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
-  App.reconcile(config)
+
+  unmount(App)
+  App = new Application(App.root, config)
+  App.run(config)
 })
 
 export function createApp ({ baseURL, selector }) {
@@ -58,3 +67,4 @@ export { html, svg } from './lib/tags'
 export { default as Bus } from './Bus'
 export { Components } from './env'
 export { default as DataSet } from './DataSet'
+export { default as Session } from './Session'

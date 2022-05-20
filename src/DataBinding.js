@@ -62,8 +62,54 @@ export class AttributeBinding extends DataBinding {
       const list = new AttributeList(this.parent, this.#node, this.#name, current)
       current = list.value
     }
+    
+    if (typeof current !== 'boolean') {
+      return this.#node.setAttribute(this.#name, current)
+    }
 
-    this.#node.setAttribute(this.#name, current)
+    if (!current) {
+      return this.#node.removeAttribute(this.#name)
+    }
+
+    this.#node.setAttribute(this.#name, '')
+  }
+}
+
+export class AttributeListBinding extends DataBinding {
+  #list
+
+  constructor (parent, list, interpolation) {
+    super(parent, interpolation)
+    this.#list = list
+  }
+
+  get initialValue () {
+    super.reconcile()
+    return this.value.current
+  }
+
+  reconcile () {
+    super.reconcile() && this.#list.reconcile(this.value)
+  }
+}
+
+export class AttributeListBooleanBinding extends DataBinding {
+  #list
+  #name
+
+  constructor (parent, list, name, interpolation) {
+    super(parent, interpolation)
+    this.#list = list
+    this.#name = name
+  }
+
+  get initialValue () {
+    super.reconcile()
+    return this.value.current
+  }
+
+  reconcile () {
+    super.reconcile() && this.#list[this.value.current === true ? 'add' : 'remove'](this.#name)
   }
 }
 
@@ -198,52 +244,3 @@ export class ViewBinding extends DataBinding {
     return children
   }
 }
-
-// export class AttributeListBinding extends DataBinding {
-//   #initialized = false
-//   #list
-//   #name
-//   #node
-
-//   constructor (parent, node, name, list, interpolation) {
-//     super(parent, interpolation)
-//     this.#list = list
-//     this.#name = name
-//     this.#node = node
-//   }
-
-//   render () {
-//     console.log(this.#list.reduce((result, item) => {
-//       if (item instanceof DataBindingInterpolation) {
-//         result.push('WORKS')
-//       }
-
-//       return result
-//     }, []));
-
-//     return this.#list.reduce((result, item) => {
-//       if (item instanceof DataBindingInterpolation) {
-//         result.push('WORKS')
-//       }
-
-//       return result
-//     }, [])
-//   }
-
-//   reconcile () {
-//     const cont = super.reconcile()
-
-//     if (!cont) {
-//       return
-//     }
-
-//     const list = this.#getValue()
-//     console.log(this.#list);
-//     this.#node.setAttribute(this.#name, list.join(' '))
-//     return list
-//   }
-
-//   #getValue () {
-//     return this.#list.map(item => item instanceof DataBindingInterpolation ? 'WIP' : item)
-//   }
-// }

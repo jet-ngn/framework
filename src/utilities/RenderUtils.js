@@ -4,6 +4,7 @@ import Router from '../Router'
 import EventRegistry from '../registries/EventRegistry'
 import AttributeList from '../AttributeList'
 import DataBindingInterpolation from '../DataBindingInterpolation'
+import { removeDOMEventsByView } from '../registries/DOMEventRegistry'
 import { addDOMEventHandler } from '../registries/DOMEventRegistry'
 import { parse } from './ParseUtils'
 import { getNeededScore } from './RouteUtils'
@@ -158,10 +159,8 @@ function setAttribute (view, node, name, value) {
   const existing = getExistingAttributeValue(node, name)
 
   if (Array.isArray(value)) {
-    return console.log('HANDLE ARRAY')
-    // const list = new AttributeList(node, name, [...(existing ?? []), ...value], view)
-    // return console.log(list.value);
-    // return node.setAttribute(name, list.value)
+    const list = new AttributeList(view, node, name, [...(existing ?? []), ...value])
+    return node.setAttribute(name, list.value)
   }
 
   switch (typeof value) {
@@ -194,6 +193,7 @@ function setProperty (view, node, name, value) {
 export function unmount (view) {
   view.children.forEach(unmount)
   view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+  removeDOMEventsByView(view)
   EventRegistry.removeByView(view)
 }
 
