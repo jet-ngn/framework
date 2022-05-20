@@ -1,27 +1,28 @@
-import IdentifiableClass from './IdentifiableClass'
+import TreeNode from './TreeNode'
 import EventRegistry from './registries/EventRegistry'
-import { Trackable } from './registries/TrackableRegistry'
-import { BUS } from 'NGN'
+import DataSet from './DataSet'
+import Bus from './Bus'
 import { INTERNAL_ACCESS_KEY } from './env'
 
-export default class View extends IdentifiableClass {
+export default class View extends TreeNode {
   #data
   #description
   #name
-  #parent
-  #root
+  #route
   #scope
   #version
 
-  constructor (parent, root, { data, description, name, scope, version }, prefix) {
-    super(prefix ?? 'view')
-    this.#data = new Trackable(data ?? {})
+  constructor (parent, root, { data, description, name, on, scope, version }, route, idPrefix = 'view') {
+    super(root, idPrefix)
+
+    this.#data = new DataSet(data ?? {})
     this.#description = description ?? null
-    this.#name = name ?? 'Unnamed Node'
-    this.#parent = parent ?? null
-    this.#root = root ?? null
+    this.#name = name ?? `${root.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
+    this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
+
+    Object.keys(on ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, on[evt]))
   }
 
   get data () {
@@ -36,12 +37,8 @@ export default class View extends IdentifiableClass {
     return this.#name
   }
 
-  get parent () {
-    return this.#parent
-  }
-
-  get root () {
-    return this.#root
+  get route () {
+    return this.#route
   }
 
   get scope () {
@@ -65,11 +62,11 @@ export default class View extends IdentifiableClass {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
     }
 
-    BUS.emit(`${this.#scope}.${evt}`, ...args)
+    Bus.emit(`${this.scope}.${evt}`, ...args)
   }
 
   find (selector) {
     selector = selector.trim()
-    return [...this.root.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]//.map(node => new Node(node))
+    return [...this.root.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]
   }
 }

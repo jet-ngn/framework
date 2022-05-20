@@ -1,13 +1,7 @@
-let id = 0
-
-function createID () {
-  return id++
-}
-
 export const InputControl = {
   name: 'Jet Input Control',
   
-  install ({ html }, Components) {
+  install ({ createID, html }, Components) {
     Components.InputControl = cfg => {
       const {
         label,
@@ -23,7 +17,7 @@ export const InputControl = {
         afterInputEnd
       } = cfg
 
-      const id = `input_${createID()}`
+      const id = createID({ prefix: 'input' })
       const attributes = cfg.attributes ?? {}
       const type = attributes.type ?? 'text'
 
@@ -48,14 +42,15 @@ export const InputControl = {
           <div class="input_wrapper">
             ${!!afterInputBegin && afterInputBegin}
             
-            ${html`<input id="${id}">`
-              .setAttributes({
+            ${html`<input id="${id}">`.config({
+              attributes: {
                 type,
                 autocomplete: attributes.autocomplete ?? 'off',
                 ...attributes
-              })
-              .on(on ?? {})
-            }
+              },
+
+              on: on ?? {}
+            })}
             
             ${!!beforeInputEnd && beforeInputEnd}
           </div>
@@ -74,7 +69,7 @@ export const InputControl = {
 export const ToggleControl = {
   name: 'Jet Toggle Control',
   
-  install ({ html }, Components) {
+  install ({ createID, html }, Components) {
     Components.ToggleControl = cfg => {
       const {
         label,
@@ -89,7 +84,7 @@ export const ToggleControl = {
         afterInputEnd
       } = cfg
 
-      const id = `input_${createID()}`
+      const id = createID({ prefix: 'toggle' })
       const attributes = cfg.attributes ?? {}
       delete attributes.type
 
@@ -100,13 +95,14 @@ export const ToggleControl = {
           <div class="input_wrapper">
             ${!!afterInputBegin && afterInputBegin}
             
-            ${html`<input type="checkbox" id="${id}">`
-              .setAttributes({
+            ${html`<input type="checkbox" id="${id}">`.config({
+              attributes: {
                 autocomplete: attributes.autocomplete ?? 'off',
                 ...attributes
-              })
-              .on(on ?? {})
-            }
+              },
+
+              on: on ?? {}
+            })}
             
             ${!!beforeInputEnd && beforeInputEnd}
           </div>
@@ -137,7 +133,7 @@ export const ToggleControl = {
 export const SelectControl = {
   name: 'Jet Select Control',
   
-  install ({ html }, Components) {
+  install ({ createID, html }, Components) {
     Components.SelectControl = cfg => {
       const {
         label,
@@ -153,7 +149,7 @@ export const SelectControl = {
         afterInputEnd
       } = cfg
 
-      const id = `input_${createID()}`
+      const id = createID({ prefix: 'select' })
       const attributes = cfg.attributes ?? {}
       const type = attributes.type ?? 'text'
 
@@ -182,18 +178,25 @@ export const SelectControl = {
               <select id="${id}">
                 ${(options ?? []).map(({ label, value, selected }) => html`
                   <option>${label}</option>  
-                `
-                  .setAttribute('value', value ?? '')
-                  .setProperty('selected', selected === true))
-                }
+                `.set({
+                  attributes: {
+                    value: value ?? ''
+                  },
+
+                  properties: {
+                    selected: selected === true
+                  }
+                }))}
               </select>
-            `.setAttributes({
+            `.config({
+              attributes: {
                 type,
                 autocomplete: attributes.autocomplete ?? 'off',
                 ...attributes
-              })
-              .on(on ?? {})
-            }
+              },
+
+              on: on ?? {}
+            })}
             
             ${!!beforeInputEnd && beforeInputEnd}
           </div>

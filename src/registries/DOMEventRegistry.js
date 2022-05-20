@@ -1,58 +1,38 @@
 import DOMEventListener from '../DOMEventListener'
 
-class DOMEventRegistry {
-  #listeners = new Map
+const listeners = new Map
 
-  add (view, node, event, callback, options) {
-    const applyListeners = !this.#hasEvent(event)
-    const listener = new DOMEventListener(...arguments)
+function applyListeners (eventName) {
+  return document.body.addEventListener(eventName, evt => {
+    const { target } = evt
 
-    this.#listeners.set({
-      view,
-      event,
-      id: listener.id,
-      node,
-      handler: listener.handler.id
-    }, listener)
-
-    if (['blur', 'focus'].includes(event)) {
-      return node.addEventListener(event, evt => listener.handler.call(event))
-    } else if (!!applyListeners) {
-      this.#applyListeners(event)
-    }
-
-    return listener
-  }
-
-  removeByView (view) {
-    [...this.#listeners.keys()].filter(listener => listener.view === view).forEach(listener => this.#listeners.delete(listener))
-  }
-
-  // removeByEvent (node, event, callback) {
-  //   console.log('REMOVE', event, 'from', node)
-    
-  //   if (callback) {
-  //     console.log('CALLBACK', callback)
-  //   }
-  // }
-
-  // removeByNode (node) {
-  //   console.log('REMOVE LISTENERS FROM', node)
-  // }
-
-  #applyListeners (eventName) {
-    return document.body.addEventListener(eventName, evt => {
-      const { target } = evt
-
-      ;[...this.#listeners.values()]
-        .filter(({ node, event }) => (target === node || node.contains(target)) && event === eventName)
-        .forEach(({ view, handler }) => handler.call(view, evt))
-    })
-  }
-
-  #hasEvent (name) {
-    return [...this.#listeners.keys()].some(({ event }) => event === name)
-  }
+    ;[...listeners.values()]
+      .filter(({ node, event }) => (target === node || node.contains(target)) && event === eventName)
+      .forEach(({ view, handler }) => handler.call(view, evt))
+  })
 }
 
-export default new DOMEventRegistry
+export function addDOMEventHandler (view, node, event, callback, options) {
+  const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name)
+  const listener = new DOMEventListener(...arguments)
+
+  listeners.set({
+    view,
+    event,
+    id: listener.id,
+    node,
+    handler: listener.handler.id
+  }, listener)
+
+  if (['blur', 'focus'].includes(event)) {
+    return node.addEventListener(event, evt => listener.handler.call(event))
+  } else if (shouldApplyListeners) {
+    applyListeners(event)
+  }
+
+  return listener
+}
+
+// export function removeByView (target) {
+//   [...listeners.keys()].filter(({ view }) => view === target).forEach(listeners.delete)
+// }

@@ -28,14 +28,7 @@ const shell = new Shell({
           entry: [path.join(source, `index.js`)],
 
           external: [
-            'os',
-            '@ngnjs/libnet-node',
-            '@ngnjs/crypto',
-            '@ngnjs/net',
-            'ngn-data',
-            'crypto',
-            'http',
-            'https',
+            'crypto'
           ],
 
           aliases: [{
@@ -44,6 +37,9 @@ const shell = new Shell({
           }, {
             filter: /^IAM/,
             path: path.join(source, 'node_modules', '@author.io', 'iam', 'index.js')
+          }, {
+            filter: /^nanoid/,
+            path: path.join(source, 'node_modules', 'nanoid', 'index.js')
           }]
         }
 

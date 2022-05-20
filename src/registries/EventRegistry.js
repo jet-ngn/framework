@@ -1,11 +1,11 @@
-import { BUS } from 'NGN'
+import Bus from '../Bus'
 import EventHandler from '../EventHandler'
 
 const views = new Map
 
 export default class EventRegistry {
   static get reservedNames () {
-    return ['mount', 'unmount', 'route.change']
+    return ['mount', 'unmount']
   }
 
   static addHandler (view, evt, cb, cfg) {
@@ -37,40 +37,37 @@ export default class EventRegistry {
 
     const callback = function () {
       const valid = handler.call(this.event, ...arguments)
-
-      if (!valid) {
-        this.remove()
-      }
+      !valid && this.remove()
     }
 
-    const stored = views.get(view)
+    const storedView = views.get(view)
 
-    if (!stored) {
+    if (storedView) {
+      storedView[evt] = callback
+    } else {
       views.set(view, {
         [evt]: callback
       })
-    } else {
-      stored[evt] = callback
     }
 
-    return BUS.on(`${view.scope}.${evt}`, callback)
+    return Bus.on(`${view.scope}.${evt}`, callback)
   }
 
-  static removeAll ({ ignore }) {
-    const ignoredViews = ignore ?? []
+  // static removeAll ({ ignore }) {
+  //   const ignoredViews = ignore ?? []
 
-    for (let [view, events] of views) {
-      if (ignoredViews.includes(view)) {
-        continue
-      }
+  //   for (let [view, events] of views) {
+  //     if (ignoredViews.includes(view)) {
+  //       continue
+  //     }
 
-      Object.keys(events).forEach(evt => {
-        BUS.off(`${view.scope}.${evt}`, events[evt])
-      })
-    }
+  //     Object.keys(events).forEach(evt => {
+  //       Bus.off(`${view.scope}.${evt}`, events[evt])
+  //     })
+  //   }
 
-    views.clear()
-  }
+  //   views.clear()
+  // }
 
   static removeByView (view) {
     const stored = views.get(view)
@@ -79,10 +76,7 @@ export default class EventRegistry {
       return
     }
 
-    Object.keys(stored).forEach(evt => {
-      BUS.off(`${view.scope}.${evt}`, stored[evt])
-    })
-
+    Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
     views.delete(stored)
   }
 }

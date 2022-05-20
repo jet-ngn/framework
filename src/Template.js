@@ -1,6 +1,6 @@
-import IdentifiableClass from './IdentifiableClass.js'
+import IdentifiedClass from './IdentifiedClass.js'
 
-export default class Template extends IdentifiableClass {
+export default class Template extends IdentifiedClass {
   #type
   #strings
   #interpolations
@@ -45,15 +45,16 @@ export default class Template extends IdentifiableClass {
     return this.#viewConfig
   }
 
-  bind (cfg) {
-    cfg.view && this.bindView(cfg.view)
-    cfg.on && this.on(cfg.on)
-    cfg.attributes && this.setAttributes(cfg.attributes)
+  attachView (config) {
+    this.#viewConfig = config
     return this
   }
 
-  bindView (cfg) {
-    this.#viewConfig = cfg
+  config ({ attributes, properties, on, view }) {
+    attributes && this.setAttributes(attributes)
+    on && this.on(on)
+    properties && this.setProperties(properties)
+    view && this.attachView(view)
     return this
   }
 
@@ -71,6 +72,10 @@ export default class Template extends IdentifiableClass {
     }
 
     return this
+  }
+
+  set ({ attributes, properties }) {
+    return this.config(...arguments)
   }
 
   setAttribute (name, value) {
