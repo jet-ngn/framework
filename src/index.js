@@ -1,7 +1,7 @@
 import Application from './Application'
 import history from 'history'
-import { generateTree, unmount } from './utilities/RenderUtils'
-import { PATH } from './env'
+import { generateTree, mount, unmount } from './utilities/RenderUtils'
+import { PATH, TASKS, TREE } from './env'
 
 let App
 let config
@@ -13,20 +13,20 @@ document.addEventListener('DOMContentLoaded', evt => {
   initialized && run()
 })
 
-// history.listen(({ action, location }) => {
-//   const { pathname } = location
+history.listen(({ action, location }) => {
+  const { pathname } = location
 
-//   if (PATH.previous === pathname) {
-//     return
-//   }
+  if (PATH.previous === pathname) {
+    return
+  }
 
-//   PATH.current = pathname === '/' ? null : pathname
-//   PATH.remaining = PATH.current
+  PATH.current = pathname === '/' ? null : pathname
+  PATH.remaining = PATH.current
 
-//   unmount(App)
-//   App = new Application(App.root, config)
-//   App.run(config)
-// })
+  unmount(App)
+  App = new Application(App.root, config)
+  render()
+})
 
 export function createApp ({ baseURL, selector }) {
   if (initialized) {
@@ -46,6 +46,24 @@ export function navigate (to, payload) {
   history.push(...arguments)
 }
 
+function render () {
+  let fragment = generateTree(App, config)
+
+  if (PATH.remaining) {
+    if (TREE.lowestChild) {
+      TREE.lowestChild.root.replaceChildren('404')
+    } else {
+      fragment = '404'
+    }
+  }
+
+  App.root.replaceChildren(fragment)
+  mount(App)
+  
+  TASKS.forEach(task => task())
+  TASKS.splice(0, TASKS.length)
+}
+
 function run () {
   const nodes = document.querySelectorAll(config.selector)
 
@@ -58,20 +76,13 @@ function run () {
   PATH.remaining = PATH.current
 
   App = new Application(nodes[0], config)
-
-  const notFound = []
-  const fragment = generateTree(App, config, notFound)
-  const first = notFound[0]
-
-  first && first.forEach((element, index) => index === first.length - 1 ? element.replaceWith('404') : element.remove())
-  App.root.replaceChildren(fragment)
-  console.log(App);
+  render()
 }
 
-// export { bind } from './registries/DataSetRegistry'
+export { bind } from './registries/DataSetRegistry'
 export { createID } from './utilities/IDUtils'
 export { html, svg } from './lib/tags'
 export { default as Bus } from './Bus'
-// export { Components } from './env'
-// export { default as DataSet } from './DataSet'
-// export { default as Session } from './Session'
+export { Components } from './env'
+export { default as DataSet } from './DataSet'
+export { default as Session } from './Session'

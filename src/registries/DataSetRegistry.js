@@ -118,7 +118,7 @@ export function registerAttributeListBooleanBinding (parent, list, name, interpo
   return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
-export function registerContentBinding (parent, node, interpolation) {
+export function registerContentBinding (parent, node, interpolation, retainFormatting, renderTemplate) {
   return registerBinding(new ContentBinding(...arguments))
 }
 

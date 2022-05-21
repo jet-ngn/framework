@@ -1,10 +1,7 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 import Template from './Template'
-import { generateTree, mount, parseTemplate, unmount } from './utilities/RenderUtils'
 import { reconcileNodes } from './utilities/ReconcileUtils'
 import { sanitizeString } from './utilities/StringUtils'
-import { INTERNAL_ACCESS_KEY } from './env'
-import AttributeList from './AttributeList'
 
 class DataBinding extends DataBindingInterpolation {
   #parent
@@ -116,11 +113,13 @@ export class ContentBinding extends DataBinding {
   #children = []
   #initialized = false
   #nodes
+  #renderTemplate
   #retainFormatting
 
-  constructor (parent, node, interpolation, retainFormatting) {
+  constructor (parent, node, interpolation, retainFormatting, renderTemplate) {
     super(parent, interpolation)
     this.#nodes = [node]
+    this.#renderTemplate = renderTemplate
     this.#retainFormatting = retainFormatting
   }
 
@@ -140,11 +139,11 @@ export class ContentBinding extends DataBinding {
       this.#nodes = reconcileNodes(this.#nodes, update)
     }
 
-    if (this.#initialized) {
-      this.#children.forEach(mount)
-    } else {
-      this.#initialized = true
-    }
+    // if (this.#initialized) {
+    //   this.#children.forEach(mount)
+    // } else {
+    //   this.#initialized = true
+    // }
 
     return this.#children
   }
@@ -155,16 +154,7 @@ export class ContentBinding extends DataBinding {
     }
 
     if (value instanceof Template) {
-      const { children, fragment } = parseTemplate(this.parent, value)
-      
-      this.#children.forEach(child => {
-        unmount(child)
-        this.parent.children.splice(this.parent.children.indexOf(child), 1)
-      })
-
-      this.parent.children.push(...children)
-      this.#children = children
-
+      const fragment = this.#renderTemplate(this.parent, value, true)
       return [...fragment.childNodes]
     }
 
@@ -205,7 +195,7 @@ export class PropertyBinding extends DataBinding {
     const cont = super.reconcile()
 
     if (cont) {
-      this.#node[this.#name] = current
+      this.#node[this.#name] = this.value.current
     }
   }
 }

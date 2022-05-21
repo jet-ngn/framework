@@ -1,5 +1,5 @@
 import TreeNode from './TreeNode'
-// import DataSet from './DataSet'
+import DataSet from './DataSet'
 import EventRegistry from './registries/EventRegistry'
 import Bus from './Bus'
 import { INTERNAL_ACCESS_KEY } from './env'
@@ -14,7 +14,7 @@ export default class Entity extends TreeNode {
   constructor (parent, rootNode, { data, description, name, on, scope, version }, idPrefix) {
     super(parent, rootNode, idPrefix)
 
-    // this.#data = new DataSet(data ?? {})
+    this.#data = new DataSet(data ?? {})
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`

@@ -1,5 +1,4 @@
 import Entity from './Entity'
-// import { generateTree, mount, unmount } from './utilities/RenderUtils'
 import { PATH, Components } from './env'
 import { html, svg } from './lib/tags'
 import { createID } from './utilities/IDUtils'
@@ -17,10 +16,4 @@ export default class Application extends Entity {
   get baseURL () {
     return PATH.base.pathname
   }
-
-  // run (config) {
-  //   const { fragment } = generateTree(this, arguments[0])
-  //   this.root.replaceChildren(fragment)
-  //   mount(this)
-  // }
 }

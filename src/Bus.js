@@ -7,7 +7,7 @@ export default class Bus {
     handlers && handlers.forEach(handler => handler.call({
       event: name,
       remove: () => this.#remove(name, handlers, handler)
-    }))
+    }, ...args))
   }
 
   static on (name, handler) {

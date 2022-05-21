@@ -5,9 +5,9 @@ export function combinePaths (...paths) {
   return `/${chunks.join('/')}`
 }
 
-export function getNeededScore (path) {
-  return getSlugs(path ?? '').reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
-}
+// export function getNeededScore (path) {
+//   return getSlugs(path ?? '').reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
+// }
 
 export function getSlugs (path) {
   return trimSlashes(path).split('/').filter(Boolean)

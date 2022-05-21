@@ -1,12 +1,10 @@
-import TreeNode from './TreeNode'
 import { getSlugs, parseRoutes } from './utilities/RouteUtils'
 import { PATH } from './env'
 
-export default class Router extends TreeNode {
+export default class Router {
   #routes
 
-  constructor (parent, routes) {
-    super(parent.root, 'router')
+  constructor (routes) {
     this.#routes = parseRoutes(routes ?? {})
   }
 

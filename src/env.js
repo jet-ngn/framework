@@ -1,3 +1,4 @@
+export const Components = {}
 export const INTERNAL_ACCESS_KEY = Symbol()
 
 export const PATH = class {
@@ -8,4 +9,9 @@ export const PATH = class {
   static has404 = false
 }
 
-export const Components = {}
+export const TASKS = []
+
+export const TREE = class {
+  static lowestLevel = 0
+  static lowestChild = null
+}

@@ -42,7 +42,7 @@ export default class AttributeList {
 
   reconcile ({ previous, current }) {
     if (this.#name === 'class') {
-      return this.#node.classList.replace(previous, current)
+      return previous ? this.#node.classList.replace(previous, current) : this.#node.classList.add(current)
     }
 
     this.#node.setAttribute(this.#name, this.#node.getAttribute.replace(previous, current))
