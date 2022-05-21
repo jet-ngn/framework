@@ -5,6 +5,7 @@ export const PATH = class {
   static current = null
   static previous = null
   static remaining = null
+  static has404 = false
 }
 
 export const Components = {}

@@ -1,6 +1,6 @@
 import Application from './Application'
 import history from 'history'
-import { unmount } from './utilities/RenderUtils'
+import { generateTree, unmount } from './utilities/RenderUtils'
 import { PATH } from './env'
 
 let App
@@ -13,20 +13,20 @@ document.addEventListener('DOMContentLoaded', evt => {
   initialized && run()
 })
 
-history.listen(({ action, location }) => {
-  const { pathname } = location
+// history.listen(({ action, location }) => {
+//   const { pathname } = location
 
-  if (PATH.previous === pathname) {
-    return
-  }
+//   if (PATH.previous === pathname) {
+//     return
+//   }
 
-  PATH.current = pathname === '/' ? null : pathname
-  PATH.remaining = PATH.current
+//   PATH.current = pathname === '/' ? null : pathname
+//   PATH.remaining = PATH.current
 
-  unmount(App)
-  App = new Application(App.root, config)
-  App.run(config)
-})
+//   unmount(App)
+//   App = new Application(App.root, config)
+//   App.run(config)
+// })
 
 export function createApp ({ baseURL, selector }) {
   if (initialized) {
@@ -58,13 +58,20 @@ function run () {
   PATH.remaining = PATH.current
 
   App = new Application(nodes[0], config)
-  App.run(config)
+
+  const notFound = []
+  const fragment = generateTree(App, config, notFound)
+  const first = notFound[0]
+
+  first && first.forEach((element, index) => index === first.length - 1 ? element.replaceWith('404') : element.remove())
+  App.root.replaceChildren(fragment)
+  console.log(App);
 }
 
-export { bind } from './registries/DataSetRegistry'
+// export { bind } from './registries/DataSetRegistry'
 export { createID } from './utilities/IDUtils'
 export { html, svg } from './lib/tags'
 export { default as Bus } from './Bus'
-export { Components } from './env'
-export { default as DataSet } from './DataSet'
-export { default as Session } from './Session'
+// export { Components } from './env'
+// export { default as DataSet } from './DataSet'
+// export { default as Session } from './Session'

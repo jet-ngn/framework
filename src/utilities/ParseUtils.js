@@ -31,9 +31,9 @@ export function parse (template, retainFormatting) {
   target.innerHTML = interpolations.length === 0
   ? strings[0] // TODO: May want to sanitize and convert back to html
   : strings.reduce((final, string, i) => final + string + parseInterpolation(interpolations[i], result, retainFormatting), '')
-
+  
   return {
-    fragment: target.content,
+    fragment: target.content ?? target,
     ...result
   }
 }

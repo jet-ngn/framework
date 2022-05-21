@@ -14,21 +14,26 @@ export default class Router extends TreeNode {
     return this.#routes
   }
 
-  getMatchingRoute (result) {
+  getMatchingRoute () {
+    const match = {
+      route: null,
+      score: -1,
+      vars: null
+    }
+
     if (!PATH.remaining) {
-      return null
+      return match
     }
 
     const pathSlugs = getSlugs(PATH.remaining)
-    let bestScore = 0
 
-    return Object.keys(this.#routes ?? {}).reduce((match, route) => {
+    Object.keys(this.#routes ?? {}).forEach(route => {
       const routeSlugs = getSlugs(route)
       const scores = new Array(routeSlugs.length).fill(0)
       const neededScore = routeSlugs.reduce((result, slug) => result += slug.startsWith(':') ? 1 : 2, 0)
       const vars = {}
   
-      if (neededScore >= bestScore) {
+      if (neededScore >= match.score) {
         pathSlugs.forEach((pathSlug, i) => {
           const routeSlug = routeSlugs[i]
     
@@ -44,17 +49,17 @@ export default class Router extends TreeNode {
     
         const finalScore = scores.reduce((result, score) => result += score, 0)
         
-        if (finalScore === neededScore && finalScore > bestScore) {
-          bestScore = finalScore
-          match = this.#routes[route]
+        if (finalScore === neededScore && finalScore > match.score) {
+          match.score = finalScore
+          match.route = this.#routes[route]
           match.vars = vars
+
           let remainingSlugs = pathSlugs.slice(routeSlugs.length)
           PATH.remaining = remainingSlugs.length === 0 ? null : `/${remainingSlugs.join('/')}`
         }
       }
-      
-      result.score = bestScore
-      return match
-    }, null)
+    })
+
+    return match
   }
 }

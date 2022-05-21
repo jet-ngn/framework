@@ -1,7 +1,6 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 import Template from './Template'
-import View from './View'
-import { generateChildren, mount, parseTemplate, unmount } from './utilities/RenderUtils'
+import { generateTree, mount, parseTemplate, unmount } from './utilities/RenderUtils'
 import { reconcileNodes } from './utilities/ReconcileUtils'
 import { sanitizeString } from './utilities/StringUtils'
 import { INTERNAL_ACCESS_KEY } from './env'
@@ -222,25 +221,26 @@ export class ViewBinding extends DataBinding {
   }
 
   reconcile () {
-    const cont = super.reconcile()
+    console.log('REC CONTENT. REVISIT ME!')
+    // const cont = super.reconcile()
 
-    if (!cont) {
-      return
-    }
+    // if (!cont) {
+    //   return
+    // }
 
-    this.#children.forEach(unmount)
-    this.#view?.emit(INTERNAL_ACCESS_KEY, 'unmount')
+    // this.#children.forEach(unmount)
+    // this.#view?.emit(INTERNAL_ACCESS_KEY, 'unmount')
 
-    const { current } = this.value
-    this.#view = new View(this.parent, this.#node, current)
-    const { children, fragment } = generateChildren(this.#view, current)
+    // const { current } = this.value
+    // this.#view = new View(this.parent, this.#node, current)
+    // const { children, fragment } = generateChildren(this.#view, current)
 
-    this.#children = children
-    this.#view.children.push(...children)
-    this.#node.replaceChildren(fragment)
+    // this.#children = children
+    // this.#view.children.push(...children)
+    // this.#node.replaceChildren(fragment)
 
-    children.forEach(mount)
-    this.#view.emit(INTERNAL_ACCESS_KEY, 'mount')
-    return children
+    // children.forEach(mount)
+    // this.#view.emit(INTERNAL_ACCESS_KEY, 'mount')
+    // return children
   }
 }
