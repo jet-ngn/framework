@@ -1,4 +1,3 @@
-// import { EventEmitter } from 'NGN'
 import User from './User.js'
 
 class Session {

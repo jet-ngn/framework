@@ -16,10 +16,11 @@ document.addEventListener('DOMContentLoaded', evt => {
 history.listen(({ action, location }) => {
   const { pathname } = location
 
-  if (PATH.previous === pathname) {
+  if (PATH.current === pathname) {
     return
   }
 
+  PATH.previous = PATH.current
   PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
 
@@ -42,7 +43,6 @@ export function createApp ({ baseURL, selector }) {
 }
 
 export function navigate (to, payload) {
-  PATH.previous = PATH.current
   history.push(...arguments)
 }
 
