@@ -17,8 +17,65 @@ export function bind (...targets) {
   return new DataBindingInterpolation(targets, transform)
 }
 
-function getArrayProxy (arr) {
+function getArrayMethodHandler (target, property, reconcile = false) {
+  return (...args) => {
+    const method = target[property]
 
+    const change = {
+      timestamp: Date.now(),
+      action: property,
+
+      value: {
+        previous: [...target],
+        current: null
+      }
+    }
+
+    const { bindings, changes } = sets.get(target) ?? {}
+    const output = method.apply(target, args)
+
+    change.value.current = [...target]
+    changes.push(change)
+    
+    for (let binding of bindings) {
+      binding.reconcile()
+      // if (tracker instanceof ArrayContentTracker && !reconcile) {
+      //   tracker[property](...args)
+      // } else {
+        // binding.reconcile()
+      // }
+    }
+
+    return output
+  }
+}
+
+function getArrayProxy (arr) {
+  return Proxy.revocable(arr, {
+    get: (target, property) => {
+      switch (property) {
+        case 'pop':
+        case 'push':
+        case 'shift':
+        case 'unshift': return getArrayMethodHandler(target, property)
+
+        case 'copyWithin':
+        case 'fill':
+        case 'reverse':
+        case 'sort':
+        case 'splice': return getArrayMethodHandler(target, property, true)
+      
+        default: return target[property]
+      }
+    },
+
+    set: () => {
+      console.log('SET ARRAY')
+      // TODO: Add logic here for setting properties like length:
+      // arr.length = 0
+      // This can clear the array without having to reassign
+    }
+  })
 }
 
 function getMapProxy (map) {
@@ -150,67 +207,6 @@ export function registerDataSet (target) {
 
   return revocable.proxy
 }
-
-// function getArrayMethodHandler (target, property, reconcile = false) {
-//   return (...args) => {
-//     const method = target[property]
-
-//     const change = {
-//       timestamp: Date.now(),
-//       action: property,
-
-//       value: {
-//         previous: [...target],
-//         current: null
-//       }
-//     }
-
-//     const { bindings, changes } = sets.get(target) ?? {}
-//     const output = method.apply(target, args)
-
-//     change.value.new = [...target]
-//     changes.push(change)
-
-//     console.log(sets);
-//     // for (let tracker of trackers) {
-//     //   if (tracker instanceof ArrayContentTracker && !reconcile) {
-//     //     tracker[property](...args)
-//     //   } else {
-//     //     tracker.reconcile()
-//     //   }
-//     // }
-
-//     return output
-//   }
-// }
-
-// function getArrayProxy (arr) {
-//   return Proxy.revocable(arr, {
-//     get: (target, property) => {
-//       switch (property) {
-//         case 'pop':
-//         case 'push':
-//         case 'shift':
-//         case 'unshift': return getArrayMethodHandler(target, property)
-
-//         case 'copyWithin':
-//         case 'fill':
-//         case 'reverse':
-//         case 'sort':
-//         case 'splice': return getArrayMethodHandler(target, property, true)
-      
-//         default: return target[property]
-//       }
-//     },
-
-//     set: () => {
-//       console.log('SET ARRAY')
-//       // TODO: Add logic here for setting properties like length:
-//       // arr.length = 0
-//       // This can clear the array without having to reassign
-//     }
-//   })
-// }
 
 // function getMapProxy (map) {
 //   console.log('PROXY', map)

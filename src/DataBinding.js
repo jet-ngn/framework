@@ -25,9 +25,11 @@ class DataBinding extends DataBindingInterpolation {
   }
 
   reconcile () {
+    const newValue = this.transform(...this.targets)
+
     this.#value = {
-      previous: this.#value.current,
-      current: this.transform(...this.targets)
+      previous: Array.isArray(this.#value.current) ? [...this.#value.current] : this.#value.current,
+      current: Array.isArray(newValue) ? [...newValue] : newValue
     }
 
     const { previous, current } = this.value
@@ -150,7 +152,7 @@ export class ContentBinding extends DataBinding {
 
   #getNodes (value) {
     if (Array.isArray(value)) {
-      return current.map(item => this.#getNodes(item))
+      return value.reduce((result, item) => [...result, ...this.#getNodes(item)], [])
     }
 
     if (value instanceof Template) {

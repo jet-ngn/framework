@@ -1,3 +1,31 @@
+function reconcileAttributes (original, update) {
+  // console.log('REC ATTRIBUTES')
+}
+
+function reconcileElementNode (original, update) {
+  if (original.constructor.name !== update.constructor.name) {
+    console.log('different type')
+    original.replaceWith(update)
+    return update
+  }
+
+  if (update.attributes.length > 0) {
+    reconcileAttributes(original, update)
+  } else {
+    removeAllAttributes(original)
+  }
+
+  // console.log('REC EVENT LISTENERS')
+
+  const { childNodes } = original
+
+  if (childNodes.length > 0) {
+    reconcileNodes(childNodes, update.childNodes)
+  }
+
+  return original
+}
+
 function reconcileNode (original, update) {
   switch (original.nodeType) {
     case 1: return reconcileElementNode(...arguments)
@@ -20,13 +48,10 @@ export function reconcileNodes (original, update) {
 
       result.at(-1).after(newNode)
       result.push(newNode)
-      console.log('MOUNT')
       continue
     }
 
     if (!newNode) {
-      console.log('UNMOUNT')
-      // unmount(existingNode)
       existingNode.remove()
       continue
     }
@@ -43,4 +68,12 @@ function reconcileTextNode (original, update) {
   }
 
   return original
+}
+
+function removeAllAttributes (node) {
+  const { attributes } = node
+
+  while (attributes.length > 0) {
+    node.removeAttribute(attributes[0].name)
+  }
 }
