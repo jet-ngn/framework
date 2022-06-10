@@ -35,9 +35,6 @@ const shell = new Shell({
             filter: /^history/,
             path: path.join(source, 'node_modules', 'history', 'browser.js')
           }, {
-            filter: /^IAM/,
-            path: path.join(source, 'node_modules', '@author.io', 'iam', 'index.js')
-          }, {
             filter: /^nanoid/,
             path: path.join(source, 'node_modules', 'nanoid', 'index.js')
           }]
@@ -76,7 +73,23 @@ const shell = new Shell({
         })
 
         await Builder.run()
-      }
+      },
+
+      commands: [{
+        name: 'components',
+        description: 'Build Jet standard library components',
+        
+        handler () {
+          console.log('BUILD COMPONENTS')
+        }
+      }, {
+        name: 'plugins',
+        description: 'Build Jet standard library plugins',
+        
+        handler () {
+          console.log('BUILD PLUGINS')
+        }
+      }]
     },
 
     {

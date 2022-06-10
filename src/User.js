@@ -1,13 +1,10 @@
-// import IAM from 'IAM'
-
 export default class User {
-  // #controller = IAM.User()
   #data
   #roles
 
   constructor ({ roles, data }) {
     this.#data = data ?? null
-    this.#roles = roles ?? null
+    this.#roles = roles ?? []
   }
 
   get data () {

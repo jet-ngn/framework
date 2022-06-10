@@ -1,12 +1,13 @@
 import View from '../View'
 import Route from '../Route'
 import Router from '../Router'
+import Session from '../Session'
 import EventRegistry from '../registries/EventRegistry'
 import AttributeList from '../AttributeList'
 import DataBindingInterpolation from '../DataBindingInterpolation'
 import { addDOMEventHandler, removeDOMEventsByView } from '../registries/DOMEventRegistry'
 import { parse } from './ParseUtils'
-import { INTERNAL_ACCESS_KEY, TASKS, TREE } from '../env'
+import { INTERNAL_ACCESS_KEY, TREE } from '../env'
 
 import {
   registerAttributeBinding,
@@ -15,7 +16,7 @@ import {
   registerViewBinding
 } from '../registries/DataSetRegistry'
 
-export function generateTree (entity, { routes }) {
+export function generateTree (entity, { permissions, routes }) {
   let starting = {
     lowestLevel: TREE.lowestLevel,
     lowestChild: TREE.lowestChild
@@ -31,8 +32,25 @@ export function generateTree (entity, { routes }) {
   TREE.lowestLevel = starting.lowestLevel
   TREE.lowestLevel = starting.lowestChild
 
+  if (permissions) {
+    if (!Session.user) {
+      return '401'
+    }
+
+    const matchingRoles = Object.keys(permissions ?? {}).filter(role => Session.user.roles.includes(role))
+
+    if (matchingRoles.length === 0) {
+      return '401'
+    }
+  }
+
   const template = Reflect.get(arguments[1], 'template', entity)
   return template ? renderTemplate(entity, template) : ''
+}
+
+export function mount (view) {
+  view.children.forEach(mount)
+  view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
 
 export function renderTemplate (parent, template, shouldMount = false) {
@@ -88,6 +106,13 @@ export function renderTemplate (parent, template, shouldMount = false) {
   return fragment
 }
 
+export function unmount (view) {
+  view.children.forEach(unmount)
+  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+  removeDOMEventsByView(view)
+  EventRegistry.removeByView(view)
+}
+
 function bindListeners (view, listeners, root, hasMultipleRoots) {
   validateBinding('listeners', root, hasMultipleRoots, () => {
     for (let evt in listeners ?? {}) {
@@ -109,14 +134,10 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-export function mount (view) {
-  view.children.forEach(mount)
-  view.emit(INTERNAL_ACCESS_KEY, 'mount')
-}
-
 function renderRoute (parent, router, route, vars) {
   const { config } = route
   route = new Route({ url: route.url, vars })
+  
   const view = new View(parent, parent.root, config, route)
   parent.children.push(view)
 
@@ -174,13 +195,6 @@ function setProperty (view, node, name, value) {
   }
 
   node[name] = value
-}
-
-export function unmount (view) {
-  view.children.forEach(unmount)
-  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
-  removeDOMEventsByView(view)
-  EventRegistry.removeByView(view)
 }
 
 function validateBinding (item, node, hasMultipleRoots, cb) {

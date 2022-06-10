@@ -1,4 +1,5 @@
 export const Components = {}
+export const Plugins = {}
 export const INTERNAL_ACCESS_KEY = Symbol()
 
 export const PATH = class {
