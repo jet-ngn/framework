@@ -4,7 +4,6 @@ function reconcileAttributes (original, update) {
 
 function reconcileElementNode (original, update) {
   if (original.constructor.name !== update.constructor.name) {
-    console.log('different type')
     original.replaceWith(update)
     return update
   }

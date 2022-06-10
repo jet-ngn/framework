@@ -113,13 +113,14 @@ export class AttributeListBooleanBinding extends DataBinding {
 
 export class ContentBinding extends DataBinding {
   #children = []
-  #initialized = false
   #nodes
+  #placeholder
   #renderTemplate
   #retainFormatting
 
   constructor (parent, node, interpolation, retainFormatting, renderTemplate) {
     super(parent, interpolation)
+    this.#placeholder = node
     this.#nodes = [node]
     this.#renderTemplate = renderTemplate
     this.#retainFormatting = retainFormatting
@@ -138,7 +139,11 @@ export class ContentBinding extends DataBinding {
     if (!previous || [previous, current].every(item => item instanceof Template)) {
       this.#replace(update)
     } else {
-      this.#nodes = reconcileNodes(this.#nodes, update)
+      if (update.length === 0) {
+        this.#replace([this.#placeholder])
+      } else {
+        this.#nodes = reconcileNodes(this.#nodes, update)
+      }
     }
 
     // if (this.#initialized) {
@@ -178,8 +183,10 @@ export class ContentBinding extends DataBinding {
       this.#nodes[i].remove()
     }
     
-    this.#nodes.at(0).replaceWith(...nodes)
-    this.#nodes = nodes
+    if (nodes.length > 0) {
+      this.#nodes.at(0).replaceWith(...nodes)
+      this.#nodes = nodes
+    }
   }
 }
 
