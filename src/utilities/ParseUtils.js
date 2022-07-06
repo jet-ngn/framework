@@ -32,10 +32,13 @@ export function parse (template, retainFormatting) {
   ? strings[0] // TODO: May want to sanitize and convert back to html
   : strings.reduce((final, string, i) => final + string + parseInterpolation(interpolations[i], result, retainFormatting), '')
   
-  return {
+  const output = {
     fragment: target.content ?? target,
     ...result
   }
+
+  target.remove()
+  return output
 }
 
 function parseInterpolation (interpolation, result, retainFormatting) {

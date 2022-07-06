@@ -2,6 +2,7 @@ import Application from './Application'
 import history from 'history'
 import { generateTree, mount, unmount } from './utilities/RenderUtils'
 import { PATH, TASKS, TREE } from './env'
+import { removeAllViews } from './registries/EventRegistry'
 
 let App
 let config
@@ -25,6 +26,8 @@ history.listen(({ action, location }) => {
   PATH.remaining = PATH.current
 
   unmount(App)
+  removeAllViews()
+
   App = new Application(App.root, config)
   render()
 })
@@ -79,10 +82,10 @@ function run () {
   render()
 }
 
-export { bind } from './registries/DataSetRegistry'
+export { bind } from './registries/DatasetRegistry'
 export { createID } from './utilities/IDUtils'
 export { html, svg } from './lib/tags'
 export { default as Bus } from './Bus'
 export { Components } from './env'
-export { default as DataSet } from './DataSet'
+export { default as Dataset } from './Dataset'
 export { default as Session } from './Session'

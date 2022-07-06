@@ -1,12 +1,61 @@
+import { logListeners, removeDOMEventsByNode } from '../registries/DOMEventRegistry'
+import { escapeString } from './StringUtils'
+
+function getAttributes (element) {
+  return [...element.attributes].reduce((result, attr) => {
+    result[attr.name] = attr.value === '' ? true : attr.value
+    return result
+  }, {})
+}
+
+function reconcileAttribute (element, name, { current, update }) {
+  if (update === current) {
+    return
+  }
+
+  if (!update) {
+    return element.removeAttribute(name)
+  }
+
+  setAttribute(element, name, update)
+}
+
 function reconcileAttributes (original, update) {
-  // console.log('REC ATTRIBUTES')
+  const attributes = {
+    current: getAttributes(original),
+    update: getAttributes(update)
+  }
+
+  if (attributes.current.length === 0) {
+    return get.forEach(name => setAttribute(original, name, attributes.update[name]))
+  }
+
+  Object.keys({ ...attributes.current, ...attributes.update }).forEach(attribute => {
+    const change = {
+      current: attributes.current[attribute],
+      update: attributes.update[attribute]
+    }
+
+    if (change.update) {
+      if (change.current) {
+        return reconcileAttribute(original, attribute, change)
+      }
+      
+      return setAttribute(original, attribute, change.update)
+    }
+
+    original.removeAttribute(attribute)
+  })
 }
 
 function reconcileElementNode (original, update) {
   if (original.constructor.name !== update.constructor.name) {
+    removeDOMEventsByNode(original)
     original.replaceWith(update)
     return update
   }
+
+  removeDOMEventsByNode(update)
 
   if (update.attributes.length > 0) {
     reconcileAttributes(original, update)
@@ -51,6 +100,7 @@ export function reconcileNodes (original, update) {
     }
 
     if (!newNode) {
+      removeDOMEventsByNode(existingNode)
       existingNode.remove()
       continue
     }
@@ -75,4 +125,12 @@ function removeAllAttributes (node) {
   while (attributes.length > 0) {
     node.removeAttribute(attributes[0].name)
   }
+}
+
+function setAttribute (element, name, value) {
+  if (!name.startsWith('data-') && typeof value === 'boolean') {
+    return value ? element.setAttribute(name, '') : element.removeAttribute(name)
+  }
+
+  element.setAttribute(name, escapeString(value))
 }

@@ -1,7 +1,7 @@
-import { registerDataSet } from './registries/DataSetRegistry'
+import { registerDataset } from './registries/DatasetRegistry'
 
-export default class DataSet {
-  constructor (obj) {
-    return registerDataSet(obj)
+export default class Dataset {
+  constructor (obj, isGlobal = true) {
+    return registerDataset(...arguments)
   }
 }

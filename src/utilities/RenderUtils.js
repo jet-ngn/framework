@@ -2,7 +2,8 @@ import View from '../View'
 import Route from '../Route'
 import Router from '../Router'
 import Session from '../Session'
-import EventRegistry from '../registries/EventRegistry'
+import { removeBindingsByView } from '../registries/DatasetRegistry'
+import { removeEventsByView } from '../registries/EventRegistry'
 import AttributeList from '../AttributeList'
 import DataBindingInterpolation from '../DataBindingInterpolation'
 import { addDOMEventHandler, removeDOMEventsByView } from '../registries/DOMEventRegistry'
@@ -14,7 +15,7 @@ import {
   registerContentBinding,
   registerPropertyBinding,
   registerViewBinding
-} from '../registries/DataSetRegistry'
+} from '../registries/DatasetRegistry'
 
 export function generateTree (entity, { permissions, routes }) {
   let starting = {
@@ -107,10 +108,16 @@ export function renderTemplate (parent, template, shouldMount = false) {
 }
 
 export function unmount (view) {
+  // console.log(view);
   view.children.forEach(unmount)
   view.emit(INTERNAL_ACCESS_KEY, 'unmount')
   removeDOMEventsByView(view)
-  EventRegistry.removeByView(view)
+  removeEventsByView(view)
+  removeBindingsByView(view)
+
+  // logSets()
+  // logListeners()
+  // logViews()
 }
 
 function bindListeners (view, listeners, root, hasMultipleRoots) {

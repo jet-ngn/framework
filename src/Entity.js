@@ -1,6 +1,6 @@
 import TreeNode from './TreeNode'
-import DataSet from './DataSet'
-import EventRegistry from './registries/EventRegistry'
+import Dataset from './Dataset'
+import { addHandler, reservedNames } from './registries/EventRegistry'
 import Bus from './Bus'
 import PermissionsManager from './PermissionsManager'
 import { INTERNAL_ACCESS_KEY } from './env'
@@ -16,14 +16,14 @@ export default class Entity extends TreeNode {
   constructor (parent, rootNode, { data, description, name, on, permissions, scope, version }, idPrefix) {
     super(parent, rootNode, idPrefix)
 
-    this.#data = new DataSet(data ?? {})
+    this.#data = new Dataset(data ?? {}, false)
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#permissions = new PermissionsManager(this, permissions) ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
 
-    Object.keys(on ?? {}).forEach(evt => EventRegistry.addHandler(this, evt, on[evt]))
+    Object.keys(on ?? {}).forEach(evt => addHandler(this, evt, on[evt]))
   }
 
   get data () {
@@ -59,7 +59,7 @@ export default class Entity extends TreeNode {
       args = args.slice(1)
     }
 
-    if (!!EventRegistry.reservedNames.includes(evt) && key !== INTERNAL_ACCESS_KEY) {
+    if (!!reservedNames.includes(evt) && key !== INTERNAL_ACCESS_KEY) {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
     }
 

@@ -1,15 +1,12 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
+import { logListeners, removeDOMEventsByNode } from './registries/DOMEventRegistry'
 import Template from './Template'
 import { reconcileNodes } from './utilities/ReconcileUtils'
 import { sanitizeString } from './utilities/StringUtils'
 
 class DataBinding extends DataBindingInterpolation {
   #parent
-  
-  #value = {
-    previous: null,
-    current: null
-  }
+  #value = null
 
   constructor (parent, { targets, transform }) {
     super(targets, transform)
@@ -24,16 +21,19 @@ class DataBinding extends DataBindingInterpolation {
     return this.#value
   }
 
-  reconcile () {
-    const newValue = this.transform(...this.targets)
+  reconcile (cb) {
+    const previous = this.#value
+    let newValue = this.transform(...this.targets)
+    newValue = Array.isArray(newValue) ? [...newValue] : newValue
 
-    this.#value = {
-      previous: Array.isArray(this.#value.current) ? [...this.#value.current] : this.#value.current,
-      current: Array.isArray(newValue) ? [...newValue] : newValue
+    if (newValue !== this.#value) {
+      this.#value = newValue
+
+      cb && cb({
+        previous,
+        current: this.#value
+      })
     }
-
-    const { previous, current } = this.value
-    return current !== previous
   }
 }
 
@@ -48,28 +48,22 @@ export class AttributeBinding extends DataBinding {
   }
 
   reconcile () {
-    const cont = super.reconcile()
-
-    if (!cont) {
-      return
-    }
-
-    let { current } = this.value
-
-    if (Array.isArray(current)) {
-      const list = new AttributeList(this.parent, this.#node, this.#name, current)
-      current = list.value
-    }
-    
-    if (typeof current !== 'boolean') {
-      return this.#node.setAttribute(this.#name, current)
-    }
-
-    if (!current) {
-      return this.#node.removeAttribute(this.#name)
-    }
-
-    this.#node.setAttribute(this.#name, '')
+    super.reconcile(({ current }) => {
+      if (Array.isArray(current)) {
+        const list = new AttributeList(this.parent, this.#node, this.#name, current)
+        current = list.value
+      }
+      
+      if (typeof current !== 'boolean') {
+        return this.#node.setAttribute(this.#name, current)
+      }
+  
+      if (!current) {
+        return this.#node.removeAttribute(this.#name)
+      }
+  
+      this.#node.setAttribute(this.#name, '')
+    })
   }
 }
 
@@ -83,11 +77,11 @@ export class AttributeListBinding extends DataBinding {
 
   get initialValue () {
     super.reconcile()
-    return this.value.current
+    return this.value
   }
 
   reconcile () {
-    super.reconcile() && this.#list.reconcile(this.value)
+    super.reconcile(value => this.#list.reconcile(value))
   }
 }
 
@@ -103,16 +97,16 @@ export class AttributeListBooleanBinding extends DataBinding {
 
   get initialValue () {
     super.reconcile()
-    return this.value.current
+    return this.value
   }
 
   reconcile () {
-    super.reconcile() && this.#list[this.value.current === true ? 'add' : 'remove'](this.#name)
+    super.reconcile(({ current }) => this.#list[current === true ? 'add' : 'remove'](this.#name))
   }
 }
 
 export class ContentBinding extends DataBinding {
-  #children = []
+  // #children = []
   #nodes
   #placeholder
   #renderTemplate
@@ -126,43 +120,43 @@ export class ContentBinding extends DataBinding {
     this.#retainFormatting = retainFormatting
   }
 
-  reconcile () {
-    const cont = super.reconcile()
-    
-    if (!cont) {
-      return
-    }
-
-    const { previous, current } = this.value
-    const update = this.#getNodes(current)
-
-    if (!previous || [previous, current].every(item => item instanceof Template)) {
-      this.#replace(update)
-    } else {
-      if (update.length === 0) {
-        this.#replace([this.#placeholder])
-      } else {
-        this.#nodes = reconcileNodes(this.#nodes, update)
+  reconcile (method) {
+    super.reconcile(({ previous, current }) => {
+      if (!!method && this.targets.length === 1 && Array.isArray(this.targets[0])) {
+        switch (method) {
+          case 'push': return this.#push(previous, current)
+          case 'pop': return this.#pop()
+          case 'shift': return this.#shift()
+          case 'unshift': return this.#unshift(previous)
+          default: break
+        }
       }
-    }
 
-    // if (this.#initialized) {
-    //   this.#children.forEach(mount)
-    // } else {
-    //   this.#initialized = true
-    // }
+      if (current.length === 0) {
+        return this.#replace([this.#placeholder])
+      }
 
-    return this.#children
+      const update = this.#getNodes(current)
+
+      if (!previous || [previous, current].every(item => item instanceof Template)) {
+        return this.#replace(update)
+      }
+
+      this.#nodes = reconcileNodes(this.#nodes, update)
+    })
   }
 
   #getNodes (value) {
     if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return []
+      }
+
       return value.reduce((result, item) => [...result, ...this.#getNodes(item)], [])
     }
 
     if (value instanceof Template) {
-      const fragment = this.#renderTemplate(this.parent, value, true)
-      return [...fragment.childNodes]
+      return [...this.#renderTemplate(this.parent, value, true).children]
     }
 
     switch (typeof value) {
@@ -180,12 +174,66 @@ export class ContentBinding extends DataBinding {
 
   #replace (nodes) {
     for (let i = 1, { length } = this.#nodes; i < length; i++) {
-      this.#nodes[i].remove()
+      const node = this.#nodes[i]
+      removeDOMEventsByNode(node)
+      node.remove()
     }
     
     if (nodes.length > 0) {
       this.#nodes.at(0).replaceWith(...nodes)
       this.#nodes = nodes
+    }
+  }
+
+  #pop () {
+    const last = this.#nodes.at(-1)
+    // const { unmount } = ViewRegistry.getEntryByNode(last) ?? {}
+    
+    // if (unmount) {
+    //   unmount()
+    // }
+
+    last.remove()
+    removeDOMEventsByNode(this.#nodes.pop())
+  }
+
+  #push (previous, current) {
+    let newNodes = this.#getNodes(current.slice((current.length - previous.length) * -1))
+    const last = this.#nodes.at(-1)
+
+    if (!last || last === this.#placeholder) {
+      this.#placeholder.replaceWith(...newNodes)
+      this.#nodes = newNodes
+    } else {
+      last.after(...newNodes)
+      this.#nodes.push(...newNodes)
+    }
+
+    newNodes = []
+  }
+
+  #shift () {
+    const first = this.#nodes.at(0)
+    // const { unmount } = ViewRegistry.getEntryByNode(first) ?? {}
+    
+    // if (unmount) {
+    //   unmount()
+    // }
+
+    first.remove()
+    removeDOMEventsByNode(this.#nodes.shift())
+  }
+
+  #unshift (...args) {
+    let newNodes = this.#getNodes(this.value.slice(0, args.length))
+    const first = this.#nodes[0]
+
+    if (!first || first === this.#placeholder) {
+      this.#placeholder.replaceWith(...newNodes)
+      this.#nodes = newNodes
+    } else {
+      first.before(...newNodes)
+      this.#nodes.unshift(...newNodes)
     }
   }
 }
@@ -201,16 +249,12 @@ export class PropertyBinding extends DataBinding {
   }
 
   reconcile () {
-    const cont = super.reconcile()
-
-    if (cont) {
-      this.#node[this.#name] = this.value.current
-    }
+    super.reconcile(({ current }) => this.#node[this.#name] = current)
   }
 }
 
 export class ViewBinding extends DataBinding {
-  #children = []
+  // #children = []
   #node
   #view
 

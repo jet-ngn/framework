@@ -3,80 +3,74 @@ import EventHandler from '../EventHandler'
 
 const views = new Map
 
-export default class EventRegistry {
-  static get reservedNames () {
-    return ['mount', 'unmount']
+export const reservedNames = ['mount', 'unmount']
+
+export function addHandler (view, evt, cb, cfg) {
+  if (typeof evt !== 'string') {
+    throw new TypeError(`Event name must be of type "string". Received "${typeof evt}"`)
   }
 
-  static addHandler (view, evt, cb, cfg) {
-    if (typeof evt !== 'string') {
-      throw new TypeError(`Event name must be of type "string". Received "${typeof evt}"`)
-    }
-  
-    if (typeof cb === 'object') {
-      return this.pool(view, evt, cb)
-    }
-  
-    return this.#registerHandler(...arguments)
+  if (typeof cb === 'object') {
+    return pool(view, evt, cb)
   }
 
-  static pool (view, namespace, cfg) {
-    Object.keys(cfg).forEach(evt => this.addHandler(view, `${namespace}.${evt}`, cfg[evt]))
+  return registerHandler(...arguments)
+}
+
+export function removeAllViews () {
+  for (let [view, events] of views) {
+    Object.keys(events).forEach(evt => {
+      Bus.off(`${view.scope}.${evt}`, events[evt])
+    })
   }
 
-  static #registerHandler (view, evt, cb, cfg = {}) {
-    if (typeof cb !== 'function') {
-      throw new TypeError(`Event handler callback must be a "function". Received "${typeof cb}"`)
-    }
-  
-    if (typeof cfg !== 'object') {
-      throw new TypeError(`Event configuration must be an "object". Received "${typeof cfg}"`)
-    }
+  views.clear()
+}
 
-    const handler = new EventHandler(view, evt, cb, cfg)
+export function removeEventsByView (view) {
+  const stored = views.get(view)
 
-    const callback = function () {
-      const valid = handler.call(this.event, ...arguments)
-      !valid && this.remove()
-    }
-
-    const storedView = views.get(view)
-
-    if (storedView) {
-      storedView[evt] = callback
-    } else {
-      views.set(view, {
-        [evt]: callback
-      })
-    }
-
-    return Bus.on(`${view.scope}.${evt}`, callback)
+  if (!stored) {
+    return
   }
 
-  // static removeAll ({ ignore }) {
-  //   const ignoredViews = ignore ?? []
+  Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
+  views.delete(stored)
+}
 
-  //   for (let [view, events] of views) {
-  //     if (ignoredViews.includes(view)) {
-  //       continue
-  //     }
+export function logViews () {
+  console.log(views);
+}
 
-  //     Object.keys(events).forEach(evt => {
-  //       Bus.off(`${view.scope}.${evt}`, events[evt])
-  //     })
-  //   }
+function pool (view, namespace, cfg) {
+  Object.keys(cfg).forEach(evt => addHandler(view, `${namespace}.${evt}`, cfg[evt]))
+}
 
-  //   views.clear()
-  // }
-
-  static removeByView (view) {
-    const stored = views.get(view)
-
-    if (!stored) {
-      return
-    }
-
-    Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
-    views.delete(stored)
+function registerHandler (view, evt, cb, cfg = {}) {
+  if (typeof cb !== 'function') {
+    throw new TypeError(`Event handler callback must be a "function". Received "${typeof cb}"`)
   }
+
+  if (typeof cfg !== 'object') {
+    throw new TypeError(`Event configuration must be an "object". Received "${typeof cfg}"`)
+  }
+
+  const handler = new EventHandler(view, evt, cb, cfg)
+
+  const callback = function () {
+    const valid = handler.call(this.event, ...arguments)
+    !valid && this.remove()
+  }
+
+  const storedView = views.get(view)
+
+  if (storedView) {
+    storedView[evt] = callback
+  } else {
+    views.set(view, {
+      [evt]: callback
+    })
+  }
+
+  return Bus.on(`${view.scope}.${evt}`, callback)
 }

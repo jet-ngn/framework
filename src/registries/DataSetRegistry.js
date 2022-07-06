@@ -10,7 +10,6 @@ import {
 } from '../DataBinding'
 
 const sets = new Map
-// const bindings = {}
 
 export function bind (...targets) {
   let transform = targets.pop()
@@ -38,12 +37,7 @@ function getArrayMethodHandler (target, property, reconcile = false) {
     changes.push(change)
     
     for (let binding of bindings) {
-      binding.reconcile()
-      // if (tracker instanceof ArrayContentTracker && !reconcile) {
-      //   tracker[property](...args)
-      // } else {
-        // binding.reconcile()
-      // }
+      binding.reconcile(reconcile ? undefined : property)
     }
 
     return output
@@ -53,20 +47,26 @@ function getArrayMethodHandler (target, property, reconcile = false) {
 function getArrayProxy (arr) {
   return Proxy.revocable(arr, {
     get: (target, property) => {
+      let reconcile = false
+
       switch (property) {
         case 'pop':
         case 'push':
         case 'shift':
-        case 'unshift': return getArrayMethodHandler(target, property)
+        case 'unshift': break
 
         case 'copyWithin':
         case 'fill':
         case 'reverse':
         case 'sort':
-        case 'splice': return getArrayMethodHandler(target, property, true)
+        case 'splice': 
+          reconcile = true
+          break
       
         default: return target[property]
       }
+
+      return getArrayMethodHandler(target, property, reconcile)
     },
 
     set: () => {
@@ -83,7 +83,7 @@ function getMapProxy (map) {
 }
 
 function getObjectProxy (obj) {
-  Object.keys(obj).forEach(key => obj[key] = processTarget(obj[key]))
+  Object.keys(obj).forEach(key => obj[key] = processTarget(obj[key], obj, false))
 
   return Proxy.revocable(obj, {
     get: (target, property) => target[property],
@@ -106,7 +106,7 @@ function getObjectProxy (obj) {
         }
       })
 
-      target[property] = processTarget(value)
+      target[property] = value
 
       bindings.forEach(binding => {
         const { targets } = binding
@@ -129,21 +129,38 @@ function getSetByProxy (proxy) {
   return [...sets.values()].find(({ revocable }) => revocable.proxy === proxy)
 }
 
-function processTarget (target) {
+function processTarget (target, parent, isGlobal = true) {
+  let isProxy = true
+  let revocable
+
   if (Array.isArray(target)) {
-    return getArrayProxy(target)
-  }
-  
-  if (target instanceof Map) {
-    return getMapProxy(target)
+    revocable = getArrayProxy(target)
+  } else if (target instanceof Map) {
+    revocable = getMapProxy(target)
+  } else if (target instanceof Set) {
+    revocable = getSetProxy(target)
+  } else if (typeof target === 'object') {
+    revocable = getObjectProxy(target)
+  } else {
+    isProxy = false
   }
 
-  if (target instanceof Set) {
-    return getSetProxy(target)
-  }
-  
-  if (typeof target === 'object') {
-    return getObjectProxy(target)
+  if (isProxy) {
+    const set = sets.get(target)
+
+    if (set) {
+      return set.revocable.proxy
+    }
+
+    sets.set(target, {
+      parent,
+      revocable,
+      bindings: [],
+      changes: [],
+      isGlobal
+    })
+
+    return revocable.proxy
   }
 
   return target
@@ -154,7 +171,7 @@ function registerBinding (binding) {
     const set = getSetByProxy(target)
 
     if (!set) {
-      throw new ReferenceError(`Cannot bind to unregistered DataSet`)
+      throw new ReferenceError(`Cannot bind to unregistered Dataset`)
     }
 
     set.bindings.push(binding)
@@ -187,25 +204,49 @@ export function registerViewBinding (parent, node, interpolation) {
   return registerBinding(new ViewBinding(...arguments))
 }
 
-export function registerDataSet (target) {
+export function registerDataset (target, isGlobal = false) {
   if (typeof target !== 'object') {
-    throw new TypeError(`DataSets must be initialized on objects, arrays, maps or sets`)
+    throw new TypeError(`Datasets must be initialized on objects, arrays, maps or sets`)
   }
 
-  const revocable = processTarget(target)
-  const set = sets.get(target)
+  return processTarget(target, null, isGlobal)
+}
 
-  if (set) {
-    return set.revocable.proxy
+export function removeBindingsByView (view) {
+  view.children.forEach(removeBindingsByView)
+  
+  const remove = []
+  const children = []
+
+  for (let [key, { bindings, revocable, parent, isGlobal }] of sets) {
+    if (revocable.proxy === view.data) {
+      remove.push(key)
+    } else {
+      bindings = bindings.reduce((result, binding) => {
+        return binding.parent === view ? result : [...result, binding]
+      }, [])
+    }
+
+    if (!isGlobal && !!parent) {
+      children.push({ key, parent })
+    }
   }
 
-  sets.set(target, {
-    revocable,
-    bindings: [],
-    changes: []
+  const cb = key => {
+    const { revocable } = sets.get(key)
+    revocable.revoke()
+    sets.delete(key)
+  }
+
+  children.forEach(({ key, parent }) => {
+    remove.includes(parent) && cb(key)
   })
 
-  return revocable.proxy
+  remove.forEach(cb)
+}
+
+export function logSets () {
+  console.log(sets);
 }
 
 // function getMapProxy (map) {
