@@ -16,7 +16,7 @@ export default class Entity extends TreeNode {
   constructor (parent, rootNode, { data, description, name, on, permissions, scope, version }, idPrefix) {
     super(parent, rootNode, idPrefix)
 
-    this.#data = new Dataset(data ?? {}, false)
+    this.#data = data ? new Dataset(data, false) : null
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#permissions = new PermissionsManager(this, permissions) ?? null

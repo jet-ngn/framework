@@ -2,7 +2,7 @@ import Application from './Application'
 import history from 'history'
 import { generateTree, mount, unmount } from './utilities/RenderUtils'
 import { PATH, TASKS, TREE } from './env'
-import { removeAllViews } from './registries/EventRegistry'
+import { removeAllViewEvents } from './registries/EventRegistry'
 
 let App
 let config
@@ -26,13 +26,11 @@ history.listen(({ action, location }) => {
   PATH.remaining = PATH.current
 
   unmount(App)
-  removeAllViews()
-
-  App = new Application(App.root, config)
-  render()
+  removeAllViewEvents()
+  render(App.root)
 })
 
-export function createApp ({ baseURL, selector }) {
+export function createApp ({ baseURL, commands, selector }) {
   if (initialized) {
     throw new Error(`Cannot create app as it has already been initialized`)
   }
@@ -49,7 +47,8 @@ export function navigate (to, payload) {
   history.push(...arguments)
 }
 
-function render () {
+function render (root) {
+  App = new Application(root, config)
   let fragment = generateTree(App, config)
 
   if (PATH.remaining) {
@@ -59,6 +58,8 @@ function render () {
       fragment = '404'
     }
   }
+
+  TREE.lowestChild = null
 
   App.root.replaceChildren(fragment)
   mount(App)
@@ -78,8 +79,7 @@ function run () {
   PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
 
-  App = new Application(nodes[0], config)
-  render()
+  render(nodes[0])
 }
 
 export { bind } from './registries/DatasetRegistry'

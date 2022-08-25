@@ -17,7 +17,7 @@ export function addHandler (view, evt, cb, cfg) {
   return registerHandler(...arguments)
 }
 
-export function removeAllViews () {
+export function removeAllViewEvents () {
   for (let [view, events] of views) {
     Object.keys(events).forEach(evt => {
       Bus.off(`${view.scope}.${evt}`, events[evt])

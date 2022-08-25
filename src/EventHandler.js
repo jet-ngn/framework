@@ -1,6 +1,6 @@
-export default class EventHandler {
-  #id = Symbol()
+import IdentifiedClass from './IdentifiedClass'
 
+export default class EventHandler extends IdentifiedClass {
   #view
   #event
   #callback
@@ -15,6 +15,8 @@ export default class EventHandler {
   #executions = 0
 
   constructor (view, event, callback, cfg) {
+    super('event')
+
     this.#view = view
     this.#event = event
     this.#callback = callback
@@ -26,10 +28,6 @@ export default class EventHandler {
     this.#maxExecutions = max ?? Infinity
     this.#interval = interval ?? 0
     // this.#ttl = ttl ?? -1
-  }
-
-  get id () {
-    return this.#id
   }
 
   async call (evt, ...args) {

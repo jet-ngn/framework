@@ -1,5 +1,5 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
-import { logListeners, removeDOMEventsByNode } from './registries/DOMEventRegistry'
+import { removeDOMEventsByNode } from './registries/DOMEventRegistry'
 import Template from './Template'
 import { reconcileNodes } from './utilities/ReconcileUtils'
 import { sanitizeString } from './utilities/StringUtils'

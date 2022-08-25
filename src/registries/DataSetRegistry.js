@@ -83,7 +83,7 @@ function getMapProxy (map) {
 }
 
 function getObjectProxy (obj) {
-  Object.keys(obj).forEach(key => obj[key] = processTarget(obj[key], obj, false))
+  Object.keys(obj).forEach((key) => obj[key] = processTarget(obj[key], obj, false))
 
   return Proxy.revocable(obj, {
     get: (target, property) => target[property],
@@ -209,44 +209,25 @@ export function registerDataset (target, isGlobal = false) {
     throw new TypeError(`Datasets must be initialized on objects, arrays, maps or sets`)
   }
 
-  return processTarget(target, null, isGlobal)
+  return sets.has(target) ? sets.get(target).revocable.proxy : processTarget(target, null, isGlobal)
 }
 
 export function removeBindingsByView (view) {
   view.children.forEach(removeBindingsByView)
-  
-  const remove = []
-  const children = []
 
-  for (let [key, { bindings, revocable, parent, isGlobal }] of sets) {
-    if (revocable.proxy === view.data) {
-      remove.push(key)
-    } else {
-      bindings = bindings.reduce((result, binding) => {
-        return binding.parent === view ? result : [...result, binding]
-      }, [])
-    }
-
-    if (!isGlobal && !!parent) {
-      children.push({ key, parent })
-    }
+  for (let [key, { bindings }] of sets) {
+    sets.get(key).bindings = bindings.reduce((result, binding) => {
+      return binding.parent === view ? result : [...result, binding]
+    }, [])
   }
-
-  const cb = key => {
-    const { revocable } = sets.get(key)
-    revocable.revoke()
-    sets.delete(key)
-  }
-
-  children.forEach(({ key, parent }) => {
-    remove.includes(parent) && cb(key)
-  })
-
-  remove.forEach(cb)
 }
 
 export function logSets () {
   console.log(sets);
+}
+
+export function logBindings () {
+  console.log([...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], []));
 }
 
 // function getMapProxy (map) {

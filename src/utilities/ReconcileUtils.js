@@ -1,4 +1,4 @@
-import { logListeners, removeDOMEventsByNode } from '../registries/DOMEventRegistry'
+import { removeDOMEventsByNode } from '../registries/DOMEventRegistry'
 import { escapeString } from './StringUtils'
 
 function getAttributes (element) {
@@ -104,7 +104,7 @@ export function reconcileNodes (original, update) {
       existingNode.remove()
       continue
     }
-    
+
     result.push(reconcileNode(existingNode, newNode))
   }
 

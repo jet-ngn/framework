@@ -1,8 +1,11 @@
 import DOMEventListener from '../DOMEventListener'
 
 const listeners = new Map
+const events = []
 
 function applyListeners (eventName) {
+  events.push(eventName)
+
   return document.body.addEventListener(eventName, evt => {
     const { target } = evt
 
@@ -13,7 +16,7 @@ function applyListeners (eventName) {
 }
 
 export function addDOMEventHandler (view, node, name, callback, options) {
-  const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name)
+  const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name) && !events.includes(name)
   const listener = new DOMEventListener(...arguments)
 
   listeners.set({
@@ -32,6 +35,10 @@ export function addDOMEventHandler (view, node, name, callback, options) {
 
   return listener
 }
+
+// export function removeAllDOMEvents () {
+//   [...listeners.keys()].forEach(listener => )
+// }
 
 export function removeDOMEventsByView (target) {
   [...listeners.keys()].filter(({ view }) => view === target).forEach(listener => listeners.delete(listener))

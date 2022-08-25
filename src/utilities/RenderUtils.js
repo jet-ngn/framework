@@ -108,16 +108,11 @@ export function renderTemplate (parent, template, shouldMount = false) {
 }
 
 export function unmount (view) {
-  // console.log(view);
   view.children.forEach(unmount)
   view.emit(INTERNAL_ACCESS_KEY, 'unmount')
   removeDOMEventsByView(view)
   removeEventsByView(view)
   removeBindingsByView(view)
-
-  // logSets()
-  // logListeners()
-  // logViews()
 }
 
 function bindListeners (view, listeners, root, hasMultipleRoots) {
