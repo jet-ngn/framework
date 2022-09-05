@@ -1,7 +1,7 @@
 import Application from './Application'
 import history from 'history'
 import { generateTree, mount, unmount } from './utilities/RenderUtils'
-import { PATH, TASKS, TREE } from './env'
+import { INTERNAL_ACCESS_KEY, PATH, TASKS, TREE } from './env'
 import { removeAllViewEvents } from './registries/EventRegistry'
 
 let App
@@ -49,6 +49,7 @@ export function navigate (to, payload) {
 
 function render (root) {
   App = new Application(root, config)
+  
   let fragment = generateTree(App, config)
 
   if (PATH.remaining) {
@@ -61,6 +62,7 @@ function render (root) {
 
   TREE.lowestChild = null
 
+  // App.emit(INTERNAL_ACCESS_KEY, 'beforeMount')
   App.root.replaceChildren(fragment)
   mount(App)
   

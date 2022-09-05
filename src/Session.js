@@ -2,6 +2,15 @@ import User from './User.js'
 
 class Session {
   #user = null
+  #initialRoute
+
+  constructor (initialRoute) {
+    this.#initialRoute = initialRoute
+  }
+
+  get initialRoute () {
+    return this.#initialRoute
+  }
 
   get user () {
     return this.#user
@@ -22,4 +31,4 @@ class Session {
   }
 }
 
-export default new Session
+export default new Session(location.pathname)

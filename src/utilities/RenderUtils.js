@@ -50,6 +50,16 @@ export function generateTree (entity, { permissions, routes }) {
 }
 
 export function mount (view) {
+  let abort = false
+
+  view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+    abort: () => abort = true
+  })
+
+  if (abort) {
+    return
+  }
+
   view.children.forEach(mount)
   view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
