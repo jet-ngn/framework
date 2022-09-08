@@ -45,7 +45,7 @@ export function generateTree (entity, { permissions, routes = {} }) {
     }
   }
 
-  const template = arguments[1].render.call(entity)
+  const template = arguments[1].render?.call(entity) ?? null
   return template ? renderTemplate(entity, template) : ''
 }
 
