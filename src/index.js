@@ -15,20 +15,7 @@ document.addEventListener('DOMContentLoaded', evt => {
   initialized && run()
 })
 
-history.listen(({ action, location }) => {
-  const { pathname } = location
-
-  if (PATH.current === pathname) {
-    return
-  }
-
-  PATH.previous = PATH.current
-  PATH.current = pathname === '/' ? null : pathname
-  PATH.remaining = PATH.current
-
-  rerender()
-})
-
+history.listen(rerender)
 InternalBus.on('session.opened', rerender)
 
 export function createApp ({ baseURL, commands, selector }) {
@@ -66,11 +53,21 @@ function render (root) {
   App.root.replaceChildren(fragment)
   mount(App)
   
-  TASKS.forEach(task => task())
-  TASKS.splice(0, TASKS.length)
+  // TASKS.forEach(task => task())
+  // TASKS.splice(0, TASKS.length)
 }
 
 function rerender () {
+  const { pathname } = location
+
+  if (PATH.current === pathname) {
+    return
+  }
+
+  PATH.previous = PATH.current
+  PATH.current = pathname === '/' ? null : pathname
+  PATH.remaining = PATH.current
+
   unmount(App)
   removeAllViewEvents()
   render(App.root)
