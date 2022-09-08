@@ -1,10 +1,12 @@
+import IdentifiedClass from './IdentifiedClass'
 import User from './User.js'
 
-class Session {
+class Session extends IdentifiedClass {
   #user = null
   #initialRoute
 
   constructor (initialRoute) {
+    super()
     this.#initialRoute = initialRoute
   }
 

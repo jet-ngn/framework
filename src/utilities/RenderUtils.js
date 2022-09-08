@@ -17,7 +17,7 @@ import {
   registerViewBinding
 } from '../registries/DatasetRegistry'
 
-export function generateTree (entity, { permissions, routes }) {
+export function generateTree (entity, { permissions, routes = {} }) {
   let starting = {
     lowestLevel: TREE.lowestLevel,
     lowestChild: TREE.lowestChild
@@ -90,8 +90,8 @@ export function renderTemplate (parent, template, shouldMount = false) {
     TREE.lowestLevel++
 
     if (viewConfig instanceof DataBindingInterpolation) {
-      const binding = registerViewBinding(parent, root, viewConfig, retainFormatting)
-      parent.children.push(...binding.reconcile())
+      const binding = registerViewBinding(parent, root, viewConfig, View, mount, unmount, generateTree)
+      binding.reconcile()
     } else {
       const view = new View(parent, root, viewConfig)
       parent.children.push(view)

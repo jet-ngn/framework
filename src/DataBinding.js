@@ -254,36 +254,39 @@ export class PropertyBinding extends DataBinding {
 }
 
 export class ViewBinding extends DataBinding {
-  // #children = []
   #node
   #view
+  #viewConstructor
+  #mount
+  #unmount
+  #generateTree
 
-  constructor (parent, node, interpolation) {
+  constructor (parent, node, interpolation, viewConstructor, mount, unmount, generateTree) {
     super(parent, interpolation)
     this.#node = node
+    this.#viewConstructor = viewConstructor
+    this.#mount = mount
+    this.#unmount = unmount
+    this.#generateTree = generateTree
   }
 
   reconcile () {
-    console.log('REC CONTENT. REVISIT ME!')
-    // const cont = super.reconcile()
+    super.reconcile(({ current }) => {
+      const { children } = this.parent
 
-    // if (!cont) {
-    //   return
-    // }
+      if (this.#view) {
+        children.splice(children.indexOf(this.#view), 1)
+        this.#unmount(this.#view)
+      }
 
-    // this.#children.forEach(unmount)
-    // this.#view?.emit(INTERNAL_ACCESS_KEY, 'unmount')
-
-    // const { current } = this.value
-    // this.#view = new View(this.parent, this.#node, current)
-    // const { children, fragment } = generateChildren(this.#view, current)
-
-    // this.#children = children
-    // this.#view.children.push(...children)
-    // this.#node.replaceChildren(fragment)
-
-    // children.forEach(mount)
-    // this.#view.emit(INTERNAL_ACCESS_KEY, 'mount')
-    // return children
+      if (!current) {
+        return
+      }
+      
+      this.#view = new this.#viewConstructor(this.parent, this.#node, current)
+      children.push(this.#view)
+      this.#node.replaceChildren(this.#generateTree(this.#view, current))
+      this.#mount(this.#view)
+    })
   }
 }

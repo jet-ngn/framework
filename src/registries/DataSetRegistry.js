@@ -133,7 +133,9 @@ function processTarget (target, parent, isGlobal = true) {
   let isProxy = true
   let revocable
 
-  if (Array.isArray(target)) {
+  if (!target) {
+    isProxy = false
+  } else if (Array.isArray(target)) {
     revocable = getArrayProxy(target)
   } else if (target instanceof Map) {
     revocable = getMapProxy(target)

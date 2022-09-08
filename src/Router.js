@@ -14,7 +14,7 @@ export default class Router {
 
   getMatchingRoute () {
     const match = {
-      route: null,
+      route: this.#routes?.['/'] ?? null,
       score: -1,
       vars: null
     }

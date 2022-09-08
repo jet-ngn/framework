@@ -27,6 +27,7 @@ history.listen(({ action, location }) => {
 
   unmount(App)
   removeAllViewEvents()
+
   render(App.root)
 })
 
@@ -62,7 +63,6 @@ function render (root) {
 
   TREE.lowestChild = null
 
-  // App.emit(INTERNAL_ACCESS_KEY, 'beforeMount')
   App.root.replaceChildren(fragment)
   mount(App)
   
@@ -78,6 +78,7 @@ function run () {
   }
 
   const { pathname } = location
+
   PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
 
