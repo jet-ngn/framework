@@ -6,7 +6,7 @@ export default {
     description: 'Default 404 Not Found View',
     scope: '404',
 
-    get template () {
+    render () {
       return html`<div class="404 not_found message">404 Not Found</div>`
     }
   }

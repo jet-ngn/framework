@@ -1,8 +1,8 @@
-export const InputControl = {
+export const inputControl = {
   name: 'Jet Input Control',
   
   install ({ createID, html }, Components) {
-    Components.InputControl = cfg => {
+    Components.inputControl = cfg => {
       const {
         label,
         value,
@@ -66,11 +66,77 @@ export const InputControl = {
   }
 }
 
-export const ToggleControl = {
+export const textareaControl = {
+  name: 'Jet Textarea Control',
+  
+  install ({ createID, html }, Components) {
+    Components.textareaControl = cfg => {
+      const {
+        label,
+        on,
+        value,
+        beforeLabelBegin,
+        afterLabelBegin,
+        beforeLabelEnd,
+        afterLabelEnd,
+        beforeInputBegin,
+        afterInputBegin,
+        beforeInputEnd,
+        afterInputEnd
+      } = cfg
+
+      const id = createID({ prefix: 'textarea' })
+      const attributes = cfg.attributes ?? {}
+
+      delete attributes.type
+
+      return html`
+        <div>
+          ${label && html`
+            ${!!beforeLabelBegin && beforeLabelBegin}
+
+            <div class="label_wrapper">
+              ${!!afterLabelBegin && afterLabelBegin}
+              <label for="${id}">${label}</label>
+              ${!!beforeLabelEnd && beforeLabelEnd}
+            </div>
+            
+            ${!!afterLabelEnd && afterLabelEnd}
+          `}
+
+          ${!!beforeInputBegin && beforeInputBegin}
+
+          <div class="input_wrapper">
+            ${!!afterInputBegin && afterInputBegin}
+            
+            ${html`<textarea id="${id}">${value ?? ''}</textarea>`.config({
+              attributes: {
+                autocomplete: attributes.autocomplete ?? 'off',
+                ...attributes
+              },
+
+              on: on ?? {}
+            })}
+            
+            ${!!beforeInputEnd && beforeInputEnd}
+          </div>
+
+          ${!!afterInputEnd && afterInputEnd}
+        </div>
+      `.setAttributes({
+        class: [cfg.class, 'textarea', 'control'].filter(Boolean),
+        disabled: attributes.disabled ?? false,
+        invalid: attributes.invalid ?? false
+      })   
+    }
+  }
+}
+
+export const toggleControl = {
   name: 'Jet Toggle Control',
   
   install ({ createID, html }, Components) {
-    Components.ToggleControl = cfg => {
+    Components.toggleControl = cfg => {
       const {
         label,
         on,
@@ -130,11 +196,11 @@ export const ToggleControl = {
   }
 }
 
-export const SelectControl = {
+export const selectControl = {
   name: 'Jet Select Control',
   
   install ({ createID, html }, Components) {
-    Components.SelectControl = cfg => {
+    Components.selectControl = cfg => {
       const {
         label,
         options,
@@ -209,7 +275,8 @@ export const SelectControl = {
 }
 
 export default [
-  InputControl,
-  SelectControl,
-  ToggleControl
+  inputControl,
+  selectControl,
+  textareaControl,
+  toggleControl
 ]

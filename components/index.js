@@ -1,9 +1,10 @@
-import { InputControl, SelectControl, ToggleControl } from './FormControls.js'
+import { inputControl, selectControl, textareaControl, toggleControl } from './FormControls.js'
 import FormControls from './FormControls.js'
 
 export {
   FormControls,
-  InputControl,
-  SelectControl,
-  ToggleControl
+  inputControl,
+  selectControl,
+  textareaControl,
+  toggleControl
 }

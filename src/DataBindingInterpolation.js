@@ -7,7 +7,7 @@ export default class DataBindingInterpolation extends IdentifiedClass {
   constructor (targets, transform) {
     super('data-binding')
     this.#targets = targets
-    this.#transform = transform
+    this.#transform = typeof transform === 'string' ? data => data[transform] : transform
   }
 
   get targets () {

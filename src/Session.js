@@ -1,3 +1,4 @@
+import InternalBus from './InternalBus'
 import IdentifiedClass from './IdentifiedClass'
 import User from './User.js'
 
@@ -29,7 +30,7 @@ class Session extends IdentifiedClass {
     }
 
     this.#user = new User(userData)
-    // this.emit('opened', this.#user)
+    InternalBus.emit('session.opened', this.#user)
   }
 }
 

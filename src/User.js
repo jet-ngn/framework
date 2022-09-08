@@ -4,7 +4,7 @@ export default class User {
 
   constructor ({ roles, data }) {
     this.#data = data ?? null
-    this.#roles = roles ?? []
+    this.#roles = Array.from(new Set([...(roles ?? []), 'everyone']))
   }
 
   get data () {

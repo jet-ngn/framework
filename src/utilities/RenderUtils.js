@@ -32,7 +32,7 @@ export function generateTree (entity, { permissions, routes = {} }) {
 
   TREE.lowestLevel = starting.lowestLevel
   TREE.lowestLevel = starting.lowestChild
-
+  
   if (permissions) {
     if (!Session.user) {
       return '401'
@@ -45,7 +45,7 @@ export function generateTree (entity, { permissions, routes = {} }) {
     }
   }
 
-  const template = Reflect.get(arguments[1], 'template', entity)
+  const template = arguments[1].render.call(entity)
   return template ? renderTemplate(entity, template) : ''
 }
 
@@ -152,6 +152,8 @@ function renderRoute (parent, router, route, vars) {
   
   const view = new View(parent, parent.root, config, route)
   parent.children.push(view)
+
+  mount(view)
 
   // TASKS.push(() => {
   //   parent.emit(INTERNAL_ACCESS_KEY, 'route.change', {

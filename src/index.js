@@ -1,8 +1,9 @@
 import Application from './Application'
 import history from 'history'
 import { generateTree, mount, unmount } from './utilities/RenderUtils'
-import { INTERNAL_ACCESS_KEY, PATH, TASKS, TREE } from './env'
+import { PATH, TASKS, TREE } from './env'
 import { removeAllViewEvents } from './registries/EventRegistry'
+import InternalBus from './InternalBus'
 
 let App
 let config
@@ -25,11 +26,10 @@ history.listen(({ action, location }) => {
   PATH.current = pathname === '/' ? null : pathname
   PATH.remaining = PATH.current
 
-  unmount(App)
-  removeAllViewEvents()
-
-  render(App.root)
+  rerender()
 })
+
+InternalBus.on('session.opened', rerender)
 
 export function createApp ({ baseURL, commands, selector }) {
   if (initialized) {
@@ -68,6 +68,12 @@ function render (root) {
   
   TASKS.forEach(task => task())
   TASKS.splice(0, TASKS.length)
+}
+
+function rerender () {
+  unmount(App)
+  removeAllViewEvents()
+  render(App.root)
 }
 
 function run () {

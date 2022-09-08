@@ -6,17 +6,14 @@ export default class PermissionsManager {
 
   constructor (entity, roles) {
     this.#entity = entity
-    this.#roles = roles
+    this.#roles = roles ?? []
   }
 
   isAuthorized (...rights) {
-    const matchingRights = Object.keys(this.#roles).reduce((result, role) => {
-      if (Session.user.roles.includes(role)) {
-        result.push(...this.#roles[role])
-      }
-
-      return result
-    }, [])
+    const matchingRights = Object.keys(this.#roles).reduce((result, role) => ([
+      ...result,
+      ...(Session.user.roles.includes(role) ? this.#roles[role] : [])
+    ]), [])
 
     return rights.every(right => matchingRights.includes(right))
   }
