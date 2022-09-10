@@ -1,4 +1,5 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
+import { INTERNAL_ACCESS_KEY } from './env'
 import { removeDOMEventsByNode } from './registries/DOMEventRegistry'
 import Template from './Template'
 import { reconcileNodes } from './utilities/ReconcileUtils'
@@ -285,6 +286,20 @@ export class ViewBinding extends DataBinding {
       
       this.#view = new this.#viewConstructor(this.parent, this.#node, current)
       children.push(this.#view)
+      console.log('BEFORE MOUNT ', this.#view.name);
+      let abort = false
+
+      this.#view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+        abort: () => {
+          console.log('ABORT MOUNTING ', this.#view.name)
+          abort = true
+        }
+      })
+
+      if (abort) {
+        return console.log('ABORTED ', this.#view.name);
+      }
+
       this.#node.replaceChildren(this.#generateTree(this.#view, current))
       this.#mount(this.#view)
     })

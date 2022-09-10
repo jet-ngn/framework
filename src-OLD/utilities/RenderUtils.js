@@ -17,8 +17,8 @@ import {
   registerViewBinding
 } from '../registries/DatasetRegistry'
 
-export function generateTree (entity, { permissions, routes = {} }) {
-  let starting = {
+export function generateTree (entity, { permissions, routes = {} }, abort) {
+  let start = {
     lowestLevel: TREE.lowestLevel,
     lowestChild: TREE.lowestChild
   }
@@ -27,44 +27,76 @@ export function generateTree (entity, { permissions, routes = {} }) {
   let { route, vars } = router.getMatchingRoute()
 
   if (route) {
-    return renderRoute(entity, router, route, vars)
+    return renderRoute(entity, router, route, vars, abort)
   }
 
-  TREE.lowestLevel = starting.lowestLevel
-  TREE.lowestLevel = starting.lowestChild
+  TREE.lowestLevel = start.lowestLevel
+  TREE.lowestChild = start.lowestChild
   
-  if (permissions) {
-    if (!Session.user) {
-      return '401'
-    }
+  // if (permissions) {
+  //   if (!Session.user) {
+  //     return '401'
+  //   }
 
-    const matchingRoles = Object.keys(permissions ?? {}).filter(role => Session.user.roles.includes(role))
+  //   const matchingRoles = Object.keys(permissions ?? {}).filter(role => Session.user.roles.includes(role))
 
-    if (matchingRoles.length === 0) {
-      return '401'
-    }
-  }
+  //   if (matchingRoles.length === 0) {
+  //     return '401'
+  //   }
+  // }
 
+  console.log('RENDER ', entity.name)
   const template = arguments[1].render?.call(entity) ?? null
-  return template ? renderTemplate(entity, template) : ''
+  return template ? renderTemplate(entity, template, false, abort) : ''
 }
 
 export function mount (view) {
-  let abort = false
+  // let abort = false
 
-  view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
-    abort: () => abort = true
-  })
+  // view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+  //   abort: () => abort = true
+  // })
 
-  if (abort) {
-    return
-  }
+  // if (abort) {
+  //   return
+  // }
 
   view.children.forEach(mount)
+  console.log('MOUNT ', view.name)
   view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
 
-export function renderTemplate (parent, template, shouldMount = false) {
+export function unmount (view) {
+  view.children.forEach(unmount)
+  console.log('UNMOUNT ', view.name)
+  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+  removeDOMEventsByView(view)
+  removeEventsByView(view)
+  removeBindingsByView(view)
+}
+
+function bindListeners (view, listeners, root, hasMultipleRoots) {
+  validateBinding('listeners', root, hasMultipleRoots, () => {
+    for (let evt in listeners ?? {}) {
+      listeners[evt].forEach(({ handler, cfg }) => addDOMEventHandler(view, root, evt, handler, cfg))
+    }
+  })
+}
+
+function bind (type, view, collection, root, hasMultipleRoots, cb) {
+  validateBinding(type, root, hasMultipleRoots, () => {
+    for (let item in collection ?? {}) {
+      cb(view, root, item, collection[item])
+    }
+  })
+}
+
+function getExistingAttributeValue (node, name) {
+  const value = node.getAttribute(name)
+  return value ? value.trim().split(' ').map(item => item.trim()) : []
+}
+
+export function renderTemplate (parent, template, shouldMount = false, abort) {
   if (template.type === 'svg') {
     return renderSVG(template)
   }
@@ -96,7 +128,16 @@ export function renderTemplate (parent, template, shouldMount = false) {
       const view = new View(parent, root, viewConfig)
       parent.children.push(view)
       TREE.lowestChild = view
-      root.replaceChildren(generateTree(view, viewConfig))
+      console.log('BEFORE MOUNT ', view.name)
+
+      view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+        abort: () => {
+          console.log('ABORT MOUNTING ', view.name)
+          abort = true
+        }
+      })
+
+      root.replaceChildren(generateTree(view, viewConfig, abort))
       shouldMount && mount(view)
     }
 
@@ -114,46 +155,15 @@ export function renderTemplate (parent, template, shouldMount = false) {
     })
   }
 
-  return fragment
+  return abort ? '' : fragment
 }
 
-export function unmount (view) {
-  view.children.forEach(unmount)
-  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
-  removeDOMEventsByView(view)
-  removeEventsByView(view)
-  removeBindingsByView(view)
-}
-
-function bindListeners (view, listeners, root, hasMultipleRoots) {
-  validateBinding('listeners', root, hasMultipleRoots, () => {
-    for (let evt in listeners ?? {}) {
-      listeners[evt].forEach(({ handler, cfg }) => addDOMEventHandler(view, root, evt, handler, cfg))
-    }
-  })
-}
-
-function bind (type, view, collection, root, hasMultipleRoots, cb) {
-  validateBinding(type, root, hasMultipleRoots, () => {
-    for (let item in collection ?? {}) {
-      cb(view, root, item, collection[item])
-    }
-  })
-}
-
-function getExistingAttributeValue (node, name) {
-  const value = node.getAttribute(name)
-  return value ? value.trim().split(' ').map(item => item.trim()) : []
-}
-
-function renderRoute (parent, router, route, vars) {
+function renderRoute (parent, router, route, vars, abort) {
   const { config } = route
   route = new Route({ url: route.url, vars })
   
   const view = new View(parent, parent.root, config, route)
   parent.children.push(view)
-
-  mount(view)
 
   // TASKS.push(() => {
   //   parent.emit(INTERNAL_ACCESS_KEY, 'route.change', {
@@ -162,8 +172,16 @@ function renderRoute (parent, router, route, vars) {
   //     view
   //   })
   // })
+  console.log('BEFORE MOUNT ', view.name);
 
-  return generateTree(view, config)
+  view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+    abort: () => {
+      console.log('ABORT MOUNTING ', view.name)
+      abort = true
+    }
+  })
+
+  return generateTree(view, config, abort)
 }
 
 function renderSVG (template) {

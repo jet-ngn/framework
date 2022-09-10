@@ -1,36 +1,34 @@
-import Application from './Application'
 import history from 'history'
-import { generateTree, mount, unmount } from './utilities/RenderUtils'
-import { PATH, TASKS, TREE } from './env'
-import { removeAllViewEvents } from './registries/EventRegistry'
-import InternalBus from './InternalBus'
+import Application from './Application'
+import { PATH } from './env'
 
 let App
 let config
-let initialized = false
+let created = false
 let ready = false
 
 document.addEventListener('DOMContentLoaded', evt => {
   ready = true
-  initialized && run()
+  created && run()
 })
 
 history.listen(({ location }) => {
-  const { pathname } = location
-  pathname !== PATH.current && rerender(pathname)
+  if (location.pathname === PATH.current) {
+    throw new Error(`Cannot navigate: "${location.pathname}" is already the current location`)
+  }
+  
+  rerender()
 })
 
-InternalBus.on('session.opened', () => rerender(location.pathname))
-
-export function createApp ({ baseURL, commands, selector }) {
-  if (initialized) {
-    throw new Error(`Cannot create app as it has already been initialized`)
+export function createApp ({ baseURL, selector }) {
+  if (created) {
+    throw new Error(`App has already been created`)
   }
 
   config = arguments[0]
   config.selector = selector ?? 'body'
   PATH.base = new URL(baseURL ?? '', location.origin)
-  initialized = true
+  created = true
 
   ready && run()
 }
@@ -39,57 +37,48 @@ export function navigate (to, payload) {
   history.push(...arguments)
 }
 
-function render (root) {
-  App = new Application(root, config)
-  
-  let fragment = generateTree(App, config)
-
-  if (PATH.remaining) {
-    if (TREE.lowestChild) {
-      TREE.lowestChild.root.replaceChildren('404')
-    } else {
-      fragment = '404'
-    }
-  }
-
-  TREE.lowestChild = null
-
-  App.root.replaceChildren(fragment)
-  mount(App)
-  
-  // TASKS.forEach(task => task())
-  // TASKS.splice(0, TASKS.length)
-}
-
-function rerender (pathname) {
+function rerender () {
+  console.log('RERENDER');
   PATH.previous = PATH.current
-  PATH.current = pathname === '/' ? null : pathname
-  PATH.remaining = PATH.current
-  
-  unmount(App)
-  removeAllViewEvents()
-  render(App.root)
+  setPaths()
+
+  App.unmount()
+  // removeAllViewEvents()
+  // App.children = []
+
+  // console.log(App);
+  // // render(App.root, App.id)
+
+  App.render()
 }
 
 function run () {
   const nodes = document.querySelectorAll(config.selector)
+  const error = `Invalid app root element selector: "${config.selector}"`
 
-  if (nodes.length > 1) {
-    throw new Error(`Invalid app root element selector: "${config.selector}" returned multiple nodes.`)
+  if (nodes.length === 0) {
+    throw new Error(`${error} returned no node.`)
   }
 
-  const { pathname } = location
+  if (nodes.length > 1) {
+    throw new Error(`${error} returned multiple nodes.`)
+  }
 
-  PATH.current = pathname === '/' ? null : pathname
-  PATH.remaining = PATH.current
+  delete config.selector
 
-  render(nodes[0])
+  setPaths()
+
+  App = new Application(nodes[0], config)
+  App.render()
 }
 
-export { bind } from './registries/DatasetRegistry'
-export { createID } from './utilities/IDUtils'
-export { html, svg } from './lib/tags'
-export { default as Bus } from './Bus'
-export { Components } from './env'
-export { default as Dataset } from './Dataset'
-export { default as Session } from './Session'
+function setPaths () {
+  PATH.current = location.pathname
+  PATH.remaining = PATH.current.split('/').filter(Boolean)
+}
+
+function update () {
+
+}
+
+export { html, svg } from './tags'
