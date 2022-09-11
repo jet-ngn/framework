@@ -3,6 +3,7 @@ import { createID } from './utilities/IDUtils'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
 export default class View {
+  #children = []
   #description
   #name
   #parent
@@ -25,12 +26,20 @@ export default class View {
     Object.keys(on ?? {}).forEach(evt => addHandler(this, evt, on[evt]))
   }
 
+  get children () {
+    return this.#children
+  }
+
   get description () {
     return this.#description
   }
 
   get name () {
     return this.#name
+  }
+
+  get parent () {
+    return this.#parent
   }
 
   get rootNode () {
@@ -63,5 +72,10 @@ export default class View {
     }
 
     emit(`${this.scope}.${evt}`, ...args)
+  }
+
+  find (selector) {
+    selector = selector.trim()
+    return [...this.#rootNode.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]
   }
 }

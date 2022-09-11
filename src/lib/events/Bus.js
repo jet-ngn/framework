@@ -46,7 +46,7 @@ function registerHandler (view, evt, cb, cfg = {}) {
     throw new TypeError(`Event configuration must be an "object". Received "${typeof cfg}"`)
   }
 
-  const handler = new EventHandler(view, cb, cfg)
+  const handler = new EventHandler(...arguments)
 
   const callback = function () {
     const valid = handler.call(this.event, ...arguments)
@@ -76,4 +76,25 @@ function remove (name, handlers, handler) {
   }
 
   listeners.set(name, handlers.filter(storedHandler => storedHandler !== handler))
+}
+
+export function removeAllViewEvents () {
+  for (let [view, events] of views) {
+    Object.keys(events).forEach(evt => {
+      off(`${view.scope}.${evt}`, events[evt])
+    })
+  }
+
+  views.clear()
+}
+
+export function removeEventsByView (view) {
+  const stored = views.get(view)
+
+  if (!stored) {
+    return
+  }
+
+  Object.keys(stored).forEach(evt => off(`${view.scope}.${evt}`, stored[evt]))
+  views.delete(stored)
 }

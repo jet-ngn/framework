@@ -38,18 +38,9 @@ export function navigate (to, payload) {
 }
 
 function rerender () {
-  console.log('RERENDER');
   PATH.previous = PATH.current
   setPaths()
-
-  App.unmount()
-  // removeAllViewEvents()
-  // App.children = []
-
-  // console.log(App);
-  // // render(App.root, App.id)
-
-  App.render()
+  App.rerender()
 }
 
 function run () {
@@ -81,4 +72,5 @@ function update () {
 
 }
 
-export { html, svg } from './tags'
+export { createComponent } from './lib/Component'
+export { css, html, svg } from './lib/templates/tags'

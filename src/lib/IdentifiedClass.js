@@ -1,4 +1,4 @@
-import { createID } from './utilities/IDUtils'
+import { createID } from '../utilities/IDUtils'
 
 export default class IdentifiedClass {
   #id

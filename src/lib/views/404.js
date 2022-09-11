@@ -1,4 +1,4 @@
-import { html } from '../../tags'
+import { html } from '../templates/tags'
 
 export default {
   name: '404 Not Found',
@@ -8,8 +8,8 @@ export default {
       console.log('ABORT MOUNT', this.name)
     },
 
-    willMount ({ abort }) {
-      console.log('WILL MOUNT ', this.name);
+    beforeMount ({ abort }) {
+      console.log('BEFORE MOUNT ', this.name);
     },
 
     mount () {
@@ -18,6 +18,10 @@ export default {
   },
 
   render () {
-    return html`404 Not Found`
+    return html`
+      <div class="not_found">
+        404 Not Found
+      </div>
+    `
   }
 }

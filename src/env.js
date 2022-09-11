@@ -8,3 +8,11 @@ export const PATH = {
   remaining: null,
   // has404: false
 }
+
+// const components = {}
+
+// export class Components {
+//   static install (namespace, ) {
+
+//   }
+// }

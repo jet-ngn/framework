@@ -1,14 +1,14 @@
-import Template from '../../Template'
+import Template from '../templates/Template'
 import { sanitizeString } from '../../utilities/StringUtils'
 
-export function parse (template, retainFormatting) {
+export function parseHTML (template, retainFormatting) {
   const result = {
     bindings: null,
     templates: null 
   }
 
   const { strings, interpolations } = template
-  let target = getTarget(template.type)
+  let target = getTarget(template.constructor.name)
 
   let output = interpolations.length === 0
   ? strings[0] // TODO: May want to sanitize and convert back to html
@@ -27,6 +27,10 @@ export function parse (template, retainFormatting) {
   
   return {
     fragment,
+    // viewConfig: template.viewConfig,
+    // attributes: template.attributes,
+    // properties: template.properties,
+    // listeners: template.listeners,
     ...result
   }
 }
@@ -43,10 +47,10 @@ function createTemplate (collection, property, { id }, classNames) {
   return `<template id="${id}" class="${classNames} template"></template>`
 }
 
-function getTarget (type) {
-  switch (type) {
-    case 'html': return htmlTemplate.cloneNode()
-    case 'svg': return svgTemplate.cloneNode()
+function getTarget (constructor) {
+  switch (constructor) {
+    case 'HTMLTemplate': return htmlTemplate.cloneNode()
+    case 'SVGTemplate': return svgTemplate.cloneNode()
     default: throw new Error(`Templates of type "${type}" are not supported`)
   }
 }

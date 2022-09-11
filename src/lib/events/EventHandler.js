@@ -1,23 +1,34 @@
-export default class EventHandler {
-  #callback
+import IdentifiedClass from '../IdentifiedClass'
+
+export default class EventHandler extends IdentifiedClass {
   #view
+  #event
+  #callback
+
   #minCalls
   #maxCalls
   #maxExecutions
   #interval
+
   #calls = 0
   #executions = 0
 
-  constructor (view, callback, { min = 0, max = Infinity, tries = Infinity, interval = 0 } = {}) {
+  constructor (view, event, callback, cfg) {
+    super('event')
+
     this.#view = view
+    this.#event = event
     this.#callback = callback
-    this.#minCalls = min
-    this.#maxCalls = tries
-    this.#maxExecutions = max
-    this.#interval = interval
+
+    const { min, max, tries, interval } = cfg ?? {}
+
+    this.#minCalls = min ?? 0
+    this.#maxCalls = tries ?? Infinity
+    this.#maxExecutions = max ?? Infinity
+    this.#interval = interval ?? 0
   }
 
-  async call () {
+  async call (evt, ...args) {
     this.#calls++
 
     if (this.#calls < this.#minCalls || this.#calls > this.#maxCalls) {

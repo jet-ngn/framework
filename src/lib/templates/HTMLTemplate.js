@@ -1,28 +1,17 @@
-import IdentifiedClass from './IdentifiedClass.js'
+import Template from './Template'
 
-export default class Template extends IdentifiedClass {
-  #type
-  #strings
-  #interpolations
-
+export default class HTMLTemplate extends Template {
   #attributes = null
   #listeners = null
   #properties = null
   #viewConfig = null
 
-  constructor (type, strings, ...interpolations) {
-    super('template')
-    this.#type = type
-    this.#strings = strings
-    this.#interpolations = interpolations
+  constructor (strings, ...interpolations) {
+    super(strings, interpolations, 'html-template')
   }
 
   get attributes () {
     return this.#attributes
-  }
-
-  get interpolations () {
-    return this.#interpolations
   }
 
   get listeners () {
@@ -31,14 +20,6 @@ export default class Template extends IdentifiedClass {
 
   get properties () {
     return this.#properties
-  }
-
-  get strings () {
-    return this.#strings
-  }
-
-  get type () {
-    return this.#type
   }
 
   get viewConfig () {
