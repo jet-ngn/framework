@@ -2,11 +2,13 @@ import View from '../../View'
 import RouteManager from '../routing/RouteManager'
 import Route from '../routing/Route'
 import { parseHTML } from './HTMLParser'
-import { addDOMEventHandler } from '../events/DOMBus'
+import { removeEventsByView } from '../events/Bus'
+import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
 import { html } from '../templates/tags'
-import { INTERNAL_ACCESS_KEY } from '../../env';
+import { TREE, INTERNAL_ACCESS_KEY } from '../../env';
 
 export function processBindings (view, fragment, bindings) {
+  console.log('WIP: Process Bindings');
   Object.keys(bindings).forEach(id => {
     console.log(bindings[id]);
     // const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id], retainFormatting, renderTemplate)
@@ -31,21 +33,19 @@ export function processTemplate (parent, { attributes, listeners, properties, vi
   !!listeners && bindListeners(parent, listeners, ...args)
 
   if (viewConfig) {
-    renderView(parent, rootNode, viewConfig)
+    parent.children.push(renderView(parent, rootNode, viewConfig))
     return fragment
   }
 
   const { bindings, templates } = parsed
 
-  console.log('TODO: Handle Bindings');
-
+  bindings && processBindings(parent, fragment, bindings)
   templates && processTemplates(parent, fragment, templates)
 
   return fragment
 }
 
 export function processTemplates (view, fragment, templates) {
-  console.log(templates);
   Object.keys(templates).forEach(id => {
     const placeholder = fragment.getElementById(id)
     placeholder.replaceWith(processTemplate(view, templates[id]))
@@ -54,7 +54,26 @@ export function processTemplates (view, fragment, templates) {
 
 export function renderView (parent, rootNode, config) {
   const meta = initializeView(...arguments)
-  meta.shouldMount && mount(meta)
+
+  const result = {
+    view: meta.view,
+    mounted: false
+  }
+
+  if (meta.shouldMount) {
+    mount(meta)
+    result.mounted = true
+  }
+
+  return result
+}
+
+export function unmount (view) {
+  view.children.forEach(({ mounted, view }) => mounted && unmount(view))
+  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+  removeDOMEventsByView(view)
+  removeEventsByView(view)
+  // removeBindingsByView(view)
 }
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {
@@ -78,7 +97,7 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-function initializeView (parent, rootNode, { routes, render }, route = null) {
+function initializeView (parent, rootNode, { routes, render }, route = null, markAsLowestChild = false) {
   const result = {
     view: new View(...arguments),
     shouldMount: true
@@ -101,6 +120,7 @@ function initializeView (parent, rootNode, { routes, render }, route = null) {
 
   if (routes) {
     const { matched } = new RouteManager(routes)
+    TREE.lowestChild = result.view
 
     if (matched) {
       return initializeView(parent, rootNode, matched.config, new Route(matched))
@@ -178,85 +198,3 @@ function validateBinding (item, node, hasMultipleRoots, cb) {
 
   cb()
 }
-
-
-
-
-
-// import Router from '../routing/Router'
-// import Route from '../routing/Route'
-// import View from '../../View'
-// import { INTERNAL_ACCESS_KEY } from '../../env'
-
-// // function renderRoute (parent, route, vars) {
-// //   const { config } = route
-// //   route = new Route({ url: route.url, vars })
-  
-// //   renderView(new View(parent, parent.rootNode, config, route), config)
-// // }
-
-// // export function renderView (view, { routes }) {
-// //   let abort = false
-
-// //   view.emit(INTERNAL_ACCESS_KEY, 'willMount', {
-// //     abort: () => {
-// //       abort = true
-
-// //       view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
-// //         retry: () => abort = false
-// //       })
-// //     }
-// //   })
-
-// //   if (abort) {
-// //     return console.log(view);
-// //   }
-
-// //   const router = new Router(routes)
-// //   let { route, vars } = router.matchingRoute
-
-// //   if (route) {
-// //     console.log(route);
-// //     return renderRoute(view, route, vars)
-// //   }
-
-// //   console.log('RENDER TEMPLATE IF IT EXISTS');
-// //   // let tree = generateTree(view, config)
-// //   // console.log(tree);
-// //   // view.emit(INTERNAL_ACCESS_KEY, 'mount')
-// //   // console.log(view);
-// // }
-
-// export function generateTree (entity, { routes = {}, render } = {}) {
-//   const router = new Router(routes)
-//   let { route, vars } = router.matchingRoute
-
-//   if (route) {
-//     const view = new View(entity, entity.rootNode, route.config, new Route({ url: route.url, vars }))
-//     return generateTree(view, route.config)
-//   }
-
-//   const template = render ? render() : null
-
-//   if (!template) {
-//     return new View(entity, entity.rootNode, {
-//       name: '404 Not Found',
-  
-//       on: {
-//         abortMount ({ retry }) {
-//           console.log('ABORT MOUNT', this.name)
-//         },
-  
-//         willMount ({ abort }) {
-//           console.log('WILL MOUNT ', this.name);
-//         },
-  
-//         mount () {
-//           console.log('MOUNT ', this.name);
-//         }
-//       }
-//     })
-//   }
-
-//   console.log('RENDER TEMPLATE');
-// }

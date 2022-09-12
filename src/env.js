@@ -9,6 +9,10 @@ export const PATH = {
   // has404: false
 }
 
+export const TREE = {
+  lowestChild: null
+}
+
 // const components = {}
 
 // export class Components {

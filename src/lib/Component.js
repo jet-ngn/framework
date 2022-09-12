@@ -47,7 +47,7 @@ const JetComponent = superclass => class extends superclass {
   }
 
   attributeChangedCallback (name, previous, current) {
-    console.log(...arguments)
+    // console.log(...arguments)
   }
 
   connectedCallback () {

@@ -1,11 +1,11 @@
-import { renderView } from './lib/rendering/Renderer'
-import { PATH, INTERNAL_ACCESS_KEY } from './env'
-import { removeAllViewEvents } from './lib/events/Bus'
+import { renderView, unmount } from './lib/rendering/Renderer'
+import { PATH, TREE } from './env'
+import View from '../src-OLD/View'
 
 export default class Application {
   #rootNode
   #config
-  #tree
+  #view
   #mounted = false
 
   constructor (rootNode, config) {
@@ -17,14 +17,42 @@ export default class Application {
     return PATH.base.pathname
   }
 
+  get view () {
+    return this.#view
+  }
+
   render () {
-    renderView(null, this.#rootNode, this.#config)
+    const { view, mounted } = renderView(null, this.#rootNode, this.#config)
+    this.#view = view
+    this.#mounted = mounted
+
+    if (PATH.remaining.length > 0) {
+      console.log('REPLACE');
+      const { lowestChild } = TREE
+      const { parent, rootNode } = lowestChild
+
+      // renderView()
+
+      // rootNode.replaceChildren('404 Not Found')
+
+      // const mounted = parent.children.reduce((result, { mounted, view }) => view === lowestChild ? mounted : result, false)
+
+      // mounted && unmount(lowestChild)
+
+      // console.log(new View(parent, rootNode, ));
+      // rootNode.
+
+      // parent.children.splice(TREE.lowestChild, 1, new View(parent, ))
+      // console.log(`REPLACE`, TREE)
+      // console.log('WITH 404');
+    }
+
+    return this
   }
 
   rerender () {
-    removeAllViewEvents()
-    this.#mounted && this.#tree.view.emit(INTERNAL_ACCESS_KEY, 'unmount')
-    this.render()
+    this.#mounted && unmount(this.#view)
+    return this.render()
   }
 }
 

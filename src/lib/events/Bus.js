@@ -78,15 +78,15 @@ function remove (name, handlers, handler) {
   listeners.set(name, handlers.filter(storedHandler => storedHandler !== handler))
 }
 
-export function removeAllViewEvents () {
-  for (let [view, events] of views) {
-    Object.keys(events).forEach(evt => {
-      off(`${view.scope}.${evt}`, events[evt])
-    })
-  }
+// export function removeAllViewEvents () {
+//   for (let [view, events] of views) {
+//     Object.keys(events).forEach(evt => {
+//       off(`${view.scope}.${evt}`, events[evt])
+//     })
+//   }
 
-  views.clear()
-}
+//   views.clear()
+// }
 
 export function removeEventsByView (view) {
   const stored = views.get(view)

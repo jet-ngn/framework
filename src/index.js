@@ -68,9 +68,6 @@ function setPaths () {
   PATH.remaining = PATH.current.split('/').filter(Boolean)
 }
 
-function update () {
-
-}
-
 export { createComponent } from './lib/Component'
 export { css, html, svg } from './lib/templates/tags'
+export { App }
