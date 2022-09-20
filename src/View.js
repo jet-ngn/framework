@@ -1,4 +1,4 @@
-import { addHandler, emit } from './lib/events/Bus'
+import Bus, { addHandler } from './lib/events/Bus'
 import { createID } from './utilities/IDUtils'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
@@ -71,7 +71,7 @@ export default class View {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
     }
 
-    emit(`${this.scope}.${evt}`, ...args)
+    Bus.emit(`${this.scope}.${evt}`, ...args)
   }
 
   find (selector) {

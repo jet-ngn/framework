@@ -1,4 +1,5 @@
-import Template from '../templates/Template'
+import Template from './Template'
+import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import { sanitizeString } from '../../utilities/StringUtils'
 
 export function parseHTML (template, retainFormatting) {
@@ -27,10 +28,6 @@ export function parseHTML (template, retainFormatting) {
   
   return {
     fragment,
-    // viewConfig: template.viewConfig,
-    // attributes: template.attributes,
-    // properties: template.properties,
-    // listeners: template.listeners,
     ...result
   }
 }
@@ -38,20 +35,20 @@ export function parseHTML (template, retainFormatting) {
 const htmlTemplate = document.createElement('template')
 const svgTemplate = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 
-function createTemplate (collection, property, { id }, classNames) {
+function createTemplate (collection, property, { id }) {
   collection[property] = {
     ...(collection[property] ?? {}),
     [id]: arguments[2]
   }
 
-  return `<template id="${id}" class="${classNames} template"></template>`
+  return `<template id="${id}"></template>`
 }
 
 function getTarget (constructor) {
   switch (constructor) {
     case 'HTMLTemplate': return htmlTemplate.cloneNode()
     case 'SVGTemplate': return svgTemplate.cloneNode()
-    default: throw new Error(`Templates of type "${type}" are not supported`)
+    default: throw new Error(`Invalid template`)
   }
 }
 
@@ -61,12 +58,12 @@ function parseInterpolation (interpolation, result, retainFormatting) {
   }
 
   if (interpolation instanceof Template) {
-    return createTemplate(result, 'templates', interpolation, interpolation.type)
+    return createTemplate(result, 'templates', interpolation)
   }
 
-  // if (interpolation instanceof DataBindingInterpolation) {
-  //   return createTemplate(result, 'bindings', interpolation, 'data_binding')
-  // }
+  if (interpolation instanceof DataBindingInterpolation) {
+    return createTemplate(result, 'bindings', interpolation, 'data_binding')
+  }
 
   switch (typeof interpolation) {
     case 'undefined':

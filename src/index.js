@@ -68,6 +68,12 @@ function setPaths () {
   PATH.remaining = PATH.current.split('/').filter(Boolean)
 }
 
+export { bind } from './lib/data/DatasetRegistry'
 export { createComponent } from './lib/Component'
-export { css, html, svg } from './lib/templates/tags'
-export { App }
+export { createID } from './utilities/IDUtils'
+export { css, html, svg } from './lib/rendering/tags'
+
+export { default as Bus } from './lib/events/Bus'
+// export { Components } from './env'
+export { default as Dataset } from './lib/data/Dataset'
+// export { default as Session } from './Session'

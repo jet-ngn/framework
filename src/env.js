@@ -13,6 +13,12 @@ export const TREE = {
   lowestChild: null
 }
 
+export const RENDERER = {
+  tasks: [],
+  mountableViews: [],
+  viewBeforeMountEventsFired: new Map
+}
+
 // const components = {}
 
 // export class Components {

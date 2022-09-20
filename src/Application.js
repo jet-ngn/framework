@@ -1,64 +1,101 @@
-import { renderView, unmount } from './lib/rendering/Renderer'
-import { PATH, TREE } from './env'
-import View from '../src-OLD/View'
+import { generateRenderingTasks, processTemplate, unmountView } from './lib/rendering/Renderer'
+import { INTERNAL_ACCESS_KEY, PATH, RENDERER, TREE } from './env'
+
+import View from './View'
+import Route from './lib/routing/Route.js'
+import NotFound from './lib/views/404.js'
 
 export default class Application {
-  #rootNode
   #config
+  #rootNode
   #view
-  #mounted = false
 
   constructor (rootNode, config) {
     this.#rootNode = rootNode
     this.#config = config
   }
 
-  get baseURL () {
-    return PATH.base.pathname
-  }
-
-  get view () {
-    return this.#view
-  }
-
   render () {
-    const { view, mounted } = renderView(null, this.#rootNode, this.#config)
-    this.#view = view
-    this.#mounted = mounted
+    this.#view = generateRenderingTasks(null, this.#rootNode, this.#config, null, true)
+    runTasks(getRenderer()())
 
-    if (PATH.remaining.length > 0) {
-      console.log('REPLACE');
-      const { lowestChild } = TREE
-      const { parent, rootNode } = lowestChild
-
-      // renderView()
-
-      // rootNode.replaceChildren('404 Not Found')
-
-      // const mounted = parent.children.reduce((result, { mounted, view }) => view === lowestChild ? mounted : result, false)
-
-      // mounted && unmount(lowestChild)
-
-      // console.log(new View(parent, rootNode, ));
-      // rootNode.
-
-      // parent.children.splice(TREE.lowestChild, 1, new View(parent, ))
-      // console.log(`REPLACE`, TREE)
-      // console.log('WITH 404');
-    }
-
-    return this
+    RENDERER.mountableViews.forEach(view => view.emit(INTERNAL_ACCESS_KEY, 'mount'))
+    RENDERER.tasks = []
+    RENDERER.viewBeforeMountEventsFired = new Map
   }
 
   rerender () {
-    this.#mounted && unmount(this.#view)
-    return this.render()
+    unmountView(this.#view)
+    this.render()
   }
+}
+
+function getRenderer () {
+  return function* () {
+    for (let { view, callback } of RENDERER.tasks) {
+      if (PATH.remaining.length > 0 && view === TREE.lowestChild) {
+        view = new View(view.parent, view.rootNode, NotFound, new Route({ url: new URL(PATH.current, PATH.base) }))
+
+        yield renderView(view, function () {
+          RENDERER.tasks = []
+          RENDERER.mountableViews = []
+          processTemplate(view, view.rootNode, NotFound.render.call(view))
+          TREE.lowestChild = null
+          runTasks(getRenderer()(), true)
+        })
+
+        break
+      }
+
+      yield renderView(view, callback)
+    }
+  }
+}
+
+function renderView (view, renderFn) {
+  let shouldMount = true
+  let retry = false
+
+  if (!RENDERER.viewBeforeMountEventsFired.get(view)) {
+    view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+      abort: () => shouldMount = false
+    })
+  
+    RENDERER.viewBeforeMountEventsFired.set(view, true)
+  }
+
+  if (!shouldMount) {
+    view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
+      resume: () => shouldMount = true,
+
+      retry: () => {
+        retry = true
+        RENDERER.viewBeforeMountEventsFired.set(view, false)
+      }
+    })
+    
+    if (retry) {
+      return renderView(...arguments)
+    }
+  }
+
+  renderFn()
+  !RENDERER.mountableViews.includes(view) && RENDERER.mountableViews.unshift(view)
+
+  return view
+}
+
+function runTasks (iterator) {
+  const { value, done } = iterator.next()
+
+  if (done || !RENDERER.mountableViews.includes(value)) {
+    return
+  }
+
+  runTasks(...arguments)
 }
 
 // function processIncludes ({ components, plugins }) {
 //   components && components.forEach(({ install }) => install({ html, svg, createID }, Components))
 //   // plugins && plugins.forEach(({ install }) => install({}, Plugins))
 // }
-
-

@@ -3,6 +3,26 @@ import EventHandler from './EventHandler'
 const listeners = new Map
 const views = new Map
 
+export default class Bus {
+  static emit (name, ...args) {
+    const handlers = listeners.get(name)
+  
+    handlers && handlers.forEach(handler => handler.call({
+      event: name,
+      remove: () => remove(name, handlers, handler)
+    }, ...args))
+  }
+
+  static off (name, handler) {
+    return remove(name, listeners.get(name), handler)
+  }
+
+  static on (name, handler) {
+    const handlers = listeners.get(name)
+    handlers ? handlers.push(handler) : listeners.set(name, [handler])
+  }
+}
+
 export function addHandler (view, evt, cb, cfg) {
   if (typeof evt !== 'string') {
     throw new TypeError(`Event name must be of type "string". Received "${typeof evt}"`)
@@ -13,24 +33,6 @@ export function addHandler (view, evt, cb, cfg) {
   }
 
   return registerHandler(...arguments)
-}
-
-export function emit (name, ...args) {
-  const handlers = listeners.get(name)
-
-  handlers && handlers.forEach(handler => handler.call({
-    event: name,
-    remove: () => remove(name, handlers, handler)
-  }, ...args))
-}
-
-export function on (name, handler) {
-  const handlers = listeners.get(name)
-  handlers ? handlers.push(handler) : listeners.set(name, [handler])
-}
-
-export function off (name, handler) {
-  return remove(name, listeners.get(name), handler)
 }
 
 function pool (view, namespace, cfg) {
@@ -63,7 +65,7 @@ function registerHandler (view, evt, cb, cfg = {}) {
     })
   }
 
-  return on(`${view.scope}.${evt}`, callback)
+  return Bus.on(`${view.scope}.${evt}`, callback)
 }
 
 function remove (name, handlers, handler) {
@@ -95,6 +97,6 @@ export function removeEventsByView (view) {
     return
   }
 
-  Object.keys(stored).forEach(evt => off(`${view.scope}.${evt}`, stored[evt]))
+  Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
   views.delete(stored)
 }

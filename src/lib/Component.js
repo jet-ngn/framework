@@ -1,4 +1,4 @@
-import { addHandler, emit } from './events/Bus'
+import Bus, { addHandler } from './events/Bus'
 import { processTemplate } from './rendering/Renderer'
 import { createID } from '../utilities/IDUtils'
 
@@ -55,7 +55,7 @@ const JetComponent = superclass => class extends superclass {
   }
 
   emit (evt, ...args) {
-    emit(`${this.#scope}.${evt}`, ...args)
+    Bus.emit(`${this.#scope}.${evt}`, ...args)
   }
 }
 

@@ -1,79 +1,116 @@
 import View from '../../View'
 import RouteManager from '../routing/RouteManager'
 import Route from '../routing/Route'
+import DataBindingInterpolation from '../data/DataBindingInterpolation'
+import AttributeList from './AttributeList'
+
 import { parseHTML } from './HTMLParser'
-import { removeEventsByView } from '../events/Bus'
 import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
-import { html } from '../templates/tags'
-import { TREE, INTERNAL_ACCESS_KEY } from '../../env';
+import { removeEventsByView } from '../events/Bus'
+import { removeBindingsByView } from '../data/DatasetRegistry'
+import { html } from './tags'
+import { TREE, INTERNAL_ACCESS_KEY, RENDERER } from '../../env';
 
-export function processBindings (view, fragment, bindings) {
-  console.log('WIP: Process Bindings');
+import {
+  registerContentBinding,
+  registerAttributeBinding,
+  registerPropertyBinding,
+  registerViewBinding
+} from '../data/DatasetRegistry'
+
+export function generateRenderingTasks (parentView, rootNode, { render, routes }, route = null, setLowestChild = false) {
+  const view = new View(...arguments)
+
+  if (routes) {
+    const { matched } = new RouteManager(routes)
+    TREE.lowestChild = view
+    
+    if (matched) {
+      return generateRenderingTasks(parentView, rootNode, matched.config, new Route(matched))
+    }
+  }
+
+  if (setLowestChild) {
+    TREE.lowestChild = view
+  }
+
+  processTemplate(view, rootNode, render?.call(view) ?? html``)
+  return view
+}
+
+export function generateRenderingTask (view, node, fragment, replace = false) {
+  return {
+    view,
+
+    callback: () => {
+      // console.log('FOR VIEW', view)
+
+      // if (replace) {
+      //   console.log('REPLACE', node.cloneNode(true))
+      //   console.log('WITH', fragment.cloneNode(true))
+      // } else {
+      //   console.log('RENDER', fragment.cloneNode(true))
+      //   console.log('TO', node.cloneNode(true));
+      // }
+
+      const { parent } = view
+
+      if (parent && !parent.children.includes(view)) {
+        parent.children.push(view)
+      }
+      
+      replace ? node.replaceWith(fragment) : node.replaceChildren(fragment)
+    }
+  }
+}
+
+export function processBindings (view, fragment, bindings, retainFormatting) {
   Object.keys(bindings).forEach(id => {
-    console.log(bindings[id]);
-    // const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id], retainFormatting, renderTemplate)
-    // binding.reconcile()
+    const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id], retainFormatting)
+    binding.reconcile()
   })
 }
 
-export function processTemplate (parent, { attributes, listeners, properties, viewConfig }) {
-  const parsed = parseHTML(arguments[1], parent?.rootNode.tagName === 'PRE' ?? false)
+export function processTemplate (view, rootNode, config, { replace = false, tasks = RENDERER.tasks } = {}) {
+  const retainFormatting = rootNode.tagName === 'PRE' ?? false
+  const parsed = parseHTML(config, retainFormatting)
   const { fragment } = parsed
-  const rootNode = fragment.firstElementChild
+  const firstNode = fragment.firstElementChild
 
-  if (!rootNode) {
-    return fragment
+  if (!firstNode) {
+    return tasks.push(generateRenderingTask(view, rootNode, fragment, replace))
   }
 
+  const { attributes, listeners, properties, viewConfig } = config
   const hasMultipleRoots = fragment.children.length > 1
-  const args = [rootNode, hasMultipleRoots]
+  const args = [firstNode, hasMultipleRoots]
 
-  !!attributes && bind('attributes', parent, attributes, ...args, setAttribute)
-  !!properties && bind('properties', parent, properties, ...args, setProperty)
-  !!listeners && bindListeners(parent, listeners, ...args)
+  !!attributes && bind('attributes', view, attributes, ...args, setAttribute)
+  !!properties && bind('properties', view, properties, ...args, setProperty)
+  !!listeners && bindListeners(view, listeners, ...args)
 
-  if (viewConfig) {
-    parent.children.push(renderView(parent, rootNode, viewConfig))
-    return fragment
+  tasks.push(generateRenderingTask(view, rootNode, fragment, replace))
+
+  if (!viewConfig) {
+    const { bindings, templates } = parsed
+    bindings && processBindings(view, fragment, bindings, retainFormatting)
+    return templates && Object.keys(templates).forEach(id => processTemplate(view, fragment.getElementById(id), templates[id], { replace: true, tasks }))
   }
 
-  const { bindings, templates } = parsed
-
-  bindings && processBindings(parent, fragment, bindings)
-  templates && processTemplates(parent, fragment, templates)
-
-  return fragment
-}
-
-export function processTemplates (view, fragment, templates) {
-  Object.keys(templates).forEach(id => {
-    const placeholder = fragment.getElementById(id)
-    placeholder.replaceWith(processTemplate(view, templates[id]))
-  })
-}
-
-export function renderView (parent, rootNode, config) {
-  const meta = initializeView(...arguments)
-
-  const result = {
-    view: meta.view,
-    mounted: false
+  if (viewConfig instanceof DataBindingInterpolation) {
+    const binding = registerViewBinding(view, firstNode, viewConfig)
+    return binding.reconcile()
   }
-
-  if (meta.shouldMount) {
-    mount(meta)
-    result.mounted = true
-  }
-
-  return result
+  
+  return generateRenderingTasks(view, firstNode, viewConfig)
 }
 
-export function unmount (view) {
-  view.children.forEach(({ mounted, view }) => mounted && unmount(view))
-  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+export function unmountView (view) {
+  view.children.forEach(unmountView)
   removeDOMEventsByView(view)
+  removeBindingsByView(view)
+  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
   removeEventsByView(view)
-  // removeBindingsByView(view)
 }
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {
@@ -97,61 +134,11 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-function initializeView (parent, rootNode, { routes, render }, route = null, markAsLowestChild = false) {
-  const result = {
-    view: new View(...arguments),
-    shouldMount: true
-  }
-
-  let retry = false
-
-  result.view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
-    abort: () => result.shouldMount = false
-  })
-
-  if (!result.shouldMount) {
-    result.view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
-      retry: () => retry = true,
-      resume: () => result.shouldMount = true
-    })
-
-    return retry ? initializeView(...arguments) : result
-  }
-
-  if (routes) {
-    const { matched } = new RouteManager(routes)
-    TREE.lowestChild = result.view
-
-    if (matched) {
-      return initializeView(parent, rootNode, matched.config, new Route(matched))
-    }
-  }
-
-  return {
-    ...result,
-    ...parseHTML(render ? render.call(this.view) : html``, rootNode.tagName === 'PRE')
-  }
-}
-
-function mount ({ view, fragment, templates, bindings }) {
-  console.log('RENDER ', view.name)
-
-  templates && processTemplates(view, fragment, templates)
-  bindings && processBindings(view, fragment, bindings)
-
-  view.rootNode.replaceChildren(fragment)
-  view.emit(INTERNAL_ACCESS_KEY, 'mount')
-}
-
-function processBinding () {
-
-}
-
 function setAttribute (view, node, name, value) {
-  // if (value instanceof DataBindingInterpolation) {
-  //   const binding = registerAttributeBinding(view, node, name, value)
-  //   return binding.reconcile()
-  // }
+  if (value instanceof DataBindingInterpolation) {
+    const binding = registerAttributeBinding(view, node, name, value)
+    return binding.reconcile()
+  }
 
   const existing = getExistingAttributeValue(node, name)
 
@@ -179,10 +166,10 @@ function setNamespacedAttribute (view, node, name, cfg) {
 }
 
 function setProperty (view, node, name, value) {
-  // if (value instanceof DataBindingInterpolation) {
-  //   const binding = registerPropertyBinding(view, node, name, value)
-  //   return binding.reconcile()
-  // }
+  if (value instanceof DataBindingInterpolation) {
+    const binding = registerPropertyBinding(view, node, name, value)
+    return binding.reconcile()
+  }
 
   node[name] = value
 }
