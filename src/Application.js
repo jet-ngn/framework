@@ -1,8 +1,12 @@
 import { generateRenderingTasks, processTemplate, unmountView } from './lib/rendering/Renderer'
 import { INTERNAL_ACCESS_KEY, PATH, RENDERER, TREE } from './env'
 
+import Session from './lib/session/Session'
 import View from './View'
 import Route from './lib/routing/Route.js'
+
+import Unauthorized from './lib/views/401.js'
+import Forbidden from './lib/views/403.js'
 import NotFound from './lib/views/404.js'
 
 export default class Application {
@@ -30,22 +34,37 @@ export default class Application {
   }
 }
 
+function replaceView (view, config) {
+  return function () {
+    RENDERER.tasks = []
+    RENDERER.mountableViews = []
+    processTemplate(view, view.rootNode, config.render.call(view))
+    TREE.lowestChild = null
+    runTasks(getRenderer()(), true)
+  }
+}
+
 function getRenderer () {
   return function* () {
-
     for (let { view, callback } of RENDERER.tasks) {
       if (PATH.remaining.length > 0 && view === TREE.lowestChild) {
         view = new View(view.parent, view.rootNode, NotFound, new Route({ url: new URL(PATH.current, PATH.base) }))
-
-        yield renderView(view, function () {
-          RENDERER.tasks = []
-          RENDERER.mountableViews = []
-          processTemplate(view, view.rootNode, NotFound.render.call(view))
-          TREE.lowestChild = null
-          runTasks(getRenderer()(), true)
-        })
-
+        yield renderView(view, replaceView(view, NotFound))
         break
+      }
+
+      if (!!view.permissions) {
+        if (!Session.user) {
+          view = new View(view.parent, view.rootNode, Unauthorized, new Route({ url: new URL(PATH.current, PATH.base) }))
+          yield renderView(view, replaceView(view, Unauthorized))
+          break
+        }
+  
+        if (!view.permissions.hasRole(...Session.user.roles)) {
+          view = new View(view.parent, view.rootNode, Forbidden, new Route({ url: new URL(PATH.current, PATH.base) }))
+          yield renderView(view, replaceView(view, Forbidden))
+          break
+        }
       }
 
       yield renderView(view, callback)

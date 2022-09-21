@@ -9,7 +9,7 @@ import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
 import { removeEventsByView } from '../events/Bus'
 import { removeBindingsByView } from '../data/DatasetRegistry'
 import { html } from './tags'
-import { TREE, INTERNAL_ACCESS_KEY, RENDERER, PATH } from '../../env';
+import { TREE, INTERNAL_ACCESS_KEY, RENDERER } from '../../env';
 
 import {
   registerContentBinding,
@@ -43,16 +43,6 @@ export function generateRenderingTask (view, node, fragment, replace = false) {
     view,
 
     callback: () => {
-      // console.log('FOR VIEW', view)
-
-      // if (replace) {
-      //   console.log('REPLACE', node.cloneNode(true))
-      //   console.log('WITH', fragment.cloneNode(true))
-      // } else {
-      //   console.log('RENDER', fragment.cloneNode(true))
-      //   console.log('TO', node.cloneNode(true));
-      // }
-
       const { parent } = view
 
       if (parent && !parent.children.includes(view)) {

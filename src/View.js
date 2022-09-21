@@ -1,12 +1,16 @@
+import Dataset from './lib/data/Dataset'
+import PermissionsManager from './lib/permissions/PermissionsManager'
 import Bus, { addHandler } from './lib/events/Bus'
 import { createID } from './utilities/IDUtils'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
 export default class View {
   #children = []
+  #data
   #description
   #name
   #parent
+  #permissions
   #rootNode
   #route
   #scope
@@ -15,9 +19,11 @@ export default class View {
   constructor (parent, rootNode, { data, description, name, on, permissions, scope, version } = {}, route) {
     const id = `view_${createID()}`
 
+    this.#data = data ? new Dataset(data, false) : null
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${id}${version ? `@${version}` : ''}`
     this.#parent = parent ?? null
+    this.#permissions = permissions ? new PermissionsManager(this, permissions) : null
     this.#rootNode = rootNode ?? null
     this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? id}`
@@ -30,6 +36,10 @@ export default class View {
     return this.#children
   }
 
+  get data () {
+    return this.#data
+  }
+
   get description () {
     return this.#description
   }
@@ -40,6 +50,10 @@ export default class View {
 
   get parent () {
     return this.#parent
+  }
+
+  get permissions () {
+    return this.#permissions
   }
 
   get rootNode () {
