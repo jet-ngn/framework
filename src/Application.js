@@ -32,6 +32,7 @@ export default class Application {
 
 function getRenderer () {
   return function* () {
+
     for (let { view, callback } of RENDERER.tasks) {
       if (PATH.remaining.length > 0 && view === TREE.lowestChild) {
         view = new View(view.parent, view.rootNode, NotFound, new Route({ url: new URL(PATH.current, PATH.base) }))

@@ -9,7 +9,7 @@ import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
 import { removeEventsByView } from '../events/Bus'
 import { removeBindingsByView } from '../data/DatasetRegistry'
 import { html } from './tags'
-import { TREE, INTERNAL_ACCESS_KEY, RENDERER } from '../../env';
+import { TREE, INTERNAL_ACCESS_KEY, RENDERER, PATH } from '../../env';
 
 import {
   registerContentBinding,
@@ -98,8 +98,13 @@ export function processTemplate (view, rootNode, config, { replace = false, task
   }
 
   if (viewConfig instanceof DataBindingInterpolation) {
-    const binding = registerViewBinding(view, firstNode, viewConfig)
-    return binding.reconcile()
+    return tasks.push({
+      view,
+      callback: () => {
+        const binding = registerViewBinding(view, firstNode, viewConfig)
+        binding.reconcile()
+      }
+    })
   }
   
   return generateRenderingTasks(view, firstNode, viewConfig)
