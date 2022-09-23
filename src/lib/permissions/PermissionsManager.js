@@ -19,6 +19,7 @@ export default class PermissionsManager {
   }
 
   hasRole (...roles) {
-    return roles.some(role => Object.keys(this.#roles).includes(role))
+    const storedRoles = Object.keys(this.#roles)
+    return roles.some(role => storedRoles.includes(role))
   }
 }

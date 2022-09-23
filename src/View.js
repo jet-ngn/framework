@@ -6,6 +6,7 @@ import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
 export default class View {
   #children = []
+  #config
   #data
   #description
   #name
@@ -19,6 +20,7 @@ export default class View {
   constructor (parent, rootNode, { data, description, name, on, permissions, scope, version } = {}, route) {
     const id = `view_${createID()}`
 
+    this.#config = arguments[2]
     this.#data = data ? new Dataset(data, false) : null
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${id}${version ? `@${version}` : ''}`
@@ -34,6 +36,10 @@ export default class View {
 
   get children () {
     return this.#children
+  }
+
+  get config () {
+    return this.#config
   }
 
   get data () {

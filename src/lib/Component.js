@@ -1,5 +1,4 @@
 import Bus, { addHandler } from './events/Bus'
-import { processTemplate } from './rendering/Renderer'
 import { createID } from '../utilities/IDUtils'
 
 const JetComponent = superclass => class extends superclass {
@@ -26,7 +25,7 @@ const JetComponent = superclass => class extends superclass {
     this.attachShadow({ mode: 'open' })
     
     if (render) {
-      this.shadowRoot.append(processTemplate(null, render.call(this)))
+      // this.shadowRoot.append(processTemplate(null, render.call(this)))
     }
 
     Object.keys(on ?? {}).forEach(evt => {

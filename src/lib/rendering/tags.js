@@ -7,7 +7,7 @@ export function html () {
 }
 
 export function svg () {
-  return new SVGTemplate('svg', ...arguments)
+  return new SVGTemplate(...arguments)
 }
 
 export function css () {

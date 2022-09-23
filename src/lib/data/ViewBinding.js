@@ -1,6 +1,6 @@
 import DataBinding from './DataBinding'
 import View from '../../View'
-import { processTemplate, unmountView } from '../rendering/Renderer'
+import { unmountView } from '../rendering/Renderer'
 import { INTERNAL_ACCESS_KEY } from '../../env'
 
 export default class ViewBinding extends DataBinding {
@@ -34,20 +34,20 @@ export default class ViewBinding extends DataBinding {
       //   abort: () => abort = true
       // })
 
-      const tasks = []
-      const mountedViews = []
+      // const tasks = []
+      // const mountedViews = []
       
-      processTemplate(this.#view, this.#node, current.render?.call(this.#view) ?? html``, { tasks })
+      // processTemplate(this.#view, this.#node, current.render?.call(this.#view) ?? html``, { tasks })
 
-      tasks.forEach(({ view, callback }) => {
-        callback()
+      // tasks.forEach(({ view, callback }) => {
+      //   callback()
 
-        if (!mountedViews.includes(view)) {
-          view.emit(INTERNAL_ACCESS_KEY, 'mount')
-        }
+      //   if (!mountedViews.includes(view)) {
+      //     view.emit(INTERNAL_ACCESS_KEY, 'mount')
+      //   }
 
-        mountedViews.push(view)
-      })
+      //   mountedViews.push(view)
+      // })
     })
   }
 }

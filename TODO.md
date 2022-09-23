@@ -1,21 +1,17 @@
-- Add data and route change events
-- Allow this:
+- Add a default maximum number of retries after aborting to prevent call stack overflow
+  - Make sure to reset the number of tries if retry is successful
+
+- Customize 401, 403, and 404 templates:
 
 ```js
-const MyView = {
-  data: {
-    active: true,
-    string: 'Hello'
-  },
-
-  get template () {
-    return html`
-      ${html`<button></button>`.setAttibute({
-        disabled: bind(this.data, 'active')
-      })}
-
-      ${bind(this.data, 'string')}
-    `
-  }
+routes: {
+  403: {...},
+  404: {...},
+  '/test': {...}
 }
 ```
+
+- Custom Templates
+  - Pass in through `createApp` config (or any view)
+
+- Add data and route change events
