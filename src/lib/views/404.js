@@ -14,6 +14,10 @@ export default {
 
     mount () {
       console.log('MOUNT ', this.name);
+    },
+
+    unmount () {
+      console.log('UNMOUNT ', this.name);
     }
   },
 

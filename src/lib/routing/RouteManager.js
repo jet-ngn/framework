@@ -36,8 +36,12 @@ export default class RouteManager {
         continue
       }
 
-      PATH.remaining.forEach((slug, i) => {
+      for (let [i, slug] of PATH.remaining.entries()) {
         const routeSlug = slugs[i]
+
+        if (!routeSlug) {
+          break
+        }
 
         if (routeSlug.startsWith(':')) {
           scores[i] = 1
@@ -45,7 +49,7 @@ export default class RouteManager {
         } else {
           scores[i] = routeSlug === slug ? 2 : 0
         }
-      })
+      }
       
       const finalScore = getScore(scores)
 

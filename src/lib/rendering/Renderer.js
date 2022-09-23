@@ -14,6 +14,7 @@ import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
 import { removeEventsByView } from '../events/Bus'
 import { removeBindingsByView } from '../data/DatasetRegistry'
 import { TREE, INTERNAL_ACCESS_KEY, PATH } from '../../env';
+import { html } from './tags'
 
 import {
   registerContentBinding,
@@ -24,6 +25,11 @@ import {
 
 export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false } = {}) {
   const view = new View(parent, rootNode, config, route)
+
+  if (rootLevel) {
+    TREE.rootView = view
+  }
+
   const { routes } = config
 
   if (routes) {
@@ -42,13 +48,12 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
 
   parent?.children.push(view)
 
-  const template = config.render?.call(view)
-  const tasks = template ? getTemplateRenderingTasks(view, template) : []
-
   if (rootLevel) {
     TREE.lowestChild = view
-    return { view, tasks }
   }
+
+  const template = config.render?.call(view)
+  const tasks = template ? getTemplateRenderingTasks(view, template) : []
 
   return tasks
 }
@@ -124,12 +129,11 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
     name: 'Replace Placeholder',
     callback: () => placeholder.replaceWith(fragment)
   } : {
-    name: 'Mount View',
+    name: `Mount View`,
 
     callback: () => {
       if (view === TREE.lowestChild && PATH.remaining.length > 0) {
-        view = new View(view.parent, view.rootNode, NotFound, new Route({ url: new URL(PATH.current, PATH.base) }))
-        return mountView(view, parseHTML(NotFound.render.call(view)).fragment)
+        return replaceView(view, NotFound)
       }
 
       mountView(view, fragment)
@@ -137,6 +141,19 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
   })
 
   return tasks
+}
+
+function replaceView (view, config) {
+  const setRoot = view === TREE.rootView
+
+  view = new View(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
+  view.parent?.children.push(view)
+
+  if (setRoot) {
+    TREE.rootView = view
+  }
+
+  return mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
 }
 
 function mountView (view, fragment) {
@@ -156,13 +173,11 @@ function mountView (view, fragment) {
   if (!stop) {
     if (!!view.permissions) {
       if (!Session.user) {
-        view = new View(view.parent, view.rootNode, Unauthorized, new Route({ url: new URL(PATH.current, PATH.base) }))
-        return mountView(view, parseHTML(Unauthorized.render.call(view)).fragment)
+        return replaceView(view, Unauthorized)
       }
 
       if (!view.permissions.hasRole(...Session.user.roles)) {
-        view = new View(view.parent, view.rootNode, Forbidden, new Route({ url: new URL(PATH.current, PATH.base) }))
-        return mountView(view, parseHTML(Forbidden.render.call(view)).fragment)
+        return replaceView(view, Forbidden)
       }
     }
 

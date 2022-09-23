@@ -9,10 +9,10 @@ export default class PermissionsManager {
     this.#roles = roles
   }
 
-  hasRight (...rights) {
+  isAuthorized (...rights) {
     const matchingRights = Object.keys(this.#roles).reduce((result, role) => ([
       ...result,
-      ...(Session.user.roles.includes(role) ? this.#roles[role] : [])
+      ...(Session.user?.roles.includes(role) ? this.#roles[role] : [])
     ]), [])
 
     return rights.every(right => matchingRights.includes(right))

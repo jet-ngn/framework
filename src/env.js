@@ -10,6 +10,7 @@ export const PATH = {
 }
 
 export const TREE = {
+  rootView: null,
   lowestChild: null
 }
 

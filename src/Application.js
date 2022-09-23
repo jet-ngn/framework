@@ -1,9 +1,9 @@
 import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
+import { TREE } from './env'
 
 export default class Application {
   #config
   #rootNode
-  #view
 
   constructor (rootNode, config) {
     this.#rootNode = rootNode
@@ -11,21 +11,16 @@ export default class Application {
   }
 
   render () {
-    const { view, tasks } = getViewRenderingTasks({
+    const tasks = getViewRenderingTasks({
       rootNode: this.#rootNode,
       config: this.#config
     }, { rootLevel: true })
 
-    this.#view = view
-    
-    tasks.forEach(({ name, callback }) => {
-      console.log(name)
-      callback()
-    })
+    tasks.forEach(({ callback }) => callback())
   }
 
   rerender () {
-    unmountView(this.#view)
+    unmountView(TREE.rootView)
     this.render()
   }
 }
