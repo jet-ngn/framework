@@ -85,7 +85,8 @@ function getExistingAttributeValue (node, name) {
 
 function getTemplateRenderingTasks (view, template, placeholder = null) {
   const tasks = []
-  const { fragment, bindings, templates } = parseHTML(template, view.rootNode.tagName === 'PRE')
+  const retainFormatting = view.rootNode.tagName === 'PRE'
+  const { fragment, bindings, templates } = parseHTML(template, retainFormatting)
   const { attributes, properties, listeners, viewConfig } = template
   const node = fragment.firstElementChild
   const hasMultipleNodes = fragment.children.length > 1
@@ -108,7 +109,7 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
 
   !!bindings && tasks.push({
     name: 'Process Bindings',
-    callback: () => console.log('TODO: PROCESS BINDINGS')
+    callback: () => processBindings(view, fragment, bindings, retainFormatting)
   })
 
   !!templates && Object.keys(templates).forEach(id => {
@@ -128,8 +129,6 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
     name: `Mount View`,
 
     callback: () => {
-      console.log(view.name, TREE.lowestChild.name);
-
       if (view === TREE.lowestChild && PATH.remaining.length > 0) {
         return replaceView(view, NotFound)
       }
