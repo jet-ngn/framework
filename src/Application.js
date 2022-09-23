@@ -14,7 +14,7 @@ export default class Application {
     const tasks = getViewRenderingTasks({
       rootNode: this.#rootNode,
       config: this.#config
-    }, { rootLevel: true })
+    }, { rootLevel: true, setLowest: true })
 
     tasks.forEach(({ callback }) => callback())
   }

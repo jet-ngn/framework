@@ -23,18 +23,21 @@ import {
   registerViewBinding
 } from '../data/DatasetRegistry'
 
-export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false } = {}) {
+export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false, setLowest = false } = {}) {
   const view = new View(parent, rootNode, config, route)
 
   if (rootLevel) {
     TREE.rootView = view
   }
 
+  if (setLowest) {
+    TREE.lowestChild = view
+  }
+
   const { routes } = config
 
   if (routes) {
     const { matched } = new RouteManager(routes)
-    TREE.lowestChild = view
 
     if (matched) {
       return getViewRenderingTasks({
@@ -42,20 +45,13 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
         rootNode,
         config: matched.config,
         route: new Route(matched)
-      }, { rootLevel })
+      }, { rootLevel, setLowest: true })
     }
   }
 
   parent?.children.push(view)
-
-  if (rootLevel) {
-    TREE.lowestChild = view
-  }
-
   const template = config.render?.call(view)
-  const tasks = template ? getTemplateRenderingTasks(view, template) : []
-
-  return tasks
+  return getTemplateRenderingTasks(view, template ?? html``)
 }
 
 export function unmountView (view) {
@@ -123,7 +119,7 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
     parent: view,
     rootNode: node,
     config: viewConfig
-  }))
+  }, { setLowest: true }))
 
   tasks.push(!!placeholder ? {
     name: 'Replace Placeholder',
@@ -132,6 +128,8 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
     name: `Mount View`,
 
     callback: () => {
+      console.log(view.name, TREE.lowestChild.name);
+
       if (view === TREE.lowestChild && PATH.remaining.length > 0) {
         return replaceView(view, NotFound)
       }
