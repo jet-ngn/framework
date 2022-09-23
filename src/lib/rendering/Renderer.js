@@ -21,10 +21,9 @@ import {
   registerPropertyBinding,
   registerViewBinding
 } from '../data/DatasetRegistry'
-import Template from './Template'
 
-export function getViewRenderingTasks (view) {
-  const { config } = view
+export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false } = {}) {
+  const view = new View(parent, rootNode, config, route)
   const { routes } = config
 
   if (routes) {
@@ -32,14 +31,26 @@ export function getViewRenderingTasks (view) {
     TREE.lowestChild = view
 
     if (matched) {
-      return getViewRenderingTasks(new View(view.parent, view.rootNode, matched.config, new Route(matched)))
+      return getViewRenderingTasks({
+        parent,
+        rootNode,
+        config: matched.config,
+        route: new Route(matched)
+      }, { rootLevel })
     }
   }
 
-  view.parent?.children.push(view)
+  parent?.children.push(view)
 
   const template = config.render?.call(view)
-  return template ? getTemplateRenderingTasks(view, template) : []
+  const tasks = template ? getTemplateRenderingTasks(view, template) : []
+
+  if (rootLevel) {
+    TREE.lowestChild = view
+    return { view, tasks }
+  }
+
+  return tasks
 }
 
 export function unmountView (view) {
@@ -79,43 +90,35 @@ function getTemplateRenderingTasks (view, template, placeholder = null) {
   const hasMultipleNodes = fragment.children.length > 1
   const args = [node, hasMultipleNodes]
 
-  if (!!properties) {
-    tasks.push({
-      name: 'Apply Properties',
-      callback: () => bind('properties', view, properties, ...args, setProperty)
-    })
-  }
+  !!properties && tasks.push({
+    name: 'Apply Properties',
+    callback: () => bind('properties', view, properties, ...args, setProperty)
+  })
 
-  if (!!attributes) {
-    tasks.push({
-      name: 'Apply Attributes',
-      callback: () => bind('attributes', view, attributes, ...args, setAttribute)
-    })
-  }
+  !!attributes && tasks.push({
+    name: 'Apply Attributes',
+    callback: () => bind('attributes', view, attributes, ...args, setAttribute)
+  })
 
-  if (!!listeners) {
-    tasks.push({
-      name: 'Apply Listeners',
-      callback: () => bindListeners(view, listeners, ...args)
-    })
-  }
+  !!listeners && tasks.push({
+    name: 'Apply Listeners',
+    callback: () => bindListeners(view, listeners, ...args)
+  })
 
-  if (!!bindings) {
-    tasks.push({
-      name: 'Process Bindings',
-      callback: () => console.log('TODO: PROCESS BINDINGS')
-    })
-  }
+  !!bindings && tasks.push({
+    name: 'Process Bindings',
+    callback: () => console.log('TODO: PROCESS BINDINGS')
+  })
 
-  if (!!templates) {
-    Object.keys(templates).forEach(id => {
-      tasks.push(...getTemplateRenderingTasks(view, templates[id], fragment.getElementById(id)))
-    })
-  }
+  !!templates && Object.keys(templates).forEach(id => {
+    tasks.push(...getTemplateRenderingTasks(view, templates[id], fragment.getElementById(id)))
+  })
 
-  if (!!viewConfig) {
-    tasks.push(...getViewRenderingTasks(new View(view, node, viewConfig)))
-  }
+  !!viewConfig && tasks.push(...getViewRenderingTasks({
+    parent: view,
+    rootNode: node,
+    config: viewConfig
+  }))
 
   tasks.push(!!placeholder ? {
     name: 'Replace Placeholder',

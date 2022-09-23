@@ -12,13 +12,7 @@ document.addEventListener('DOMContentLoaded', evt => {
   created && run()
 })
 
-history.listen(({ location }) => {
-  if (location.pathname === PATH.current) {
-    throw new Error(`Cannot navigate: "${location.pathname}" is already the current location`)
-  }
-  
-  rerender()
-})
+history.listen(() => rerender())
 
 export function createApp ({ baseURL, selector }) {
   if (created) {
@@ -34,6 +28,10 @@ export function createApp ({ baseURL, selector }) {
 }
 
 export function navigate (to, payload) {
+  if (to === PATH.current) {
+    throw new Error(`Cannot navigate: "${to}" is already the current location`)
+  }
+
   history.push(...arguments)
 }
 
@@ -56,7 +54,6 @@ function run () {
   }
 
   delete config.selector
-
   setPaths()
 
   App = new Application(nodes[0], config)

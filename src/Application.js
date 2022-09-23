@@ -1,6 +1,4 @@
-import View from './View'
 import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
-import { TREE } from './env'
 
 export default class Application {
   #config
@@ -13,10 +11,12 @@ export default class Application {
   }
 
   render () {
-    this.#view = new View(null, this.#rootNode, this.#config)
-    TREE.lowestChild = this.#view
+    const { view, tasks } = getViewRenderingTasks({
+      rootNode: this.#rootNode,
+      config: this.#config
+    }, { rootLevel: true })
 
-    const tasks = getViewRenderingTasks(this.#view)
+    this.#view = view
     
     tasks.forEach(({ name, callback }) => {
       console.log(name)
