@@ -1,7 +1,6 @@
 import DataBinding from './DataBinding'
-import View from '../../View'
-import { unmountView } from '../rendering/Renderer'
-import { INTERNAL_ACCESS_KEY } from '../../env'
+import { getViewRenderingTasks, unmountView } from '../rendering/Renderer'
+import { TREE } from '../../env'
 
 export default class ViewBinding extends DataBinding {
   #node
@@ -26,28 +25,14 @@ export default class ViewBinding extends DataBinding {
         return
       }
 
-      this.#view = new View(this.parent, this.#node, current)
+      const tasks = getViewRenderingTasks({
+        parent: this.parent,
+        rootNode: this.#node,
+        config: current
+      }, { rootLevel: true })
 
-      // let abort = false
-
-      // this.#view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
-      //   abort: () => abort = true
-      // })
-
-      // const tasks = []
-      // const mountedViews = []
-      
-      // processTemplate(this.#view, this.#node, current.render?.call(this.#view) ?? html``, { tasks })
-
-      // tasks.forEach(({ view, callback }) => {
-      //   callback()
-
-      //   if (!mountedViews.includes(view)) {
-      //     view.emit(INTERNAL_ACCESS_KEY, 'mount')
-      //   }
-
-      //   mountedViews.push(view)
-      // })
+      this.#view = TREE.rootView
+      tasks.forEach(({ callback }) => callback())
     })
   }
 }

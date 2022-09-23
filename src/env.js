@@ -11,7 +11,7 @@ export const PATH = {
 
 export const TREE = {
   rootView: null,
-  lowestChild: null
+  deepestRoute: null
 }
 
 // const components = {}

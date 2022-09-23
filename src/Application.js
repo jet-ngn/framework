@@ -14,9 +14,16 @@ export default class Application {
     const tasks = getViewRenderingTasks({
       rootNode: this.#rootNode,
       config: this.#config
-    }, { rootLevel: true, setLowest: true })
+    }, { rootLevel: true, setDeepestRoute: true })
 
-    tasks.forEach(({ callback }) => callback())
+    for (let { callback } of tasks) {
+      let stop = false
+      callback(() => stop = true)
+
+      if (stop) {
+        break
+      }
+    }
   }
 
   rerender () {
