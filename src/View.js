@@ -1,5 +1,5 @@
 import Dataset from './lib/data/Dataset'
-import PermissionsManager from './lib/permissions/PermissionsManager'
+import PermissionsManager from './lib/session/PermissionsManager'
 import Bus, { addHandler } from './lib/events/Bus'
 import { createID } from './utilities/IDUtils'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
@@ -25,7 +25,7 @@ export default class View {
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${id}${version ? `@${version}` : ''}`
     this.#parent = parent ?? null
-    this.#permissions = permissions ? new PermissionsManager(this, permissions) : null
+    this.#permissions = permissions ? new PermissionsManager(permissions) : null
     this.#rootNode = rootNode ?? null
     this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? id}`

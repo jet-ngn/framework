@@ -1,63 +1,6 @@
 import Bus, { addHandler } from './events/Bus'
 import { createID } from '../utilities/IDUtils'
 
-const JetComponent = superclass => class extends superclass {
-  #attributes
-  // #description
-  #name
-  // #parent
-  // #rootNode
-  // #route
-  #scope
-  #tag
-  // #version
-
-  #onMount
-
-  constructor (tag, { attributes, name, on, render, style }) {
-    super()
-
-    this.#attributes = attributes ?? {}
-    this.#name = name ?? tag
-    this.#scope = createID({ prefix: tag })
-    this.#tag = tag
-
-    this.attachShadow({ mode: 'open' })
-    
-    if (render) {
-      // this.shadowRoot.append(processTemplate(null, render.call(this)))
-    }
-
-    Object.keys(on ?? {}).forEach(evt => {
-      if (evt !== 'mount') {
-        return addHandler(this, evt, on[evt])
-      }
-      
-      this.#onMount = on[evt]
-    })
-  }
-
-  get name () {
-    return this.#name
-  }
-
-  get scope () {
-    return this.#scope
-  }
-
-  attributeChangedCallback (name, previous, current) {
-    // console.log(...arguments)
-  }
-
-  connectedCallback () {
-    this.#onMount && this.#onMount.call(this)
-  }
-
-  emit (evt, ...args) {
-    Bus.emit(`${this.#scope}.${evt}`, ...args)
-  }
-}
-
 export function createComponent (tag, cfg) {
   if (customElements.get(tag)) {
     throw new Error(`Custom Element "${tag}" already exists`)
@@ -69,7 +12,7 @@ export function createComponent (tag, cfg) {
     options.extends = cfg.extends
   }
 
-  class Component extends JetComponent(options.extends ? getInterface(options.extends) : HTMLElement) {
+  class Component extends getComponent(options.extends ? getInterface(options.extends) : HTMLElement) {
     constructor () {
       super(tag, cfg)
     }
@@ -80,6 +23,65 @@ export function createComponent (tag, cfg) {
   }
   
   customElements.define(tag, Component, options)
+}
+
+function getComponent (superclass) {
+  return class extends superclass {
+    #attributes
+    // #description
+    #name
+    // #parent
+    // #rootNode
+    // #route
+    #scope
+    #tag
+    // #version
+
+    #onMount
+
+    constructor (tag, { attributes, name, on, render, style }) {
+      super()
+
+      this.#attributes = attributes ?? {}
+      this.#name = name ?? tag
+      this.#scope = createID({ prefix: tag })
+      this.#tag = tag
+
+      this.attachShadow({ mode: 'open' })
+      
+      if (render) {
+        // this.shadowRoot.append(processTemplate(null, render.call(this)))
+      }
+
+      Object.keys(on ?? {}).forEach(evt => {
+        if (evt !== 'mount') {
+          return addHandler(this, evt, on[evt])
+        }
+        
+        this.#onMount = on[evt]
+      })
+    }
+
+    get name () {
+      return this.#name
+    }
+
+    get scope () {
+      return this.#scope
+    }
+
+    attributeChangedCallback (name, previous, current) {
+      // console.log(...arguments)
+    }
+
+    connectedCallback () {
+      this.#onMount && this.#onMount.call(this)
+    }
+
+    emit (evt, ...args) {
+      Bus.emit(`${this.#scope}.${evt}`, ...args)
+    }
+  }
 }
 
 function getInterface (tag) {

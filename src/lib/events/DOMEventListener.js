@@ -14,7 +14,7 @@ export default class DOMEventListener {
     this.#node = node
     this.#event = event
     this.#handler = new DOMEventHandler(view, event, callback, options)
-    this.#options = this.#processOptions(options)
+    this.#options = processOptions(options)
 
     if (!this.#options.hasOwnProperty('signal')) {
       this.#abortController = new AbortController
@@ -45,16 +45,16 @@ export default class DOMEventListener {
   abort () {
     this.#abortController.abort()
   }
+}
 
-  #processOptions (options) {
-    if (options === null) {
-      return {}
-    }
+function processOptions (options) {
+  if (options === null) {
+    return {}
+  }
 
-    switch (typeof options) {
-      case 'object': return options
-      case 'boolean': return { capture: options } 
-      default: throw new TypeError(`Invalid Event Listener options. Expected "object" or "boolean" but received "${typeof options}"`)
-    }
+  switch (typeof options) {
+    case 'object': return options
+    case 'boolean': return { capture: options } 
+    default: throw new TypeError(`Invalid Event Listener options. Expected "object" or "boolean" but received "${typeof options}"`)
   }
 }

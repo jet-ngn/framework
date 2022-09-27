@@ -21,7 +21,7 @@ class Session extends IdentifiedClass {
 
   close () {
     this.#user = null
-    // this.emit('closed')
+    InternalBus.emit('session.closed')
   }
 
   open (userData) {

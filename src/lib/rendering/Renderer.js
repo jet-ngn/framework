@@ -23,6 +23,103 @@ import {
   registerViewBinding
 } from '../data/DatasetRegistry'
 
+export function getTemplateRenderingTasks (view, template, placeholder = null) {
+  const tasks = []
+  const retainFormatting = view.rootNode.tagName === 'PRE'
+  const { fragment, bindings, templates } = parseHTML(template, retainFormatting)
+  const { attributes, properties, listeners, viewConfig } = template
+  const node = fragment.firstElementChild
+  const hasMultipleNodes = fragment.children.length > 1
+  const args = [node, hasMultipleNodes]
+
+  !placeholder && tasks.push({
+    name: 'Fire Before Mount event',
+
+    callback: abort => {
+      if (PATH.remaining.length > 0 && (view === TREE.deepestRoute || viewIsChildOfDeepestRoute(view))) {
+        return
+      }
+
+      fireBeforeMountEvent(view, abort)
+    }
+  })
+
+  !!properties && tasks.push({
+    name: 'Apply Properties',
+    callback: () => bind('properties', view, properties, ...args, setProperty)
+  })
+
+  !!attributes && tasks.push({
+    name: 'Apply Attributes',
+    callback: () => bind('attributes', view, attributes, ...args, setAttribute)
+  })
+
+  !!listeners && tasks.push({
+    name: 'Apply Listeners',
+    callback: () => bindListeners(view, listeners, ...args)
+  })
+
+  !!bindings && tasks.push({
+    name: 'Process Bindings',
+    callback: () => processBindings(view, fragment, bindings, retainFormatting)
+  })
+
+  !!templates && Object.keys(templates).forEach(id => {
+    tasks.push(...getTemplateRenderingTasks(view, templates[id], fragment.getElementById(id)))
+  })
+
+  if (viewConfig) {
+    if (viewConfig instanceof DataBindingInterpolation) {
+      tasks.push({
+        name: 'Process View Binding',
+        callback: () => {
+          const binding = registerViewBinding(view, node, viewConfig)
+          binding.reconcile()
+        }
+      })
+    } else {
+      tasks.push(...getViewRenderingTasks({
+        parent: view,
+        rootNode: node,
+        config: viewConfig
+      }))
+    }
+  }
+
+  tasks.push(!!placeholder ? {
+    name: 'Replace Placeholder',
+    callback: () => placeholder.replaceWith(fragment)
+  } : {
+    name: `Mount View`,
+
+    callback: abort => {
+      if (PATH.remaining.length > 0) {
+        if (view === TREE.deepestRoute) {
+          return replaceView(view, NotFound, abort)
+        }
+  
+        if (viewIsChildOfDeepestRoute(view)) {
+          return
+        }
+      }
+
+      if (!!view.permissions) {
+        if (!Session.user) {
+          return replaceView(view, Unauthorized, abort)
+        }
+  
+        if (!view.permissions.hasRole(...Session.user.roles)) {
+          return replaceView(view, Forbidden, abort)
+        }
+      }
+
+      mountView(view, fragment)
+    }
+  })
+
+  return tasks
+}
+
 export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false, setDeepestRoute = false } = {}) {
   const view = new View(parent, rootNode, config, route)
 
@@ -105,93 +202,6 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-function getTemplateRenderingTasks (view, template, placeholder = null) {
-  const tasks = []
-  const retainFormatting = view.rootNode.tagName === 'PRE'
-  const { fragment, bindings, templates } = parseHTML(template, retainFormatting)
-  const { attributes, properties, listeners, viewConfig } = template
-  const node = fragment.firstElementChild
-  const hasMultipleNodes = fragment.children.length > 1
-  const args = [node, hasMultipleNodes]
-
-  !placeholder && tasks.push({
-    name: 'Fire Before Mount event',
-
-    callback: abort => {
-      if (PATH.remaining.length > 0 && (view === TREE.deepestRoute || viewIsChildOfDeepestRoute(view))) {
-        return
-      }
-
-      fireBeforeMountEvent(view, abort)
-    }
-  })
-
-  !!properties && tasks.push({
-    name: 'Apply Properties',
-    callback: () => bind('properties', view, properties, ...args, setProperty)
-  })
-
-  !!attributes && tasks.push({
-    name: 'Apply Attributes',
-    callback: () => bind('attributes', view, attributes, ...args, setAttribute)
-  })
-
-  !!listeners && tasks.push({
-    name: 'Apply Listeners',
-    callback: () => bindListeners(view, listeners, ...args)
-  })
-
-  !!bindings && tasks.push({
-    name: 'Process Bindings',
-    callback: () => processBindings(view, fragment, bindings, retainFormatting)
-  })
-
-  !!templates && Object.keys(templates).forEach(id => {
-    tasks.push(...getTemplateRenderingTasks(view, templates[id], fragment.getElementById(id)))
-  })
-
-  if (viewConfig) {
-    if (viewConfig instanceof DataBindingInterpolation) {
-      tasks.push({
-        name: 'Process View Binding',
-        callback: () => {
-          const binding = registerViewBinding(view, node, viewConfig)
-          binding.reconcile()
-        }
-      })
-    } else {
-      tasks.push(...getViewRenderingTasks({
-        parent: view,
-        rootNode: node,
-        config: viewConfig
-      }))
-    }
-  }
-
-  tasks.push(!!placeholder ? {
-    name: 'Replace Placeholder',
-    callback: () => placeholder.replaceWith(fragment)
-  } : {
-    name: `Mount View`,
-
-    callback: abort => {
-      if (PATH.remaining.length > 0) {
-        if (view === TREE.deepestRoute) {
-          return replaceView(view, NotFound, abort)
-        }
-  
-        if (viewIsChildOfDeepestRoute(view)) {
-          return
-        }
-      }
-
-      mountView(view, fragment)
-    }
-  })
-
-  return tasks
-}
-
 function replaceView (view, config, abort) {
   const setRoot = view === TREE.rootView
   view = new View(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
@@ -206,15 +216,14 @@ function replaceView (view, config, abort) {
   return mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
 }
 
-function mountView (view, fragment, children) {
+function mountView (view, fragment) {
   view.rootNode.replaceChildren(fragment)
   view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
 
 function processBindings (view, fragment, bindings, retainFormatting) {
-  console.log('HEY');
   Object.keys(bindings).forEach(id => {
-    const binding = registerContentBinding(parent, fragment.getElementById(id), bindings[id], retainFormatting)
+    const binding = registerContentBinding(view, fragment.getElementById(id), bindings[id], retainFormatting)
     binding.reconcile()
   })
 }
@@ -278,116 +287,3 @@ function viewIsChildOfDeepestRoute (view) {
 
   return view.parent === TREE.deepestRoute || viewIsChildOfDeepestRoute(view.parent)
 }
-
-
-
-
-
-
-
-
-
-
-// export function generateRenderingTasks (tasks, parentView, rootNode, config, route = null, setLowestChild = false) {
-//   const view = new View(parentView, rootNode, config)
-//   const { render, routes } = config
-
-//   if (routes) {
-//     const { matched } = new RouteManager(routes)
-//     TREE.deepestRoute = view
-    
-//     if (matched) {
-//       return generateRenderingTasks(tasks, parentView, rootNode, matched.config, new Route(matched))
-//     }
-//   }
-
-//   if (setLowestChild) {
-//     TREE.deepestRoute = view
-//   }
-
-//   processTemplate(tasks, view, rootNode, render?.call(view) ?? html``)
-//   return view
-// }
-
-// export function generateRenderingTask (view, node, fragment, replace = false) {
-//   return {
-//     view,
-
-//     log: (number) => {
-//       console.log(`${number}) FOR VIEW "${view.name}"`)
-
-//       if (replace) {
-//         console.log('REPLACE', node.cloneNode(true))
-//         console.log('WITH', fragment.cloneNode(true))
-//       } else {
-//         console.log('RENDER', fragment.cloneNode(true))
-//         console.log('TO', node.cloneNode(true));
-//       }
-
-//       console.log('---------------------------');
-//     },
-
-//     callback: () => {
-//       const { parent } = view
-
-//       if (parent && !parent.children.includes(view)) {
-//         parent.children.push(view)
-//       }
-      
-//       replace ? node.replaceWith(fragment) : node.replaceChildren(fragment)
-//     }
-//   }
-// }
-
-// export function processTemplate (tasks, view, rootNode, config, replace = false) {
-//   const retainFormatting = rootNode.tagName === 'PRE' ?? false
-//   const parsed = parseHTML(config, retainFormatting)
-//   const { fragment } = parsed
-//   const firstNode = fragment.firstElementChild
-
-//   if (!firstNode) {
-//     return tasks.push(generateRenderingTask(view, rootNode, fragment, replace))
-//   }
-
-//   const { attributes, listeners, properties, viewConfig } = config
-//   const hasMultipleRoots = fragment.children.length > 1
-//   const args = [firstNode, hasMultipleRoots]
-
-//   !!attributes && bind('attributes', view, attributes, ...args, setAttribute)
-//   !!properties && bind('properties', view, properties, ...args, setProperty)
-//   !!listeners && bindListeners(view, listeners, ...args)
-
-//   tasks.push(generateRenderingTask(view, rootNode, fragment, replace))
-
-//   if (!viewConfig) {
-//     const { bindings, templates } = parsed
-//     bindings && processBindings(view, fragment, bindings, retainFormatting)
-//     return templates && Object.keys(templates).forEach(id => processTemplate(tasks, view, fragment.getElementById(id), templates[id], true))
-//   }
-
-//   if (viewConfig instanceof DataBindingInterpolation) {
-//     return tasks.push({
-//       view,
-
-//       log: (number) => {
-//         console.log(`${number}) FOR VIEW "${view.name}"`)
-  
-//         if (replace) {
-//           console.log('REPLACE', node.cloneNode(true))
-//           console.log('WITH', fragment.cloneNode(true))
-//         } else {
-//           console.log('RENDER', fragment.cloneNode(true))
-//           console.log('TO', node.cloneNode(true));
-//         }
-//       },
-
-//       callback: () => {
-//         const binding = registerViewBinding(view, firstNode, viewConfig)
-//         binding.reconcile()
-//       }
-//     })
-//   }
-  
-//   return generateRenderingTasks(tasks, view, firstNode, viewConfig)
-// }
-

@@ -1,12 +1,8 @@
-import Session from '../session/Session'
-
 export default class PermissionsManager {
-  #view
   #roles
 
-  constructor (view, roles = {}) {
-    this.#view = view
-    this.#roles = roles
+  constructor (config) {
+    this.#roles = config
   }
 
   isAuthorized (...rights) {
@@ -19,7 +15,6 @@ export default class PermissionsManager {
   }
 
   hasRole (...roles) {
-    const storedRoles = Object.keys(this.#roles)
-    return roles.some(role => storedRoles.includes(role))
+    return roles.some(role => Object.keys(this.#roles).includes(role))
   }
 }

@@ -5,19 +5,10 @@ export const PATH = {
   base: null,
   current: null,
   previous: null,
-  remaining: null,
-  // has404: false
+  remaining: null
 }
 
 export const TREE = {
   rootView: null,
   deepestRoute: null
 }
-
-// const components = {}
-
-// export class Components {
-//   static install (namespace, ) {
-
-//   }
-// }

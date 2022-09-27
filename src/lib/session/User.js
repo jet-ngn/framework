@@ -4,7 +4,7 @@ export default class User {
 
   constructor ({ roles, data }) {
     this.#data = data ?? null
-    this.#roles = Array.from(new Set([...(roles ?? []), 'everyone']))
+    this.#roles = [...new Set([...(roles ?? []), 'everyone'])]
   }
 
   get data () {
@@ -13,5 +13,9 @@ export default class User {
 
   get roles () {
     return this.#roles
+  }
+
+  hasRole (...roles) {
+    return roles.some(role => this.#roles.includes(role))
   }
 }

@@ -12,7 +12,11 @@ document.addEventListener('DOMContentLoaded', evt => {
   created && run()
 })
 
-history.listen(() => rerender())
+history.listen(() => {
+  PATH.previous = PATH.current
+  setPaths()
+  App.rerender()
+})
 
 export function createApp ({ baseURL, selector }) {
   if (created) {
@@ -33,12 +37,6 @@ export function navigate (to, payload) {
   }
 
   history.push(...arguments)
-}
-
-function rerender () {
-  PATH.previous = PATH.current
-  setPaths()
-  App.rerender()
 }
 
 function run () {
@@ -71,6 +69,5 @@ export { createID } from './utilities/IDUtils'
 export { css, html, svg } from './lib/rendering/tags'
 
 export { default as Bus } from './lib/events/Bus'
-// export { Components } from './env'
 export { default as Dataset } from './lib/data/Dataset'
 export { default as Session } from './lib/session/Session'

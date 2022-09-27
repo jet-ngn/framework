@@ -1,6 +1,35 @@
 import { removeDOMEventsByNode } from '../events/DOMBus'
 import { escapeString } from '../../utilities/StringUtils'
 
+export function reconcileNodes (original, update) {
+  const result = []
+
+  for (let i = 0, length = Math.max(original.length, update.length); i < length; i++) {
+    const existingNode = original[i]
+    const newNode = update[i]
+
+    if (!existingNode) {
+      if (!newNode) {
+        break
+      }
+
+      result.at(-1).after(newNode)
+      result.push(newNode)
+      continue
+    }
+
+    if (!newNode) {
+      removeDOMEventsByNode(existingNode)
+      existingNode.remove()
+      continue
+    }
+
+    result.push(reconcileNode(existingNode, newNode))
+  }
+
+  return result
+}
+
 function getAttributes (element) {
   return [...element.attributes].reduce((result, attr) => {
     result[attr.name] = attr.value === '' ? true : attr.value
@@ -80,35 +109,6 @@ function reconcileNode (original, update) {
     case 3: return reconcileTextNode(...arguments)
     default: throw new TypeError(`Cannot reconcile node type "${original.nodeType}"`)
   }
-}
-
-export function reconcileNodes (original, update) {
-  const result = []
-
-  for (let i = 0, length = Math.max(original.length, update.length); i < length; i++) {
-    const existingNode = original[i]
-    const newNode = update[i]
-
-    if (!existingNode) {
-      if (!newNode) {
-        break
-      }
-
-      result.at(-1).after(newNode)
-      result.push(newNode)
-      continue
-    }
-
-    if (!newNode) {
-      removeDOMEventsByNode(existingNode)
-      existingNode.remove()
-      continue
-    }
-
-    result.push(reconcileNode(existingNode, newNode))
-  }
-
-  return result
 }
 
 function reconcileTextNode (original, update) {

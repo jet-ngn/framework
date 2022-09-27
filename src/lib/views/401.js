@@ -3,24 +3,6 @@ import { html } from '../rendering/tags'
 export default {
   name: '401 Unauthorized',
 
-  on: {
-    abortMount ({ retry }) {
-      console.log('ABORT MOUNT', this.name)
-    },
-
-    beforeMount ({ abort }) {
-      console.log('BEFORE MOUNT ', this.name);
-    },
-
-    mount () {
-      console.log('MOUNT ', this.name);
-    },
-
-    unmount () {
-      console.log('UNMOUNT ', this.name);
-    }
-  },
-
   render () {
     return html`
       <div class="unauthorized">

@@ -1,5 +1,6 @@
 import DataBinding from './DataBinding'
 import Template from '../rendering/Template'
+import { getTemplateRenderingTasks } from '../rendering/Renderer'
 import { reconcileNodes } from '../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../events/DOMBus'
 import { sanitizeString } from '../../utilities/StringUtils'
@@ -53,8 +54,14 @@ export default class ContentBinding extends DataBinding {
     }
 
     if (value instanceof Template) {
-      return 'WORKS'
-      // return [...this.#renderTemplate(this.parent, value, true).children]
+      const fragment = document.createDocumentFragment()
+      const template = document.createElement('template')
+      fragment.append(template)
+      
+      const tasks = getTemplateRenderingTasks(this.parent, value, template)
+      tasks.forEach(({ callback }) => callback())
+      
+      return fragment.children
     }
 
     switch (typeof value) {

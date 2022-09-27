@@ -2,6 +2,9 @@ import Template from './Template'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import { sanitizeString } from '../../utilities/StringUtils'
 
+const htmlTemplate = document.createElement('template')
+const svgTemplate = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
 export function parseHTML (template, retainFormatting) {
   const result = {
     bindings: null,
@@ -31,9 +34,6 @@ export function parseHTML (template, retainFormatting) {
     ...result
   }
 }
-
-const htmlTemplate = document.createElement('template')
-const svgTemplate = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 
 function createTemplate (collection, property, { id }) {
   collection[property] = {
