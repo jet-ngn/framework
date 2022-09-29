@@ -1,6 +1,8 @@
 import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
 import { TREE } from './env'
 
+import { listeners, views } from './lib/events/Bus'
+
 export default class Application {
   #config
   #rootNode
@@ -24,6 +26,8 @@ export default class Application {
         break
       }
     }
+
+    console.log(views);
   }
 
   rerender () {

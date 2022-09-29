@@ -6,11 +6,57 @@ import ContentBinding from './ContentBinding'
 import PropertyBinding from './PropertyBinding'
 import ViewBinding from './ViewBinding'
 
-const sets = new Map
+export const sets = new Map
 
 export function bind (...targets) {
   let transform = targets.pop()
   return new DataBindingInterpolation(targets, transform)
+}
+
+export function registerAttributeBinding (parent, node, name, interpolation) {
+  return registerBinding(new AttributeBinding(...arguments))
+}
+
+export function registerAttributeListBinding (parent, list, interpolation) {
+  return registerBinding(new AttributeListBinding(...arguments))
+}
+
+export function registerAttributeListBooleanBinding (parent, list, name, interpolation) {
+  return registerBinding(new AttributeListBooleanBinding(...arguments))
+}
+
+export function registerContentBinding (parent, node, interpolation, retainFormatting) {
+  return registerBinding(new ContentBinding(...arguments))
+}
+
+export function registerPropertyBinding (parent, node, name, interpolation) {
+  return registerBinding(new PropertyBinding(...arguments))
+}
+
+export function registerViewBinding (parent, node, interpolation) {
+  return registerBinding(new ViewBinding(...arguments))
+}
+
+export function registerDataset (target, isGlobal = false) {
+  if (typeof target !== 'object') {
+    throw new TypeError(`Datasets must be initialized on objects, arrays, maps or sets`)
+  }
+
+  return sets.has(target) ? sets.get(target).revocable.proxy : processTarget(target, null, isGlobal)
+}
+
+export function removeBindingsByView (view) {
+  view.children.forEach(removeBindingsByView)
+
+  for (let [key, { bindings }] of sets) {
+    sets.get(key).bindings = bindings.reduce((result, binding) => {
+      return binding.parent === view ? result : [...result, binding]
+    }, [])
+  }
+}
+
+export function logBindings () {
+  console.log([...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], []));
 }
 
 function getArrayMethodHandler (target, property, reconcile = false) {
@@ -177,56 +223,6 @@ function registerBinding (binding) {
   })
 
   return binding
-}
-
-export function registerAttributeBinding (parent, node, name, interpolation) {
-  return registerBinding(new AttributeBinding(...arguments))
-}
-
-export function registerAttributeListBinding (parent, list, interpolation) {
-  return registerBinding(new AttributeListBinding(...arguments))
-}
-
-export function registerAttributeListBooleanBinding (parent, list, name, interpolation) {
-  return registerBinding(new AttributeListBooleanBinding(...arguments))
-}
-
-export function registerContentBinding (parent, node, interpolation, retainFormatting) {
-  return registerBinding(new ContentBinding(...arguments))
-}
-
-export function registerPropertyBinding (parent, node, name, interpolation) {
-  return registerBinding(new PropertyBinding(...arguments))
-}
-
-export function registerViewBinding (parent, node, interpolation) {
-  return registerBinding(new ViewBinding(...arguments))
-}
-
-export function registerDataset (target, isGlobal = false) {
-  if (typeof target !== 'object') {
-    throw new TypeError(`Datasets must be initialized on objects, arrays, maps or sets`)
-  }
-
-  return sets.has(target) ? sets.get(target).revocable.proxy : processTarget(target, null, isGlobal)
-}
-
-export function removeBindingsByView (view) {
-  view.children.forEach(removeBindingsByView)
-
-  for (let [key, { bindings }] of sets) {
-    sets.get(key).bindings = bindings.reduce((result, binding) => {
-      return binding.parent === view ? result : [...result, binding]
-    }, [])
-  }
-}
-
-export function logSets () {
-  console.log(sets);
-}
-
-export function logBindings () {
-  console.log([...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], []));
 }
 
 // function getMapProxy (map) {

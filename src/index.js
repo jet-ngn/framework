@@ -1,4 +1,3 @@
-import history from 'history'
 import Application from './Application'
 import { PATH } from './env'
 
@@ -12,10 +11,9 @@ document.addEventListener('DOMContentLoaded', evt => {
   created && run()
 })
 
-history.listen(() => {
-  PATH.previous = PATH.current
-  setPaths()
-  App.rerender()
+window.addEventListener('popstate', evt => {
+  evt.preventDefault()
+  updateHistory()
 })
 
 export function createApp ({ baseURL, selector }) {
@@ -31,12 +29,13 @@ export function createApp ({ baseURL, selector }) {
   ready && run()
 }
 
-export function navigate (to, payload) {
+export function navigate (to, payload = null) {
   if (to === PATH.current) {
     throw new Error(`Cannot navigate: "${to}" is already the current location`)
   }
 
-  history.push(...arguments)
+  history.pushState(payload, null, to)
+  updateHistory()
 }
 
 function run () {
@@ -61,6 +60,12 @@ function run () {
 function setPaths () {
   PATH.current = location.pathname
   PATH.remaining = PATH.current.split('/').filter(Boolean)
+}
+
+function updateHistory () {
+  PATH.previous = PATH.current
+  setPaths()
+  App.rerender()
 }
 
 export { bind } from './lib/data/DatasetRegistry'

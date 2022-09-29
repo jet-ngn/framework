@@ -122,15 +122,6 @@ export function getTemplateRenderingTasks (view, template, placeholder = null) {
 
 export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false, setDeepestRoute = false } = {}) {
   const view = new View(parent, rootNode, config, route)
-
-  if (rootLevel) {
-    TREE.rootView = view
-  }
-
-  if (setDeepestRoute) {
-    TREE.deepestRoute = view
-  }
-
   const { routes } = config
 
   if (routes) {
@@ -145,6 +136,14 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
         route: new Route(matched)
       }, { rootLevel, setDeepestRoute: true })
     }
+  }
+
+  if (rootLevel) {
+    TREE.rootView = view
+  }
+
+  if (setDeepestRoute) {
+    TREE.deepestRoute = view
   }
 
   parent?.children.push(view)

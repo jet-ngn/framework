@@ -1,3 +1,5 @@
+import Session from './Session'
+
 export default class PermissionsManager {
   #roles
 
@@ -5,7 +7,7 @@ export default class PermissionsManager {
     this.#roles = config
   }
 
-  isAuthorized (...rights) {
+  allows (...rights) {
     const matchingRights = Object.keys(this.#roles).reduce((result, role) => ([
       ...result,
       ...(Session.user?.roles.includes(role) ? this.#roles[role] : [])

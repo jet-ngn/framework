@@ -1,7 +1,7 @@
 import EventHandler from './EventHandler'
 
-const listeners = new Map
-const views = new Map
+export const listeners = new Map
+export const views = new Map
 
 export default class Bus {
   static emit (name, ...args) {
@@ -80,16 +80,6 @@ function remove (name, handlers, handler) {
   listeners.set(name, handlers.filter(storedHandler => storedHandler !== handler))
 }
 
-// export function removeAllViewEvents () {
-//   for (let [view, events] of views) {
-//     Object.keys(events).forEach(evt => {
-//       off(`${view.scope}.${evt}`, events[evt])
-//     })
-//   }
-
-//   views.clear()
-// }
-
 export function removeEventsByView (view) {
   const stored = views.get(view)
 
@@ -98,5 +88,5 @@ export function removeEventsByView (view) {
   }
 
   Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
-  views.delete(stored)
+  views.delete(view)
 }

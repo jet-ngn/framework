@@ -4,7 +4,7 @@ import { TREE } from '../../env'
 
 export default class ViewBinding extends DataBinding {
   #node
-  #view
+  #view = null
 
   constructor (parent, node, interpolation) {
     super(parent, interpolation)
