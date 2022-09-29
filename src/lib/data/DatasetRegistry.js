@@ -13,27 +13,27 @@ export function bind (...targets) {
   return new DataBindingInterpolation(targets, transform)
 }
 
-export function registerAttributeBinding (parent, node, name, interpolation) {
+export function registerAttributeBinding (view, node, name, interpolation) {
   return registerBinding(new AttributeBinding(...arguments))
 }
 
-export function registerAttributeListBinding (parent, list, interpolation) {
+export function registerAttributeListBinding (view, list, interpolation) {
   return registerBinding(new AttributeListBinding(...arguments))
 }
 
-export function registerAttributeListBooleanBinding (parent, list, name, interpolation) {
+export function registerAttributeListBooleanBinding (view, list, name, interpolation) {
   return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
-export function registerContentBinding (parent, node, interpolation, retainFormatting) {
+export function registerContentBinding (view, node, interpolation, retainFormatting) {
   return registerBinding(new ContentBinding(...arguments))
 }
 
-export function registerPropertyBinding (parent, node, name, interpolation) {
+export function registerPropertyBinding (view, node, name, interpolation) {
   return registerBinding(new PropertyBinding(...arguments))
 }
 
-export function registerViewBinding (parent, node, interpolation) {
+export function registerViewBinding (view, node, interpolation) {
   return registerBinding(new ViewBinding(...arguments))
 }
 
@@ -46,13 +46,14 @@ export function registerDataset (target, isGlobal = false) {
 }
 
 export function removeBindingsByView (view) {
+  console.log(view.name);
   view.children.forEach(removeBindingsByView)
 
-  for (let [key, { bindings }] of sets) {
-    sets.get(key).bindings = bindings.reduce((result, binding) => {
-      return binding.parent === view ? result : [...result, binding]
-    }, [])
+  for (let [data, { bindings }] of sets) {
+    sets.get(data).bindings = bindings.filter(binding => binding.view !== view)
   }
+
+  logBindings()
 }
 
 export function logBindings () {

@@ -1,7 +1,7 @@
 import DOMEventListener from './DOMEventListener'
 
-export const listeners = new Map
-export const events = []
+const listeners = new Map
+const events = []
 
 export function addDOMEventHandler (view, node, name, callback, options) {
   const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name) && !events.includes(name)

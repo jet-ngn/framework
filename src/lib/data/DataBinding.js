@@ -1,16 +1,16 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 
 export default class DataBinding extends DataBindingInterpolation {
-  #parent
+  #view
   #value = null
 
-  constructor (parent, { targets, transform }) {
+  constructor (view, { targets, transform }) {
     super(targets, transform)
-    this.#parent = parent
+    this.#view = view
   }
 
-  get parent () {
-    return this.#parent
+  get view () {
+    return this.#view
   }
 
   get value () {

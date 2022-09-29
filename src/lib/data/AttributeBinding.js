@@ -4,8 +4,8 @@ export default class AttributeBinding extends DataBinding {
   #name
   #node
 
-  constructor (parent, node, name, interpolation) {
-    super(parent, interpolation)
+  constructor (view, node, name, interpolation) {
+    super(view, interpolation)
     this.#name = name
     this.#node = node
   }
@@ -13,7 +13,7 @@ export default class AttributeBinding extends DataBinding {
   reconcile () {
     super.reconcile(({ current }) => {
       if (Array.isArray(current)) {
-        const list = new AttributeList(this.parent, this.#node, this.#name, current)
+        const list = new AttributeList(this.view, this.#node, this.#name, current)
         current = list.value
       }
       

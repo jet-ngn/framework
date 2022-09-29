@@ -11,8 +11,8 @@ export default class ContentBinding extends DataBinding {
   #placeholder
   #retainFormatting
 
-  constructor (parent, node, interpolation, retainFormatting) {
-    super(parent, interpolation)
+  constructor (view, node, interpolation, retainFormatting) {
+    super(view, interpolation)
     this.#placeholder = node
     this.#nodes = [node]
     this.#retainFormatting = retainFormatting
@@ -57,8 +57,7 @@ export default class ContentBinding extends DataBinding {
       const fragment = document.createDocumentFragment()
       const template = document.createElement('template')
       fragment.append(template)
-      
-      const tasks = getTemplateRenderingTasks(this.parent, value, template)
+      const tasks = getTemplateRenderingTasks(this.view, value, template)
       tasks.forEach(({ callback }) => callback())
 
       return fragment.children

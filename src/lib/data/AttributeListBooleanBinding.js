@@ -4,8 +4,8 @@ export default class AttributeListBooleanBinding extends DataBinding {
   #list
   #name
 
-  constructor (parent, list, name, interpolation) {
-    super(parent, interpolation)
+  constructor (view, list, name, interpolation) {
+    super(view, interpolation)
     this.#list = list
     this.#name = name
   }

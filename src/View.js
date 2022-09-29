@@ -1,10 +1,10 @@
+import IdentifiedClass from './lib/IdentifiedClass'
 import Dataset from './lib/data/Dataset'
 import PermissionsManager from './lib/session/PermissionsManager'
 import Bus, { addHandler } from './lib/events/Bus'
-import { createID } from './utilities/IDUtils'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
-export default class View {
+export default class View extends IdentifiedClass {
   #children = []
   #config
   #data
@@ -18,7 +18,7 @@ export default class View {
   #version
 
   constructor (parent, rootNode, { data, description, name, on, permissions, scope, version } = {}, route) {
-    const id = `view_${createID()}`
+    super('view')
 
     this.#config = arguments[2]
     this.#data = data ? new Dataset(data, false) : null
@@ -28,7 +28,7 @@ export default class View {
     this.#permissions = permissions ? new PermissionsManager(permissions) : null
     this.#rootNode = rootNode ?? null
     this.#route = route ?? null
-    this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? id}`
+    this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
 
     Object.keys(on ?? {}).forEach(evt => addHandler(this, evt, on[evt]))

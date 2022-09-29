@@ -3,8 +3,8 @@ import DataBinding from './DataBinding'
 export default class AttributeListBinding extends DataBinding {
   #list
 
-  constructor (parent, list, interpolation) {
-    super(parent, interpolation)
+  constructor (view, list, interpolation) {
+    super(view, interpolation)
     this.#list = list
   }
 

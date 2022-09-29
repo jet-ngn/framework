@@ -60,9 +60,7 @@ function registerHandler (view, evt, cb, cfg = {}) {
   if (storedView) {
     storedView[evt] = callback
   } else {
-    views.set(view, {
-      [evt]: callback
-    })
+    views.set(view, { [evt]: callback })
   }
 
   return Bus.on(`${view.scope}.${evt}`, callback)
@@ -77,7 +75,13 @@ function remove (name, handlers, handler) {
     return listeners.delete(name)
   }
 
-  listeners.set(name, handlers.filter(storedHandler => storedHandler !== handler))
+  handlers.splice(handlers.indexOf(handler))
+  
+  if (handlers.length === 0) {
+    return listeners.delete(name)
+  }
+
+  listeners.set(name, handlers)
 }
 
 export function removeEventsByView (view) {

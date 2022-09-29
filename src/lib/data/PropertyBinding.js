@@ -4,8 +4,8 @@ export default class PropertyBinding extends DataBinding {
   #name
   #node
 
-  constructor (parent, node, name, interpolation) {
-    super(parent, interpolation)
+  constructor (view, node, name, interpolation) {
+    super(view, interpolation)
     this.#name = name
     this.#node = node
   }
