@@ -23,7 +23,7 @@ export default class View extends IdentifiedClass {
     this.#config = arguments[2]
     this.#data = data ? new Dataset(data, false) : null
     this.#description = description ?? null
-    this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${id}${version ? `@${version}` : ''}`
+    this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#parent = parent ?? null
     this.#permissions = permissions ? new PermissionsManager(permissions) : null
     this.#rootNode = rootNode ?? null
@@ -94,8 +94,13 @@ export default class View extends IdentifiedClass {
     Bus.emit(`${this.scope}.${evt}`, ...args)
   }
 
-  find (selector) {
-    selector = selector.trim()
-    return [...this.#rootNode.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]
+  find (...selectors) {
+    selectors = selectors.map(selector => selector.trim())
+    const result = []
+
+    for (let selector of selectors) {
+      result.push(...this.#rootNode.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`))
+    }
+    return result
   }
 }

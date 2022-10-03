@@ -46,24 +46,17 @@ export function registerDataset (target, isGlobal = false) {
 }
 
 export function removeBindingsByView (view) {
-  console.log(view.name);
-  view.children.forEach(removeBindingsByView)
-
   for (let [data, { bindings }] of sets) {
     sets.get(data).bindings = bindings.filter(binding => binding.view !== view)
   }
-
-  logBindings()
 }
 
-export function logBindings () {
-  console.log([...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], []));
-}
+// export function logBindings () {
+//   return [...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], [])
+// }
 
-function getArrayMethodHandler (target, property, reconcile = false) {
+function getArrayMethodHandler (target, property, method, reconcile = false) {
   return (...args) => {
-    const method = target[property]
-
     const change = {
       timestamp: Date.now(),
       action: property,
@@ -79,7 +72,7 @@ function getArrayMethodHandler (target, property, reconcile = false) {
 
     change.value.current = [...target]
     changes.push(change)
-    
+
     for (let binding of bindings) {
       binding.reconcile(reconcile ? undefined : property)
     }
@@ -92,7 +85,7 @@ function getArrayProxy (arr) {
   return Proxy.revocable(arr, {
     get: (target, property) => {
       let reconcile = false
-
+      
       switch (property) {
         case 'pop':
         case 'push':
@@ -106,11 +99,18 @@ function getArrayProxy (arr) {
         case 'splice': 
           reconcile = true
           break
+
+        case 'empty': return getArrayMethodHandler(target, property, () => target.length = 0, true)
+        
+        case 'replace': return getArrayMethodHandler(target, property, value => {
+          target.length = 0
+          target.push(...value)
+        }, true)
       
         default: return target[property]
       }
 
-      return getArrayMethodHandler(target, property, reconcile)
+      return getArrayMethodHandler(target, property, target[property], reconcile)
     },
 
     set: () => {
@@ -127,7 +127,7 @@ function getMapProxy (map) {
 }
 
 function getObjectProxy (obj) {
-  Object.keys(obj).forEach((key) => obj[key] = processTarget(obj[key], obj, false))
+  // Object.keys(obj).forEach((key) => obj[key] = processTarget(obj[key], obj, false))
 
   return Proxy.revocable(obj, {
     get: (target, property) => target[property],

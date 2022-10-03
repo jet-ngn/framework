@@ -60,7 +60,7 @@ export default class ContentBinding extends DataBinding {
       const tasks = getTemplateRenderingTasks(this.view, value, template)
       tasks.forEach(({ callback }) => callback())
 
-      return fragment.children
+      return [...fragment.children]
     }
 
     switch (typeof value) {

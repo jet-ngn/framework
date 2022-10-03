@@ -1,5 +1,9 @@
+import { getTemplateRenderingTasks } from './rendering/Renderer'
 import Bus, { addHandler } from './events/Bus'
 import { createID } from '../utilities/IDUtils'
+import { RESERVED_EVENT_NAMES } from '../env'
+
+// WIP!
 
 export function createComponent (tag, cfg) {
   if (customElements.get(tag)) {
@@ -28,58 +32,101 @@ export function createComponent (tag, cfg) {
 function getComponent (superclass) {
   return class extends superclass {
     #attributes
-    // #description
+    #data
+    #description
     #name
-    // #parent
-    // #rootNode
-    // #route
     #scope
     #tag
-    // #version
+    #version
 
+    #onBeforeMount
     #onMount
 
-    constructor (tag, { attributes, name, on, render, style }) {
+    constructor (tag, { attributes, data, description, name, on, render, style, version }) {
       super()
 
+      tag = tag.toLowerCase()
+
       this.#attributes = attributes ?? {}
-      this.#name = name ?? tag
+      this.#data = data ? new Dataset(data, false) : null
+      this.#description = description ?? null
+      this.#name = name ?? `${tag}${version ? `@${version}` : ''}`
       this.#scope = createID({ prefix: tag })
       this.#tag = tag
+      this.#version = version ?? null
 
       this.attachShadow({ mode: 'open' })
-      
-      if (render) {
-        // this.shadowRoot.append(processTemplate(null, render.call(this)))
-      }
+
+      const tasks = getTemplateRenderingTasks(this, render.call(this))
+
+      console.log(tasks);
+
+      // this.shadowRoot.append(document.createElement('slot'))
+      // this.shadowRoot.append(render ? processTemplate(null, render.call(this)) : document.createElement('slot'))
 
       Object.keys(on ?? {}).forEach(evt => {
-        if (evt !== 'mount') {
-          return addHandler(this, evt, on[evt])
-        }
-        
-        this.#onMount = on[evt]
+        !RESERVED_EVENT_NAMES.includes(evt) && addHandler(this, evt, on[evt])
       })
+
+      this.#onBeforeMount = on['beforeMount'] ?? null
+      this.#onMount = on['mount'] ?? null
+
+      this.emit('beforeMount')
+      !!this.#onBeforeMount && this.#onBeforeMount()
+    }
+
+    get data () {
+      return this.#data
+    }
+
+    get description () {
+      return this.#description
     }
 
     get name () {
       return this.#name
     }
 
+    get rootNode () {
+      return this
+    }
+
     get scope () {
       return this.#scope
     }
 
+    get version () {
+      return this.#version
+    }
+
     attributeChangedCallback (name, previous, current) {
-      // console.log(...arguments)
+      console.log(...arguments)
     }
 
     connectedCallback () {
+      this.emit('mount')
       this.#onMount && this.#onMount.call(this)
     }
 
     emit (evt, ...args) {
-      Bus.emit(`${this.#scope}.${evt}`, ...args)
+      let key = null
+  
+      if (typeof evt === 'symbol') {
+        key = evt
+        evt = args[0]
+        args = args.slice(1)
+      }
+  
+      if (!!RESERVED_EVENT_NAMES.includes(evt) && key !== INTERNAL_ACCESS_KEY) {
+        throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
+      }
+  
+      Bus.emit(`${this.scope}.${evt}`, ...args)
+    }
+
+    find (selector) {
+      selector = selector.trim()
+      return [...this.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`)]
     }
   }
 }

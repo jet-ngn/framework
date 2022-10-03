@@ -29,12 +29,12 @@ export function createApp ({ baseURL, selector }) {
   ready && run()
 }
 
-export function navigate (to, payload = null) {
+export function navigate (to, { append = false, data = null } = {}) {
   if (to === PATH.current) {
     throw new Error(`Cannot navigate: "${to}" is already the current location`)
   }
 
-  history.pushState(payload, null, to)
+  history.pushState(data, null, `${append ? PATH.current : ''}${to}`)
   updateHistory()
 }
 
