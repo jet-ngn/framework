@@ -45,15 +45,13 @@ export function registerDataset (target, isGlobal = false) {
   return sets.has(target) ? sets.get(target).revocable.proxy : processTarget(target, null, isGlobal)
 }
 
-export function removeBindingsByView (view) {
-  for (let [data, { bindings }] of sets) {
-    sets.get(data).bindings = bindings.filter(binding => binding.view !== view)
-  }
+export function removeBindings () {
+  sets.forEach(set => set.bindings = [])
 }
 
-// export function logBindings () {
-//   return [...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], [])
-// }
+export function logBindings () {
+  return [...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], [])
+}
 
 function getArrayMethodHandler (target, property, method, reconcile = false) {
   return (...args) => {

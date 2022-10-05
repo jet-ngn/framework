@@ -1,7 +1,7 @@
 import EventHandler from './EventHandler'
 
-export const listeners = new Map
-export const views = new Map
+export let listeners = new Map
+export let views = new Map
 
 export default class Bus {
   static emit (name, ...args) {
@@ -82,6 +82,11 @@ function remove (name, handlers, handler) {
   }
 
   listeners.set(name, handlers)
+}
+
+export function removeEvents () {
+  listeners = new Map
+  views = new Map
 }
 
 export function removeEventsByView (view) {

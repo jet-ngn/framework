@@ -1,5 +1,8 @@
 import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
 import { TREE } from './env'
+import { removeBindings } from './lib/data/DatasetRegistry'
+import { removeDOMEvents } from './lib/events/DOMBus'
+import { removeEvents } from './lib/events/Bus'
 
 export default class Application {
   #config
@@ -28,6 +31,9 @@ export default class Application {
 
   rerender () {
     unmountView(TREE.rootView)
+    removeDOMEvents()
+    removeEvents()
+    removeBindings()
     this.render()
   }
 }

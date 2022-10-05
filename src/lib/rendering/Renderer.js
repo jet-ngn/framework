@@ -10,9 +10,8 @@ import Forbidden from '../views/403.js'
 import NotFound from '../views/404.js'
 
 import { parseHTML } from './HTMLParser'
-import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
+import { addDOMEventHandler } from '../events/DOMBus'
 import { removeEventsByView } from '../events/Bus'
-import { removeBindingsByView } from '../data/DatasetRegistry'
 import { TREE, INTERNAL_ACCESS_KEY, PATH } from '../../env';
 import { html } from './tags'
 
@@ -153,10 +152,7 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
 
 export function unmountView (view) {
   view.children.forEach(unmountView)
-  removeDOMEventsByView(view)
-  removeBindingsByView(view)
   view.emit(INTERNAL_ACCESS_KEY, 'unmount')
-  removeEventsByView(view)
 }
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {

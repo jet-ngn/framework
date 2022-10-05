@@ -1,10 +1,10 @@
 import DOMEventListener from './DOMEventListener'
 
-export const listeners = new Map
-export const events = []
+export let listeners = new Map
+export let events = new Set
 
 export function addDOMEventHandler (view, node, name, callback, options) {
-  const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name) && !events.includes(name)
+  const shouldApplyListeners = ![...listeners.keys()].some(({ event }) => event === name) && !events.has(name)
   const listener = new DOMEventListener(...arguments)
 
   listeners.set({
@@ -25,7 +25,7 @@ export function addDOMEventHandler (view, node, name, callback, options) {
 }
 
 function applyListeners (eventName) {
-  events.push(eventName)
+  events.add(eventName)
 
   return document.body.addEventListener(eventName, evt => {
     const { target } = evt
@@ -36,10 +36,23 @@ function applyListeners (eventName) {
   })
 }
 
-export function removeDOMEventsByView (target) {
-  [...listeners.keys()].filter(({ view }) => view === target).forEach(listener => listeners.delete(listener))
+export function removeDOMEvents () {
+  listeners = new Map
+  events = new Set
 }
 
 export function removeDOMEventsByNode (target) {
-  [...listeners.keys()].filter(({ node }) => node === target).forEach(key => listeners.delete(key))
+  const remainingEvents = new Set
+
+  ;[...listeners.keys()].filter(({ event, node }) => {
+    const match = node === target
+
+    if (!match) {
+      remainingEvents.add(event)
+    }
+
+    return match
+  }).forEach(key => listeners.delete(key))
+
+  events = remainingEvents
 }

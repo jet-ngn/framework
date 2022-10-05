@@ -77,6 +77,14 @@ function reconcileAttributes (original, update) {
   })
 }
 
+function reconcileNode (original, update) {
+  switch (original.nodeType) {
+    case 1: return reconcileElementNode(...arguments)
+    case 3: return reconcileTextNode(...arguments)
+    default: throw new TypeError(`Cannot reconcile node type "${original.nodeType}"`)
+  }
+}
+
 function reconcileElementNode (original, update) {
   if (original.constructor.name !== update.constructor.name) {
     removeDOMEventsByNode(original)
@@ -92,8 +100,6 @@ function reconcileElementNode (original, update) {
     removeAllAttributes(original)
   }
 
-  // console.log('REC EVENT LISTENERS')
-
   const { childNodes } = original
 
   if (childNodes.length > 0) {
@@ -101,14 +107,6 @@ function reconcileElementNode (original, update) {
   }
 
   return original
-}
-
-function reconcileNode (original, update) {
-  switch (original.nodeType) {
-    case 1: return reconcileElementNode(...arguments)
-    case 3: return reconcileTextNode(...arguments)
-    default: throw new TypeError(`Cannot reconcile node type "${original.nodeType}"`)
-  }
 }
 
 function reconcileTextNode (original, update) {
