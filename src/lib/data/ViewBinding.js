@@ -1,6 +1,5 @@
 import DataBinding from './DataBinding'
 import { getViewRenderingTasks, unmountView } from '../rendering/Renderer'
-import { TREE } from '../../env'
 
 export default class ViewBinding extends DataBinding {
   #node
@@ -25,13 +24,16 @@ export default class ViewBinding extends DataBinding {
         return
       }
 
+      const tree = {}
+
       const tasks = getViewRenderingTasks({
         view: this.view,
         rootNode: this.#node,
         config: current
-      }, { rootLevel: true })
+      }, { rootLevel: true }, tree)
 
-      this.#boundView = TREE.rootView
+      this.#boundView = tree.rootView
+      children.push(this.#boundView)
       tasks.forEach(({ callback }) => callback())
     })
   }

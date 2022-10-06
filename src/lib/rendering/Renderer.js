@@ -11,8 +11,8 @@ import NotFound from '../views/404.js'
 
 import { parseHTML } from './HTMLParser'
 import { addDOMEventHandler } from '../events/DOMBus'
-import { removeEventsByView } from '../events/Bus'
-import { TREE, INTERNAL_ACCESS_KEY, PATH } from '../../env';
+// import { removeEventsByView } from '../events/Bus'
+import { INTERNAL_ACCESS_KEY, PATH } from '../../env';
 import { html } from './tags'
 
 import {
@@ -22,7 +22,7 @@ import {
   registerViewBinding
 } from '../data/DatasetRegistry'
 
-export function getTemplateRenderingTasks (view, template, placeholder = null) {
+export function getTemplateRenderingTasks (view, template, placeholder = null, tree) {
   const tasks = []
   const retainFormatting = view.rootNode.tagName === 'PRE'
   const { fragment, bindings, templates } = parseHTML(template, retainFormatting)
@@ -35,7 +35,7 @@ export function getTemplateRenderingTasks (view, template, placeholder = null) {
     name: 'Fire Before Mount event',
 
     callback: abort => {
-      if (PATH.remaining.length > 0 && (view === TREE.deepestRoute || viewIsChildOfDeepestRoute(view))) {
+      if (PATH.remaining.length > 0 && (view === tree.deepestRoute || viewIsChildOfDeepestRoute(view))) {
         return
       }
 
@@ -93,7 +93,7 @@ export function getTemplateRenderingTasks (view, template, placeholder = null) {
 
     callback: abort => {
       if (PATH.remaining.length > 0) {
-        if (view === TREE.deepestRoute) {
+        if (view === tree.deepestRoute) {
           return replaceView(view, NotFound, abort)
         }
   
@@ -119,13 +119,13 @@ export function getTemplateRenderingTasks (view, template, placeholder = null) {
   return tasks
 }
 
-export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false, setDeepestRoute = false } = {}) {
+export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false, setDeepestRoute = false } = {}, tree = {}) {
   const view = new View(parent, rootNode, config, route)
   const { routes } = config
 
   if (routes) {
     const { matched } = new RouteManager(routes)
-    TREE.deepestRoute = view
+    tree.deepestRoute = view
 
     if (matched) {
       return getViewRenderingTasks({
@@ -133,21 +133,21 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
         rootNode,
         config: matched.config,
         route: new Route(matched)
-      }, { rootLevel, setDeepestRoute: true })
+      }, { rootLevel, setDeepestRoute: true }, tree)
     }
   }
 
   if (rootLevel) {
-    TREE.rootView = view
+    tree.rootView = view
   }
 
   if (setDeepestRoute) {
-    TREE.deepestRoute = view
+    tree.deepestRoute = view
   }
 
   parent?.children.push(view)
   const template = config.render?.call(view)
-  return getTemplateRenderingTasks(view, template ?? html``)
+  return getTemplateRenderingTasks(view, template ?? html``, null, tree)
 }
 
 export function unmountView (view) {
@@ -197,21 +197,22 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-function replaceView (view, config, abort) {
-  const setRoot = view === TREE.rootView
+function replaceView (view, config, abort, tree) {
+  const setRoot = view === tree.rootView
   view = new View(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
   
   fireBeforeMountEvent(view, abort)
   view.parent?.children.push(view)
 
   if (setRoot) {
-    TREE.rootView = view
+    tree.rootView = view
   }
 
   return mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
 }
 
 function mountView (view, fragment) {
+  // console.log('MOUNT', view.name);
   view.rootNode.replaceChildren(fragment)
   view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
@@ -275,10 +276,10 @@ function validateBinding (item, node, hasMultipleRoots, cb) {
   cb()
 }
 
-function viewIsChildOfDeepestRoute (view) {
+function viewIsChildOfDeepestRoute (view, tree) {
   if (!view) {
     return false
   }
 
-  return view.parent === TREE.deepestRoute || viewIsChildOfDeepestRoute(view.parent)
+  return view.parent === tree.deepestRoute || viewIsChildOfDeepestRoute(view.parent)
 }

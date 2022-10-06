@@ -56,8 +56,12 @@ export default class ContentBinding extends DataBinding {
     if (value instanceof Template) {
       const fragment = document.createDocumentFragment()
       const template = document.createElement('template')
+      
       fragment.append(template)
-      const tasks = getTemplateRenderingTasks(this.view, value, template)
+
+      const tree = {}
+      const tasks = getTemplateRenderingTasks(this.view, value, template, tree)
+      
       tasks.forEach(({ callback }) => callback())
 
       return [...fragment.children]

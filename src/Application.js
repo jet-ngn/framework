@@ -1,5 +1,4 @@
 import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
-import { TREE } from './env'
 import { removeBindings } from './lib/data/DatasetRegistry'
 import { removeDOMEvents } from './lib/events/DOMBus'
 import { removeEvents } from './lib/events/Bus'
@@ -7,6 +6,7 @@ import { removeEvents } from './lib/events/Bus'
 export default class Application {
   #config
   #rootNode
+  #tree = {}
 
   constructor (rootNode, config) {
     this.#rootNode = rootNode
@@ -14,11 +14,13 @@ export default class Application {
   }
 
   render () {
+    const tree = {}
+
     const tasks = getViewRenderingTasks({
       rootNode: this.#rootNode,
       config: this.#config
-    }, { rootLevel: true, setDeepestRoute: true })
-
+    }, { rootLevel: true, setDeepestRoute: true }, this.#tree)
+    
     for (let { callback } of tasks) {
       let stop = false
       callback(() => stop = true)
@@ -30,7 +32,7 @@ export default class Application {
   }
 
   rerender () {
-    unmountView(TREE.rootView)
+    unmountView(this.#tree.rootView)
     removeDOMEvents()
     removeEvents()
     removeBindings()
