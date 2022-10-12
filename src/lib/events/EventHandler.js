@@ -58,6 +58,6 @@ export default class EventHandler extends IdentifiedClass {
     await this.#callback.apply(this.#view, args)
     delete this.#view.event
 
-    return true
+    return !args[0]?.cancelBubble ?? true
   }
 }

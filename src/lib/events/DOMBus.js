@@ -31,12 +31,22 @@ export function addDOMEventHandler (view, node, name, callback, options) {
 function applyListeners (eventName) {
   events.add(eventName)
 
-  const handler = evt => {
+  const handler = async (evt) => {
     const { target } = evt
+    const matches = [...listeners.values()].filter(({ node, event }) => event === eventName && (target === node || node.contains(target))).reverse()
+    let cancel = false
 
-    ;[...listeners.values()]
-      .filter(({ node, event }) => (target === node || node.contains(target)) && event === eventName)
-      .forEach(({ view, handler }) => handler.call(view, evt))
+    for (let { node, handler, view } of matches) {
+      if (node.contains(target) && cancel) {
+        continue
+      }
+
+      const cancelled = await handler.call(view, evt)
+      
+      if (!cancelled) {
+        cancel = true
+      }
+    }
   }
 
   handlers[eventName] = handler
