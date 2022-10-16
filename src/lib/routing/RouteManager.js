@@ -26,7 +26,7 @@ export default class RouteManager {
     let match = null
     let current = 0
     const routes = Object.values(this.#routes).filter(({ value }) => value >= minimum)
-    
+
     for (let route of routes) {
       const { slugs, value } = route
       const scores = new Array(slugs.length).fill(0)
@@ -38,7 +38,7 @@ export default class RouteManager {
 
       for (let [i, slug] of PATH.remaining.entries()) {
         const routeSlug = slugs[i]
-
+        
         if (!routeSlug) {
           break
         }
@@ -60,11 +60,10 @@ export default class RouteManager {
           ...route,
           vars
         }
-        
-        PATH.remaining = PATH.remaining.slice(slugs.length)
       }
     }
 
+    PATH.remaining = PATH.remaining.slice(match?.slugs.length ?? 0)
     return match
   }
 }

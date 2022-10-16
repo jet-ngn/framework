@@ -35,7 +35,7 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
     name: 'Fire Before Mount event',
 
     callback: abort => {
-      if (PATH.remaining.length > 0 && (view === tree.deepestRoute || viewIsChildOfDeepestRoute(view))) {
+      if (PATH.remaining.length > 0 && (view === tree.deepestRoute || viewIsChildOfDeepestRoute(view, tree))) {
         return
       }
 
@@ -94,21 +94,21 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
     callback: abort => {
       if (PATH.remaining.length > 0) {
         if (view === tree.deepestRoute) {
-          return replaceView(view, NotFound, abort)
+          return replaceView(view, NotFound, abort, tree)
         }
   
-        if (viewIsChildOfDeepestRoute(view)) {
+        if (viewIsChildOfDeepestRoute(view, tree)) {
           return
         }
       }
 
       if (!!view.permissions) {
         if (!Session.user) {
-          return replaceView(view, Unauthorized, abort)
+          return replaceView(view, Unauthorized, abort, tree)
         }
   
         if (!view.permissions.hasRole(...Session.user.roles)) {
-          return replaceView(view, Forbidden, abort)
+          return replaceView(view, Forbidden, abort, tree)
         }
       }
 
@@ -128,6 +128,7 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
     tree.deepestRoute = view
 
     if (matched) {
+      console.log('MATCHED', matched);
       return getViewRenderingTasks({
         parent,
         rootNode,
@@ -281,5 +282,5 @@ function viewIsChildOfDeepestRoute (view, tree) {
     return false
   }
 
-  return view.parent === tree.deepestRoute || viewIsChildOfDeepestRoute(view.parent)
+  return view.parent === tree.deepestRoute || viewIsChildOfDeepestRoute(view.parent, tree)
 }
