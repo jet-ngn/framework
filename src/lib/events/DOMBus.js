@@ -1,4 +1,4 @@
-import { createID } from '../../utilities/IDUtils'
+import { createId } from '../../utilities/IDUtils'
 import DOMEventListener from './DOMEventListener'
 
 export let listeners = new Map
@@ -35,15 +35,19 @@ function applyListeners (eventName) {
     const { target } = evt
     const matches = [...listeners.values()].filter(({ node, event }) => event === eventName && (target === node || node.contains(target))).reverse()
     let cancel = false
+    let targetIsChild = false
 
     for (let { node, handler, view } of matches) {
-      if (node.contains(target) && cancel) {
+      if (cancel && targetIsChild) {
         continue
       }
 
-      const cancelled = await handler.call(view, evt)
+      const propagate = await handler.call(view, evt)
       
-      if (!cancelled) {
+      if (propagate) {
+        targetIsChild = false
+      } else {
+        targetIsChild = node.contains(target)
         cancel = true
       }
     }

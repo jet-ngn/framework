@@ -2,6 +2,7 @@ import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
 import { removeBindings } from './lib/data/DatasetRegistry'
 import { removeDOMEvents } from './lib/events/DOMBus'
 import { removeEvents } from './lib/events/Bus'
+import { Plugins } from './env'
 
 export default class Application {
   #config
@@ -11,6 +12,7 @@ export default class Application {
   constructor (rootNode, config) {
     this.#rootNode = rootNode
     this.#config = config
+    config.plugins?.forEach(({ install }) => install(Plugins))
   }
 
   render () {

@@ -1,5 +1,5 @@
 import Application from './Application'
-import { PATH } from './env'
+import { PATH, Plugins } from './env'
 
 let App
 let config
@@ -70,9 +70,11 @@ function updateHistory () {
 
 export { bind } from './lib/data/DatasetRegistry'
 export { createComponent } from './lib/Component'
-export { createID } from './utilities/IDUtils'
+export { createId } from './utilities/IDUtils'
 export { css, html, svg } from './lib/rendering/tags'
 
 export { default as Bus } from './lib/events/Bus'
 export { default as Dataset } from './lib/data/Dataset'
 export { default as Session } from './lib/session/Session'
+
+export { Plugins }

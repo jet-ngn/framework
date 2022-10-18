@@ -1,10 +1,10 @@
-import { createID } from '../utilities/IDUtils'
+import { createId } from '../utilities/IDUtils'
 
 export default class IdentifiedClass {
   #id
 
   constructor (prefix = null) {
-    this.#id = createID({ prefix })
+    this.#id = createId({ prefix })
   }
 
   get id () {

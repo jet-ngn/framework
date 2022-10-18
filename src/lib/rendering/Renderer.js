@@ -128,7 +128,6 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
     tree.deepestRoute = view
 
     if (matched) {
-      console.log('MATCHED', matched);
       return getViewRenderingTasks({
         parent,
         rootNode,
@@ -213,7 +212,6 @@ function replaceView (view, config, abort, tree) {
 }
 
 function mountView (view, fragment) {
-  // console.log('MOUNT', view.name);
   view.rootNode.replaceChildren(fragment)
   view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }

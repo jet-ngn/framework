@@ -1,6 +1,6 @@
 import { getTemplateRenderingTasks } from './rendering/Renderer'
 import Bus, { addHandler } from './events/Bus'
-import { createID } from '../utilities/IDUtils'
+import { createId } from '../utilities/IDUtils'
 import { RESERVED_EVENT_NAMES } from '../env'
 
 // WIP!
@@ -51,7 +51,7 @@ function getComponent (superclass) {
       this.#data = data ? new Dataset(data, false) : null
       this.#description = description ?? null
       this.#name = name ?? `${tag}${version ? `@${version}` : ''}`
-      this.#scope = createID({ prefix: tag })
+      this.#scope = createId({ prefix: tag })
       this.#tag = tag
       this.#version = version ?? null
 
