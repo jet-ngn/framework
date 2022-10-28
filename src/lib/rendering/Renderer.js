@@ -107,7 +107,7 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
           return replaceView(view, Unauthorized, abort, tree)
         }
   
-        if (!view.permissions.hasRole(...Session.user.roles)) {
+        if (!view.isAccessibleTo(...Session.user.roles)) {
           return replaceView(view, Forbidden, abort, tree)
         }
       }

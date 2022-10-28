@@ -1,10 +1,16 @@
-import IdentifiedClass from './lib/IdentifiedClass'
-import Dataset from './lib/data/Dataset'
 import PermissionsManager from './lib/session/PermissionsManager'
+import Dataset from './lib/data/Dataset'
 import Bus, { addHandler } from './lib/events/Bus'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
-export default class View extends IdentifiedClass {
+export class ViewPermissions extends Object {
+  constructor (obj) {
+    super()
+    Object.keys(obj).forEach(key => this[key] = obj[key])
+  }
+}
+
+export default class View extends PermissionsManager {
   #children = []
   #config
   #data
@@ -18,14 +24,14 @@ export default class View extends IdentifiedClass {
   #version
 
   constructor (parent, rootNode, { data, description, name, on, permissions, scope, version } = {}, route) {
-    super('view')
+    super(permissions, 'view')
 
     this.#config = arguments[2]
     this.#data = data ? new Dataset(data, false) : null
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#parent = parent ?? null
-    this.#permissions = permissions ? new PermissionsManager(permissions) : null
+    this.#permissions = permissions ? new Dataset(new ViewPermissions(permissions), false) : null
     this.#rootNode = rootNode ?? null
     this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`

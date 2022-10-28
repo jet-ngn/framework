@@ -1,10 +1,12 @@
+import IdentifiedClass from '../IdentifiedClass'
 import Session from './Session'
 
-export default class PermissionsManager {
+export default class PermissionsManager extends IdentifiedClass {
   #roles
 
-  constructor (config) {
-    this.#roles = config
+  constructor (roles, idPrefix) {
+    super(idPrefix)
+    this.#roles = roles ?? null
   }
 
   allows (...rights) {
@@ -16,7 +18,7 @@ export default class PermissionsManager {
     return rights.every(right => matchingRights.includes(right))
   }
 
-  hasRole (...roles) {
+  isAccessibleTo (...roles) {
     return roles.some(role => Object.keys(this.#roles).includes(role))
   }
 }

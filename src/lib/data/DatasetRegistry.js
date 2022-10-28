@@ -5,6 +5,8 @@ import AttributeListBooleanBinding from './AttributeListBooleanBinding'
 import ContentBinding from './ContentBinding'
 import PropertyBinding from './PropertyBinding'
 import ViewBinding from './ViewBinding'
+import { ViewPermissions } from '../../View'
+import { INTERNAL_ACCESS_KEY } from '../../env'
 
 export const sets = new Map
 
