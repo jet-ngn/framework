@@ -10,13 +10,13 @@ export default class ViewBinding extends DataBinding {
     this.#node = node
   }
 
-  reconcile () {
-    super.reconcile(({ current }) => {
+  async reconcile () {
+    await super.reconcile(async ({ current }) => {
       const { children } = this.view
 
       if (this.#boundView) {
         children.splice(children.indexOf(this.#boundView), 1)
-        unmountView(this.#boundView)
+        await unmountView(this.#boundView)
       }
 
       if (!current) {
@@ -34,7 +34,10 @@ export default class ViewBinding extends DataBinding {
 
       this.#boundView = tree.rootView
       children.push(this.#boundView)
-      tasks.forEach(({ callback }) => callback())
+
+      for (let { callback } of tasks) {
+        await callback()
+      }
     })
   }
 }

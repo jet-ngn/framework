@@ -34,12 +34,12 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
   !placeholder && tasks.push({
     name: 'Fire Before Mount event',
 
-    callback: abort => {
+    callback: async (abort) => {
       if (PATH.remaining.length > 0 && (view === tree.deepestRoute || viewIsChildOfDeepestRoute(view, tree))) {
         return
       }
 
-      fireBeforeMountEvent(view, abort)
+      await fireBeforeMountEvent(view, abort)
     }
   })
 
@@ -91,10 +91,10 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
   } : {
     name: `Mount View`,
 
-    callback: abort => {
+    callback: async (abort) => {
       if (PATH.remaining.length > 0) {
         if (view === tree.deepestRoute) {
-          return replaceView(view, NotFound, abort, tree)
+          return await replaceView(view, NotFound, abort, tree)
         }
   
         if (viewIsChildOfDeepestRoute(view, tree)) {
@@ -108,11 +108,11 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
         }
   
         if (!view.isAccessibleTo(...Session.user.roles)) {
-          return replaceView(view, Forbidden, abort, tree)
+          return await replaceView(view, Forbidden, abort, tree)
         }
       }
 
-      mountView(view, fragment)
+      await mountView(view, fragment)
     }
   })
 
@@ -150,9 +150,12 @@ export function getViewRenderingTasks ({ parent = null, rootNode, config, route 
   return getTemplateRenderingTasks(view, template ?? html``, null, tree)
 }
 
-export function unmountView (view) {
-  view.children.forEach(unmountView)
-  view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+export async function unmountView (view) {
+  for (let child of view.children) {
+    await unmountView(child)
+  }
+
+  await view.emit(INTERNAL_ACCESS_KEY, 'unmount')
 }
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {
@@ -171,19 +174,19 @@ function bindListeners (view, listeners, root, hasMultipleRoots) {
   })
 }
 
-function fireBeforeMountEvent (view, abort) {
+async function fireBeforeMountEvent (view, abort) {
   let stop = false
 
-  view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
-    abort: () => {
+  await view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+    abort: async () => {
       stop = true
 
-      view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
+      await view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
         resume: () => stop = false,
 
-        retry: () => {
+        retry: async () => {
           stop = false
-          fireBeforeMountEvent(...arguments)
+          await fireBeforeMountEvent(...arguments)
         }
       })
     }
@@ -197,23 +200,23 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-function replaceView (view, config, abort, tree) {
+async function replaceView (view, config, abort, tree) {
   const setRoot = view === tree.rootView
   view = new View(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
   
-  fireBeforeMountEvent(view, abort)
+  await fireBeforeMountEvent(view, abort)
   view.parent?.children.push(view)
 
   if (setRoot) {
     tree.rootView = view
   }
 
-  return mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
+  return await mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
 }
 
-function mountView (view, fragment) {
+async function mountView (view, fragment) {
   view.rootNode.replaceChildren(fragment)
-  view.emit(INTERNAL_ACCESS_KEY, 'mount')
+  await view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
 
 function processBindings (view, fragment, bindings, retainFormatting) {

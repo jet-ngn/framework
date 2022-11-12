@@ -81,7 +81,16 @@ export default function FormControls (dependencies) {
                 return html`<input id="${id}">`.config(getFieldConfig(attributes, null, cfg.on))
               })}
             </div>
-          `.setAttributes(getAttributes(attributes, cfg.class, attributes.type, 'input'))
+          `.config({
+            attributes: getAttributes(attributes, cfg.class, attributes.type, 'input'),
+
+            on: {
+              click: evt => {
+                const input = document.getElementById(id)
+                input.focus()
+              }
+            }
+          })
         },
 
         select (cfg) {
@@ -104,7 +113,16 @@ export default function FormControls (dependencies) {
                 `.config(getFieldConfig(attributes, null, cfg.on))
               })}
             </div>
-          `.setAttributes(getAttributes(attributes, cfg.class, 'select'))
+          `.config({
+            attributes: getAttributes(attributes, cfg.class, 'select'),
+
+            on: {
+              click: evt => {
+                const select = document.getElementById(id)
+                select.focus()
+              }
+            }
+          })
         },
 
         textarea (cfg) {
@@ -118,7 +136,16 @@ export default function FormControls (dependencies) {
                 return html`<textarea id="${id}"></textarea>`.config(getFieldConfig(attributes, { value: cfg.value ?? '' }, cfg.on))
               })}
             </div>
-          `.setAttributes(getAttributes(attributes, cfg.class, 'textarea'))
+          `.config({
+            attributes: getAttributes(attributes, cfg.class, 'textarea'),
+
+            on: {
+              click: evt => {
+                const textarea = document.getElementById(id)
+                textarea.focus()
+              }
+            }
+          })
         },
 
         toggle (cfg) {

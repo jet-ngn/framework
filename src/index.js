@@ -16,7 +16,7 @@ window.addEventListener('popstate', evt => {
   updateHistory()
 })
 
-export function createApp ({ baseURL, selector }) {
+export async function createApp ({ baseURL, selector }) {
   if (created) {
     throw new Error(`App has already been created`)
   }
@@ -26,19 +26,19 @@ export function createApp ({ baseURL, selector }) {
   PATH.base = new URL(baseURL ?? '', location.origin)
   created = true
 
-  ready && run()
+  ready && await run()
 }
 
-export function navigate (to, { append = false, data = null } = {}) {
+export async function navigate (to, { append = false, data = null } = {}) {
   if (to === PATH.current) {
     throw new Error(`Cannot navigate: "${to}" is already the current location`)
   }
 
   history.pushState(data, null, `${append ? PATH.current : ''}${to}`)
-  updateHistory()
+  await updateHistory()
 }
 
-function run () {
+async function run () {
   const nodes = document.querySelectorAll(config.selector)
   const error = `Invalid app root element selector: "${config.selector}"`
 
@@ -54,7 +54,7 @@ function run () {
   setPaths()
 
   App = new Application(nodes[0], config)
-  App.render()
+  await App.render()
 }
 
 function setPaths () {
@@ -62,14 +62,14 @@ function setPaths () {
   PATH.remaining = PATH.current.split('/').filter(Boolean)
 }
 
-function updateHistory () {
+async function updateHistory () {
   PATH.previous = PATH.current
   setPaths()
-  App.rerender()
+  await App.rerender()
 }
 
 export { bind } from './lib/data/DatasetRegistry'
-export { createComponent } from './lib/Component'
+// export { createComponent } from './lib/Component'
 export { createId } from './utilities/IDUtils'
 export { css, html, svg } from './lib/rendering/tags'
 

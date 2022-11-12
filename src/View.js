@@ -84,7 +84,7 @@ export default class View extends PermissionsManager {
     return this.#version
   }
 
-  emit (evt, ...args) {
+  async emit (evt, ...args) {
     let key = null
 
     if (typeof evt === 'symbol') {
@@ -97,7 +97,7 @@ export default class View extends PermissionsManager {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
     }
 
-    Bus.emit(`${this.scope}.${evt}`, ...args)
+    await Bus.emit(`${this.scope}.${evt}`, ...args)
   }
 
   find (...selectors) {

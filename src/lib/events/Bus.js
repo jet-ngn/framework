@@ -4,13 +4,19 @@ export let listeners = new Map
 export let views = new Map
 
 export default class Bus {
-  static emit (name, ...args) {
+  static async emit (name, ...args) {
     const handlers = listeners.get(name)
-  
-    handlers && handlers.forEach(handler => handler.call({
-      event: name,
-      remove: () => remove(name, handlers, handler)
-    }, ...args))
+
+    if (!handlers) {
+      return
+    }
+
+    for (const handler of handlers) {
+      await handler.call({
+        event: name,
+        remove: () => remove(name, handlers, handler)
+      }, ...args)
+    }
   }
 
   static off (name, handler) {
@@ -50,8 +56,8 @@ function registerHandler (view, evt, cb, cfg = {}) {
 
   const handler = new EventHandler(...arguments)
 
-  const callback = function () {
-    const valid = handler.call(this.event, ...arguments)
+  const callback = async function () {
+    const valid = await handler.call(this.event, ...arguments)
     !valid && this.remove()
   }
 

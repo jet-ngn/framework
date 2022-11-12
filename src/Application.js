@@ -15,9 +15,7 @@ export default class Application {
     config.plugins?.forEach(({ install }) => install(Plugins))
   }
 
-  render () {
-    const tree = {}
-
+  async render () {
     const tasks = getViewRenderingTasks({
       rootNode: this.#rootNode,
       config: this.#config
@@ -25,7 +23,7 @@ export default class Application {
     
     for (let { callback } of tasks) {
       let stop = false
-      callback(() => stop = true)
+      await callback(() => stop = true)
 
       if (stop) {
         break
@@ -33,11 +31,11 @@ export default class Application {
     }
   }
 
-  rerender () {
-    unmountView(this.#tree.rootView)
+  async rerender () {
+    await unmountView(this.#tree.rootView)
     removeDOMEvents()
     removeEvents()
     removeBindings()
-    this.render()
+    await this.render()
   }
 }
