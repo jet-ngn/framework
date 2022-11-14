@@ -6,9 +6,9 @@ let config
 let created = false
 let ready = false
 
-document.addEventListener('DOMContentLoaded', evt => {
+document.addEventListener('DOMContentLoaded', async (evt) => {
   ready = true
-  created && run()
+  created && await run()
 })
 
 window.addEventListener('popstate', async (evt) => {
