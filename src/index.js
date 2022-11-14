@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', evt => {
   created && run()
 })
 
-window.addEventListener('popstate', evt => {
+window.addEventListener('popstate', async (evt) => {
   evt.preventDefault()
-  updateHistory()
+  await updateHistory()
 })
 
 export async function createApp ({ baseURL, selector }) {
