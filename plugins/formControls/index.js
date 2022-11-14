@@ -22,9 +22,10 @@ export default function FormControls (dependencies) {
   
   function getAttributes (attributes, ...classes) {
     return {
-      class: [...classes, 'control'].filter(Boolean),
-      disabled: attributes.disabled ?? false,
-      invalid: attributes.invalid ?? false
+      class: [...classes, 'control', {
+        disabled: attributes.disabled ?? false,
+        invalid: attributes.invalid ?? false
+      }].filter(Boolean),
     }
   }
   
@@ -82,7 +83,7 @@ export default function FormControls (dependencies) {
               })}
             </div>
           `.config({
-            attributes: getAttributes(attributes, cfg.class, attributes.type, 'input'),
+            attributes: getAttributes(attributes, attributes.type, 'input', ...(cfg.classes ?? [])),
 
             on: {
               click: evt => {
@@ -114,7 +115,7 @@ export default function FormControls (dependencies) {
               })}
             </div>
           `.config({
-            attributes: getAttributes(attributes, cfg.class, 'select'),
+            attributes: getAttributes(attributes, 'select', ...(cfg.classes ?? [])),
 
             on: {
               click: evt => {
@@ -137,7 +138,7 @@ export default function FormControls (dependencies) {
               })}
             </div>
           `.config({
-            attributes: getAttributes(attributes, cfg.class, 'textarea'),
+            attributes: getAttributes(attributes, 'textarea', ...(cfg.classes ?? [])),
 
             on: {
               click: evt => {
@@ -159,7 +160,7 @@ export default function FormControls (dependencies) {
         
               ${cfg.label && Label({ ...cfg, id })}
             </div>
-          `.setAttributes(getAttributes(attributes, cfg.class, 'toggle'))
+          `.setAttributes(getAttributes(attributes, 'toggle', ...(cfg.classes ?? [])))
         }
       }
     }
