@@ -11,6 +11,7 @@ import NotFound from '../views/404.js'
 
 import { parseHTML } from './HTMLParser'
 import { addDOMEventHandler } from '../events/DOMBus'
+import { removeBindingsByView } from '../data/DatasetRegistry'
 // import { removeEventsByView } from '../events/Bus'
 import { INTERNAL_ACCESS_KEY, PATH } from '../../env';
 import { html } from './tags'
@@ -155,6 +156,7 @@ export async function unmountView (view) {
     await unmountView(child)
   }
 
+  removeBindingsByView(view)
   await view.emit(INTERNAL_ACCESS_KEY, 'unmount')
 }
 

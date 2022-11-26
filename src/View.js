@@ -27,7 +27,7 @@ export default class View extends PermissionsManager {
     super(permissions, 'view')
 
     this.#config = arguments[2]
-    this.#data = data ? new Dataset(data, false) : null
+    this.#data = data ? new Dataset(data) : null
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#parent = parent ?? null

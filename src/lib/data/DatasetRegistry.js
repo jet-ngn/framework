@@ -39,20 +39,36 @@ export function registerViewBinding (view, node, interpolation) {
   return registerBinding(new ViewBinding(...arguments))
 }
 
-export function registerDataset (target, isGlobal = false) {
+export function registerDataset (target) {
   if (typeof target !== 'object') {
     throw new TypeError(`Datasets must be initialized on objects, arrays, maps or sets`)
   }
 
-  return sets.has(target) ? sets.get(target).revocable.proxy : processTarget(target, null, isGlobal)
+  return sets.has(target) ? sets.get(target).revocable.proxy : processTarget(target, null)
 }
 
 export function removeBindings () {
-  sets.forEach(set => set.bindings = [])
+  for (let [key, value] of sets) {
+    value.bindings = []
+
+    if (value.revocable.proxy instanceof ViewPermissions) {
+      sets.delete(key)
+    }
+  }
+}
+
+export function removeBindingsByView (view) {
+  for (let set of sets) {
+    let [key, { bindings }] = set
+    sets.get(key).bindings = bindings.reduce((result, binding) => binding.view === view ? result : [...result, binding], [])
+  }
+
+  // logBindings()
 }
 
 export function logBindings () {
-  return [...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], [])
+  console.log(sets);
+  console.log([...sets].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
 }
 
 function getArrayMethodHandler (target, property, method, reconcile = false) {
@@ -173,7 +189,7 @@ function getSetByProxy (proxy) {
   return [...sets.values()].find(({ revocable }) => revocable.proxy === proxy)
 }
 
-function processTarget (target, parent, isGlobal = true) {
+function processTarget (target) {
   let isProxy = true
   let revocable
 
@@ -199,11 +215,9 @@ function processTarget (target, parent, isGlobal = true) {
     }
 
     sets.set(target, {
-      parent,
       revocable,
       bindings: [],
-      changes: [],
-      isGlobal
+      changes: []
     })
 
     return revocable.proxy

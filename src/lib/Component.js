@@ -48,7 +48,7 @@ function getComponent (superclass) {
       tag = tag.toLowerCase()
 
       this.#attributes = attributes ?? {}
-      this.#data = data ? new Dataset(data, false) : null
+      this.#data = data ? new Dataset(data) : null
       this.#description = description ?? null
       this.#name = name ?? `${tag}${version ? `@${version}` : ''}`
       this.#scope = createId({ prefix: tag })

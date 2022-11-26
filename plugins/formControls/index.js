@@ -29,10 +29,11 @@ export default function FormControls (dependencies) {
     }
   }
   
-  function getData (prefix, { attributes = {} } = {}) {
+  function getData (prefix, { attributes = {}, properties = {} } = {}) {
     return {
       id: createId({ prefix }),
-      attributes
+      attributes,
+      properties
     }
   }
   
@@ -150,12 +151,12 @@ export default function FormControls (dependencies) {
         },
 
         toggle (cfg) {
-          const { id, attributes } = getData('toggle', cfg)
+          const { id, attributes, properties } = getData('toggle', cfg)
 
           return html`
             <div>
               ${Field(cfg, function () {
-                return html`<input type="checkbox" id="${id}">`.config(getFieldConfig(attributes, null, cfg.on))
+                return html`<input type="checkbox" id="${id}">`.config(getFieldConfig(attributes, properties, cfg.on))
               })}
         
               ${cfg.label && Label({ ...cfg, id })}

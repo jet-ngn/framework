@@ -21,7 +21,7 @@ export default class DataBinding extends DataBindingInterpolation {
 
   async reconcile (cb) {
     const previous = this.#value
-    
+
     let newValue = this.transform(...this.targets.map(target => {
       if (target instanceof ViewPermissions) {
         return new PermissionsManager(target)
