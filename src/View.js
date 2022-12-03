@@ -1,6 +1,6 @@
 import PermissionsManager from './lib/session/PermissionsManager'
-import Dataset from './lib/data/Dataset'
 import Bus, { addHandler } from './lib/events/Bus'
+import { registerState } from './lib/data/DataRegistry'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
 export class ViewPermissions extends Object {
@@ -27,11 +27,11 @@ export default class View extends PermissionsManager {
     super(permissions, 'view')
 
     this.#config = arguments[2]
-    this.#data = data ? new Dataset(data) : null
+    this.#data = data ? registerState(data) : null
     this.#description = description ?? null
     this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
     this.#parent = parent ?? null
-    this.#permissions = permissions ? new Dataset(new ViewPermissions(permissions), false) : null
+    this.#permissions = permissions ? registerState(new ViewPermissions(permissions), false) : null
     this.#rootNode = rootNode ?? null
     this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`

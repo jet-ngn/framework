@@ -1,7 +1,7 @@
-import { getTemplateRenderingTasks } from './rendering/Renderer'
-import Bus, { addHandler } from './events/Bus'
-import { createId } from '../utilities/IDUtils'
-import { RESERVED_EVENT_NAMES } from '../env'
+import { getTemplateRenderingTasks } from '../src/lib/rendering/Renderer'
+import Bus, { addHandler } from '../src/lib/events/Bus'
+import { createId } from '../src/utilities/IDUtils'
+import { RESERVED_EVENT_NAMES } from '../src/env'
 
 // WIP!
 
@@ -48,7 +48,7 @@ function getComponent (superclass) {
       tag = tag.toLowerCase()
 
       this.#attributes = attributes ?? {}
-      this.#data = data ? new Dataset(data) : null
+      this.#data = data ? registerState(data) : null
       this.#description = description ?? null
       this.#name = name ?? `${tag}${version ? `@${version}` : ''}`
       this.#scope = createId({ prefix: tag })

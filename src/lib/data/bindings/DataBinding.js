@@ -1,6 +1,6 @@
-import DataBindingInterpolation from './DataBindingInterpolation'
-import PermissionsManager from '../session/PermissionsManager'
-import { ViewPermissions } from '../../View'
+import DataBindingInterpolation from '../DataBindingInterpolation'
+import PermissionsManager from '../../session/PermissionsManager'
+import { ViewPermissions } from '../../../View'
 
 export default class DataBinding extends DataBindingInterpolation {
   #view

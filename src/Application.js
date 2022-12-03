@@ -1,5 +1,5 @@
 import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
-import { removeBindings } from './lib/data/DatasetRegistry'
+import { removeBindings } from './lib/data/DataRegistry'
 import { removeDOMEvents } from './lib/events/DOMBus'
 import { removeEvents } from './lib/events/Bus'
 import { Plugins } from './env'

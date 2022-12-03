@@ -1,5 +1,5 @@
 import DataBinding from './DataBinding'
-import { getViewRenderingTasks, unmountView } from '../rendering/Renderer'
+import { getViewRenderingTasks, unmountView } from '../../rendering/Renderer'
 
 export default class ViewBinding extends DataBinding {
   #node

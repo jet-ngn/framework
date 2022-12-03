@@ -1,5 +1,5 @@
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
-import { registerAttributeListBinding, registerAttributeListBooleanBinding } from '../data/DatasetRegistry'
+import { registerAttributeListBinding, registerAttributeListBooleanBinding } from '../data/DataRegistry'
 
 export default class AttributeList {
   #list

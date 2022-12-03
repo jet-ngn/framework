@@ -10,8 +10,9 @@ import Forbidden from '../views/403.js'
 import NotFound from '../views/404.js'
 
 import { parseHTML } from './HTMLParser'
-import { addDOMEventHandler } from '../events/DOMBus'
-import { removeBindingsByView } from '../data/DatasetRegistry'
+import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
+import { removeBindingsByView } from '../data/DataRegistry'
+import { removeEventsByView } from '../events/Bus'
 // import { removeEventsByView } from '../events/Bus'
 import { INTERNAL_ACCESS_KEY, PATH } from '../../env';
 import { html } from './tags'
@@ -21,7 +22,7 @@ import {
   registerAttributeBinding,
   registerPropertyBinding,
   registerViewBinding
-} from '../data/DatasetRegistry'
+} from '../data/DataRegistry'
 
 export function getTemplateRenderingTasks (view, template, placeholder = null, tree) {
   const tasks = []
@@ -156,8 +157,11 @@ export async function unmountView (view) {
     await unmountView(child)
   }
 
-  removeBindingsByView(view)
   await view.emit(INTERNAL_ACCESS_KEY, 'unmount')
+  
+  removeDOMEventsByNode(view.rootNode)
+  removeEventsByView(view)
+  removeBindingsByView(view)
 }
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {

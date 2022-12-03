@@ -1,5 +1,16 @@
 import Application from './Application'
 import { PATH, Plugins } from './env'
+import { createId } from './utilities/IDUtils'
+import { append, bind, load } from './lib/data/DataRegistry'
+import State from './lib/data/State'
+
+const Data = {
+  append,
+  bind,
+  createId,
+  load,
+  state: State
+}
 
 let App
 let config
@@ -68,13 +79,7 @@ async function updateHistory () {
   await App.rerender()
 }
 
-export { bind } from './lib/data/DatasetRegistry'
-// export { createComponent } from './lib/Component'
-export { createId } from './utilities/IDUtils'
 export { css, html, svg } from './lib/rendering/tags'
-
 export { default as Bus } from './lib/events/Bus'
-export { default as Dataset } from './lib/data/Dataset'
 export { default as Session } from './lib/session/Session'
-
-export { Plugins }
+export { Data, Plugins }
