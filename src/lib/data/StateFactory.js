@@ -1,7 +1,7 @@
 import { registerState } from './DataRegistry'
 
-export default class State {
-  constructor (data, config = null) {
+export default class StateFactory {
+  constructor (data, config) {
     return registerState(...arguments)
   }
 }
