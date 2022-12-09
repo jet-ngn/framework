@@ -1,6 +1,6 @@
 {
   "name": "jet",
-  "version": "3.0.0",
+  "version": "1.0.0-beta.1",
   "description": "JavaScript UI Library",
   "main": "src/index.js",
   "type": "module",
