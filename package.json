@@ -1,15 +1,19 @@
 {
-  "name": "jet",
+  "name": "@jet-ngn/framework-dev-environment",
   "version": "1.0.0-beta.1",
-  "description": "JavaScript UI Library",
-  "main": "src/index.js",
+  "private": true,
+  "description": "Jet NGN JavaScript UI Framework Development Environment",
   "type": "module",
-  "bin": {
-    "jet": "./cli.js"
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "browser": "src/index.js",
+  "exports": {
+    "import": "src/index.js",
+    "default": "src/index.js"
   },
   "scripts": {
-    "setup": "rm -rf ./.dist && rm -rf ./node_modules && npm install && npm link && echo \"\n\nWARNING: Using local copy of ProductionLine. This should be moved into it's own npm package before final release.\n\n\" && npm link productionline && cd ./test && npm run setup && cd ../src && npm run setup && cd ../components && npm run setup && cd ../plugins && npm run setup",
-    "update": "npm update && npm link && echo \"\n\nWARNING: Using local copy of ProductionLine. This should be moved into it's own npm package before final release.\n\n\" && npm link productionline && cd ./test && npm update && cd ../src && npm update",
+    "setup": "rm -rf ./.dist && rm -rf ./node_modules && npm install && npm link && cd ./test && npm run setup && cd ../src && npm run setup",
+    "update": "npm update && npm link && cd ./test && npm update && cd ../src && npm update",
     "test": "cd test && node index.js"
   },
   "repository": {
@@ -22,7 +26,7 @@
     "url": "https://github.com/jet-ngn/framework/issues"
   },
   "homepage": "https://github.com/jet-ngn/framework#readme",
-  "dependencies": {
+  "devDependencies": {
     "@author.io/shell": "^1.9.2"
   }
 }
