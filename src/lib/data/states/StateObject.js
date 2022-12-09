@@ -43,6 +43,14 @@ export default class StateObject extends State {
     this.#model = model
   }
 
+  clear () {
+    this.removeChildProxies()
+
+    for (let key of Object.keys(this.proxy)) {
+      delete this.proxy[key]
+    }
+  }
+
   load (data) {
     const { proxy } = this
 

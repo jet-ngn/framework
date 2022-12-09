@@ -1,12 +1,13 @@
 import Application from './Application'
 import { PATH, Plugins } from './env'
 import { createId } from './utilities/IDUtils'
-import { append, bind, load } from './lib/data/DataRegistry'
+import { append, bind, clear, load } from './lib/data/DataRegistry'
 import StateFactory from './lib/data/StateFactory'
 
 const Data = {
   append,
   bind,
+  clear,
   createId,
   load,
   State: StateFactory

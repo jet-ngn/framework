@@ -1,4 +1,5 @@
-import State, { initChildState } from './State'
+import { load, registerState } from '../DataRegistry'
+import State, { initChildState, getTarget } from './State'
 
 export default class StateArray extends State {
   #childConfig
@@ -12,7 +13,8 @@ export default class StateArray extends State {
           case 'push':
           case 'fill': return getArrayMethodHandler(this, target, property, target[property], {
             reconcile: false,
-            model
+            model,
+            index: 0
           })
         
           case 'copyWithin':
@@ -36,18 +38,53 @@ export default class StateArray extends State {
     }), config)
 
     this.#childConfig = { type, model, states }
+
+    if (Array.isArray(config)) {
+      this.#childConfig = {
+        ...this.#childConfig,
+        type: State,
+        config
+      }
+    }
+  }
+
+  get childConfig () {
+    return this.#childConfig
+  }
+
+  // append (data) {
+  //   return this.proxy.push(...this.#processData(data))
+  // }
+
+  clear () {
+    return this.load([])
   }
 
   load (data) {
     const { proxy } = this
-    
-    data = !data ? [] : Array.isArray(data) ? data : [data]
     this.removeChildProxies()
-    
+    return proxy.splice(0, proxy.length, ...this.#processData(data))
+  }
+
+  #processData (data) {
+    data = !data ? [] : Array.isArray(data) ? data : [data]
+
     const { type, states } = this.#childConfig
 
     if (!!type) {
       for (let entry of data) {
+        if (type === State) {
+          const { config } = this.#childConfig
+          config[0] = getTarget(config[0])
+
+          const proxy = registerState(...config)
+          this.addChildProxy(proxy)
+          load(proxy, entry)
+          data.splice(data.indexOf(entry), 1, proxy)
+
+          continue
+        }
+
         if (entry.constructor !== type) {
           throw new TypeError(`Data State Array${this.name ? ` "${this.name}"` : ''} expected value of type "${(new type()).constructor.name.toLowerCase()}," received "${entry.constructor.name.toLowerCase()}"`)
         }
@@ -64,13 +101,32 @@ export default class StateArray extends State {
       }
     }
 
-    return proxy.splice(0, proxy.length, ...data)
+    return data
   }
 }
 
 function getArrayMethodHandler (state, target, property, method, { reconcile = false, model = null, index = null } = {}) {
   return (...args) => {
-    !!model && validateArray(args.slice(index ?? 0), model)
+    const additive = index !== null
+    
+    if (additive) {
+      const { type, config } = state.childConfig
+
+      if (type === State) {
+        args = args.map((arg, i) => {
+          if (i < index) {
+            return arg
+          }
+
+          config[0] = getTarget(config[0])
+
+          const proxy = registerState(...config)
+          state.addChildProxy(proxy)
+          load(proxy, arg)
+          return proxy
+        })
+      }
+    }
 
     const change = {
       timestamp: Date.now(),

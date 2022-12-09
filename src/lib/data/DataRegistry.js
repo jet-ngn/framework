@@ -12,13 +12,19 @@ import StateObject from './states/StateObject'
 export const states = new Map
 
 export function append (proxy, data) {
-  const state = getStateByProxy(proxy)
-  state.append(data)
+  console.log('TODO: Add append feature')
+  // const state = getStateByProxy(proxy)
+  // state.append(data)
 }
 
 export function bind (...targets) {
   let transform = targets.pop()
   return new DataBindingInterpolation(targets, transform)
+}
+
+export function clear (proxy) {
+  const state = getStateByProxy(proxy)
+  state.clear()
 }
 
 export function getStateByProxy (proxy) {
@@ -66,6 +72,7 @@ export function registerState (target, config) {
     // throw new Error(`A Data State has already been mapped to the specified target`)
 
     if (typeof target !== 'object') {
+      console.log(target);
       throw new TypeError(`Data States must be initialized with Object, Array, Map or Set primitives`)
     }
   
