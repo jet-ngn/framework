@@ -1,0 +1,17 @@
+{
+  "name": "jet-test",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Test suite for Jet UI",
+  "main": "index.js",
+  "scripts": {
+    "setup": "rm -rf ./node_modules && npm install",
+    "test": "echo \"Please run 'jet test' from the root directory\" && exit 1"
+  },
+  "author": "Graham Butler",
+  "license": "ISC",
+  "dependencies": {
+    "tappedout": "^1.1.8"
+  }
+}
