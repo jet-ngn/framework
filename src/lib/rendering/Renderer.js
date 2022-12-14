@@ -222,7 +222,9 @@ async function replaceView (view, config, abort, tree) {
 
 async function mountView (view, fragment) {
   view.rootNode.replaceChildren(fragment)
-  await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+
+  // setTimeout ensures the DOM is fully accessible by the time the "mount" event is fired
+  setTimeout(async() => await view.emit(INTERNAL_ACCESS_KEY, 'mount'), 0)
 }
 
 function processBindings (view, fragment, bindings, retainFormatting) {
