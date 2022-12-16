@@ -1,5 +1,5 @@
-import { registerState } from '../DataRegistry'
-import State, { getTarget, initChildState } from './State'
+import { load, registerState } from '../DataRegistry'
+import State, { getTarget } from './State'
 
 export default class StateObject extends State {
   #model

@@ -83,16 +83,3 @@ export function getTarget (target) {
 
   throw new TypeError(`Data States do not currently support "${target.constructor.name}" primitives.`)
 }
-
-export function initChildState (state, data, states, key) {
-  const config = states[key]
-  const content = data[key] ?? null
-  
-  config[0] = getTarget(config[0])
-  
-  const proxy = registerState(...config)
-
-  state.addChildProxy(proxy)
-  data[key] = proxy
-  load(proxy, content)
-}

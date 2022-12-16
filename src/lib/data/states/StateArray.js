@@ -1,5 +1,5 @@
 import { load, registerState } from '../DataRegistry'
-import State, { initChildState, getTarget } from './State'
+import State, { getTarget } from './State'
 
 export default class StateArray extends State {
   #childConfig
