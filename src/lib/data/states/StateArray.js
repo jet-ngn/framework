@@ -5,7 +5,9 @@ export default class StateArray extends State {
   #childConfig
 
   constructor (arr, config = {}) {
-    const { type = null, model = {}, states = {}, properties = {} } = config
+    const { model = {}, states = {}, properties = {} } = config
+    const initial = [...arr]
+    arr.splice(0, arr.length)
 
     super(new Proxy(arr, {
       get: (target, property) => {
@@ -37,14 +39,16 @@ export default class StateArray extends State {
       }
     }), config)
 
-    this.#childConfig = { type, model, states, properties }
+    this.#childConfig = { model, states, properties, isState: false }
 
     if (Array.isArray(config)) {
       this.#childConfig = {
         ...this.#childConfig,
-        type: State,
+        isState: true,
         config
       }
+
+      this.load(initial)
     }
   }
 
@@ -52,9 +56,9 @@ export default class StateArray extends State {
     return this.#childConfig
   }
 
-  // append (data) {
-  //   return this.proxy.push(...this.#processData(data))
-  // }
+  append (data) {
+    return this.proxy.push(...this.#processData(data))
+  }
 
   clear () {
     return this.load([])
@@ -69,16 +73,16 @@ export default class StateArray extends State {
   #processData (data) {
     data = !data ? [] : Array.isArray(data) ? data : [data]
 
-    const { type, states, properties } = this.#childConfig
+    const { isState } = this.#childConfig
 
-    if (!type) {
+    if (!isState) {
       return data
     }
 
     for (let entry of data) {
-      if (type === State) {
+      if (isState) {
         const { config } = this.#childConfig
-        const proxy = registerState(getTarget(config[0]), ...config.slice(1))
+        const proxy = this.getProxy(config)
 
         this.addChildProxy(proxy)
         load(proxy, entry)
@@ -109,8 +113,7 @@ function getArrayMethodHandler (state, target, property, method, { reconcile = f
             return arg
           }
 
-          const proxy = registerState(getTarget(config[0]), ...config.slice(1))
-          
+          const proxy = state.getProxy(config)
           state.addChildProxy(proxy)
           load(proxy, arg)
           
