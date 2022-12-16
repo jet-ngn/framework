@@ -12,22 +12,10 @@ export default class RouteManager {
   }
 
   get matched () {
-    const minimum = PATH.remaining.length
-
-    if (minimum === 0) {
-      const defaultRoute = this.#routes['/'] ?? null
-      
-      return defaultRoute ? {
-        ...defaultRoute,
-        vars: {}
-      } : null
-    }
-
     let match = null
     let current = 0
-    const routes = Object.values(this.#routes).filter(({ value }) => value >= minimum)
-
-    for (let route of routes) {
+    
+    for (let route of Object.values(this.#routes)) {
       const { slugs, value } = route
       const scores = new Array(slugs.length).fill(0)
       const vars = {}
