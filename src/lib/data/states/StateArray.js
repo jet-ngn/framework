@@ -5,7 +5,7 @@ export default class StateArray extends State {
   #childConfig
 
   constructor (arr, config = {}) {
-    const { type = null, model = null, states = null } = config
+    const { type = null, model = {}, states = {}, properties = {} } = config
 
     super(new Proxy(arr, {
       get: (target, property) => {
@@ -37,7 +37,7 @@ export default class StateArray extends State {
       }
     }), config)
 
-    this.#childConfig = { type, model, states }
+    this.#childConfig = { type, model, states, properties }
 
     if (Array.isArray(config)) {
       this.#childConfig = {
@@ -69,35 +69,26 @@ export default class StateArray extends State {
   #processData (data) {
     data = !data ? [] : Array.isArray(data) ? data : [data]
 
-    const { type, states } = this.#childConfig
+    const { type, states, properties } = this.#childConfig
 
-    if (!!type) {
-      for (let entry of data) {
-        if (type === State) {
-          const { config } = this.#childConfig
-          config[0] = getTarget(config[0])
+    if (!type) {
+      return data
+    }
 
-          const proxy = registerState(...config)
-          this.addChildProxy(proxy)
-          load(proxy, entry)
-          data.splice(data.indexOf(entry), 1, proxy)
+    for (let entry of data) {
+      if (type === State) {
+        const { config } = this.#childConfig
+        const proxy = registerState(getTarget(config[0]), ...config.slice(1))
 
-          continue
-        }
+        this.addChildProxy(proxy)
+        load(proxy, entry)
+        data.splice(data.indexOf(entry), 1, proxy)
 
-        if (entry.constructor !== type) {
-          throw new TypeError(`Data State Array${this.name ? ` "${this.name}"` : ''} expected value of type "${(new type()).constructor.name.toLowerCase()}," received "${entry.constructor.name.toLowerCase()}"`)
-        }
+        continue
+      }
 
-        if (type === Object) {
-          if (!!states) {
-            for (let key in states) {
-              if (states.hasOwnProperty(key)) {
-                initChildState(this, entry, states, key)
-              }
-            }
-          }
-        }
+      if (entry.constructor !== type) {
+        throw new TypeError(`Data State Array${this.name ? ` "${this.name}"` : ''} expected value of type "${(new type()).constructor.name.toLowerCase()}," received "${entry.constructor.name.toLowerCase()}"`)
       }
     }
 
@@ -118,11 +109,11 @@ function getArrayMethodHandler (state, target, property, method, { reconcile = f
             return arg
           }
 
-          config[0] = getTarget(config[0])
-
-          const proxy = registerState(...config)
+          const proxy = registerState(getTarget(config[0]), ...config.slice(1))
+          
           state.addChildProxy(proxy)
           load(proxy, arg)
+          
           return proxy
         })
       }
