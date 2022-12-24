@@ -67,6 +67,10 @@ export default class RouteManager {
   }
 }
 
+export function getRouteSlugs (path) {
+  return path?.trim().split('/').filter(Boolean) ?? []
+}
+
 function getScore (slugs) {
   return slugs.reduce((total, slug) => {
     return total + (
@@ -80,10 +84,10 @@ function getScore (slugs) {
 }
 
 function parseRoutes (routes) {
-  return Object.keys(routes).reduce((result, route) => {
+  return Object.keys(routes ?? {}).reduce((result, route) => {
     route = route.trim()
     const url = new URL(route, PATH.base)
-    const slugs = url.pathname.split('/').filter(Boolean)
+    const slugs = getRouteSlugs(url.pathname)
 
     return {
       ...(result ?? {}),

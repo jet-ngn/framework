@@ -1,13 +1,13 @@
-import { getViewRenderingTasks, unmountView } from './lib/rendering/Renderer'
+import { getViewInitializationTasks, unmountView } from './lib/rendering/Renderer'
+import { getViewReconciliationTasks } from './lib/rendering/Reconciler'
 import { removeBindings } from './lib/data/DataRegistry'
 import { removeDOMEvents } from './lib/events/DOMBus'
 import { removeEvents } from './lib/events/Bus'
-import { Plugins } from './env'
+import { Plugins, TREE, PATH } from './env'
 
 export default class Application {
   #config
   #rootNode
-  #tree = {}
 
   constructor (rootNode, config) {
     this.#rootNode = rootNode
@@ -16,12 +16,12 @@ export default class Application {
   }
 
   async render () {
-    const tasks = getViewRenderingTasks({
+    const tasks = getViewInitializationTasks({
       rootNode: this.#rootNode,
       config: this.#config
-    }, { rootLevel: true, setDeepestRoute: true }, this.#tree)
+    }, { rootLevel: true, setDeepestRoute: true })
     
-    for (let { callback } of tasks) {
+    for (let { callback, name } of tasks) {
       let stop = false
       await callback(() => stop = true)
 
@@ -32,10 +32,21 @@ export default class Application {
   }
 
   async rerender () {
-    await unmountView(this.#tree.rootView)
-    removeDOMEvents()
-    removeEvents()
-    removeBindings()
-    await this.render()
+    const tasks = getViewReconciliationTasks(TREE.deepestRoute)
+    
+    for (let { callback, name } of tasks) {
+      let stop = false
+      await callback(() => stop = true)
+
+      if (stop) {
+        break
+      }
+    }
+
+    // await unmountView(TREE.rootView)
+    // removeDOMEvents()
+    // removeEvents()
+    // removeBindings()
+    // await this.render()
   }
 }

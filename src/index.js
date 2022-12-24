@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', async (evt) => {
 })
 
 window.addEventListener('popstate', async (evt) => {
+  // TODO: If history has no entries, do default action (this is if you navigate
+  // to the jet app, then navigate back from where you came from outside of the app)
   evt.preventDefault()
   await updateHistory()
 })

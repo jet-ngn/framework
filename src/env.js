@@ -8,4 +8,9 @@ export const PATH = {
   remaining: null
 }
 
+export const TREE = {
+  rootView: null,
+  deepestRoute: null
+}
+
 export const Plugins = {}

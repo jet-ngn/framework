@@ -60,7 +60,13 @@ export default class ContentBinding extends DataBinding {
       fragment.append(template)
 
       const tree = {}
-      const tasks = getTemplateRenderingTasks(this.view, value, template, tree)
+      
+      const tasks = getTemplateRenderingTasks({
+        view: this.view,
+        template: value,
+        placeholder: template,
+        tree
+      })
       
       tasks.forEach(({ callback }) => callback())
 

@@ -9,12 +9,13 @@ import Unauthorized from '../views/401.js'
 import Forbidden from '../views/403.js'
 import NotFound from '../views/404.js'
 
+import { getView, registerView } from './ViewRegistry'
 import { parseHTML } from './HTMLParser'
 import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
-import { removeBindingsByView } from '../data/DataRegistry'
+import { logBindings, removeBindingsByView } from '../data/DataRegistry'
 import { removeEventsByView } from '../events/Bus'
 // import { removeEventsByView } from '../events/Bus'
-import { INTERNAL_ACCESS_KEY, PATH } from '../../env';
+import { INTERNAL_ACCESS_KEY, PATH, TREE } from '../../env'
 import { html } from './tags'
 
 import {
@@ -24,20 +25,62 @@ import {
   registerViewBinding
 } from '../data/DataRegistry'
 
-export function getTemplateRenderingTasks (view, template, placeholder = null, tree) {
-  const tasks = []
-  const retainFormatting = view.rootNode.tagName === 'PRE'
-  const { fragment, bindings, templates } = parseHTML(template, retainFormatting)
-  const { attributes, properties, listeners, viewConfig } = template
-  const node = fragment.firstElementChild
-  const hasMultipleNodes = fragment.children.length > 1
-  const args = [node, hasMultipleNodes]
+export function getViewRoutingTasks (view, options) {
+  const { matched } = new RouteManager(view.config.routes)
+
+  if (matched) {
+    return getViewInitializationTasks({
+      parent: view,
+      rootNode: view.rootNode,
+      config: matched.config,
+      route: new Route(matched)
+    }, { setDeepestRoute: true })
+  }
+
+  return getViewRenderingTasks(...arguments)
+}
+
+export function getViewRenderingTasks (view, { rootLevel = false, setDeepestRoute = false } = {}) {
+  if (rootLevel) {
+    TREE.rootView = view
+  }
+
+  if (setDeepestRoute) {
+    TREE.deepestRoute = view
+  }
+  
+  return getTemplateRenderingTasks({
+    view,
+    template: view.config.render?.call(view) ?? html``
+  })
+}
+
+export function getViewInitializationTasks ({ parent = null, rootNode, config, route = null }, options) {
+  const view = new View(parent, rootNode, config, route)
+  
+  if (!!parent) {
+    parent.children.add(view)
+  }
+
+  return getViewRoutingTasks(view, options)
+}
+
+export function getTemplateRenderingTasks ({ view, template, placeholder = null } = {}) {
+  const tasks = [],
+        { name } = view,
+        retainFormatting = view.rootNode.tagName === 'PRE',
+        { fragment, bindings, templates } = parseHTML(template, retainFormatting),
+        { attributes, properties, listeners, viewConfig } = template,
+        node = fragment.firstElementChild,
+        hasMultipleNodes = fragment.children.length > 1,
+        args = [node, hasMultipleNodes]
 
   !placeholder && tasks.push({
-    name: 'Fire Before Mount event',
+    name: `Fire "${name}" beforeMount event`,
+    meta: { view },
 
     callback: async (abort) => {
-      if (PATH.remaining.length > 0 && (view === tree.deepestRoute || viewIsChildOfDeepestRoute(view, tree))) {
+      if (PATH.remaining.length > 0 && (view === TREE.deepestRoute || viewIsChildOfDeepestRoute(view))) {
         return
       }
 
@@ -46,40 +89,50 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
   })
 
   !!properties && tasks.push({
-    name: 'Apply Properties',
+    name: `Apply properties to "${name}" rootNode`,
+    meta: { view, node, properties },
     callback: () => bind('properties', view, properties, ...args, setProperty)
   })
 
   !!attributes && tasks.push({
-    name: 'Apply Attributes',
+    name: `Apply attributes to "${name}" rootNode or child node`,
+    meta: { view, node, attributes },
     callback: () => bind('attributes', view, attributes, ...args, setAttribute)
   })
 
   !!listeners && tasks.push({
-    name: 'Apply Listeners',
+    name: `Apply listeners to "${name}" rootNode or child node`,
+    meta: { view, node, listeners },
     callback: () => bindListeners(view, listeners, ...args)
   })
 
   !!bindings && tasks.push({
-    name: 'Process Bindings',
+    name: `Process "${name}" Bindings`,
+    meta: { view, fragment, bindings, retainFormatting },
     callback: () => processBindings(view, fragment, bindings, retainFormatting)
   })
 
   !!templates && Object.keys(templates).forEach(id => {
-    tasks.push(...getTemplateRenderingTasks(view, templates[id], fragment.getElementById(id)))
+    tasks.push(...getTemplateRenderingTasks({
+      view,
+      template: templates[id],
+      placeholder: fragment.getElementById(id)
+    }))
   })
 
   if (viewConfig) {
     if (viewConfig instanceof DataBindingInterpolation) {
       tasks.push({
-        name: 'Process View Binding',
+        name: `Bind ${viewConfig.name ? `"${viewConfig.name}" as` : ''} child view to "${name}"`,
+        meta: { view, config: viewConfig },
+
         callback: () => {
           const binding = registerViewBinding(view, node, viewConfig)
-          binding.reconcile()
+          return binding.reconcile()
         }
       })
     } else {
-      tasks.push(...getViewRenderingTasks({
+      tasks.push(...getViewInitializationTasks({
         parent: view,
         rootNode: node,
         config: viewConfig
@@ -88,29 +141,33 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
   }
 
   tasks.push(!!placeholder ? {
-    name: 'Replace Placeholder',
+    name: `Replace "${name}" placeholder "${placeholder.id}" template`,
+    meta: { view, placeholder, fragment },
+
     callback: () => placeholder.replaceWith(fragment)
   } : {
-    name: `Mount View`,
+    name: `Mount "${name}"`,
+    meta: { view, fragment },
 
     callback: async (abort) => {
       if (PATH.remaining.length > 0) {
-        if (view === tree.deepestRoute) {
-          return await replaceView(view, NotFound, abort, tree)
+        console.log(PATH.remaining);
+        if (view === TREE.deepestRoute) {
+          return await replaceView(view, NotFound, abort)
         }
   
-        if (viewIsChildOfDeepestRoute(view, tree)) {
+        if (viewIsChildOfDeepestRoute(view)) {
           return
         }
       }
 
       if (!!view.permissions) {
         if (!Session.user) {
-          return replaceView(view, Unauthorized, abort, tree)
+          return replaceView(view, Unauthorized, abort)
         }
   
         if (!view.isAccessibleTo(...Session.user.roles)) {
-          return await replaceView(view, Forbidden, abort, tree)
+          return await replaceView(view, Forbidden, abort)
         }
       }
 
@@ -121,42 +178,12 @@ export function getTemplateRenderingTasks (view, template, placeholder = null, t
   return tasks
 }
 
-export function getViewRenderingTasks ({ parent = null, rootNode, config, route = null }, { rootLevel = false, setDeepestRoute = false } = {}, tree = {}) {
-  const view = new View(parent, rootNode, config, route)
-  const { routes } = config
-
-  if (routes) {
-    const { matched } = new RouteManager(routes)
-    tree.deepestRoute = view
-
-    if (matched) {
-      return getViewRenderingTasks({
-        parent,
-        rootNode,
-        config: matched.config,
-        route: new Route(matched)
-      }, { rootLevel, setDeepestRoute: true }, tree)
-    }
-  }
-
-  if (rootLevel) {
-    tree.rootView = view
-  }
-
-  if (setDeepestRoute) {
-    tree.deepestRoute = view
-  }
-
-  parent?.children.push(view)
-  const template = config.render?.call(view)
-  return getTemplateRenderingTasks(view, template ?? html``, null, tree)
-}
-
 export async function unmountView (view) {
   for (let child of view.children) {
     await unmountView(child)
   }
 
+  view.children.clear()
   await view.emit(INTERNAL_ACCESS_KEY, 'unmount')
   
   removeDOMEventsByNode(view.rootNode)
@@ -206,15 +233,15 @@ function getExistingAttributeValue (node, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-async function replaceView (view, config, abort, tree) {
-  const setRoot = view === tree.rootView
-  view = new View(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
+async function replaceView (view, config, abort) {
+  const isRoot = view === TREE.rootView
+  view = registerView(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
   
   await fireBeforeMountEvent(view, abort)
-  view.parent?.children.push(view)
+  view.parent?.children.add(view)
 
-  if (setRoot) {
-    tree.rootView = view
+  if (isRoot) {
+    TREE.rootView = view
   }
 
   return await mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
@@ -284,10 +311,10 @@ function validateBinding (item, node, hasMultipleRoots, cb) {
   cb()
 }
 
-function viewIsChildOfDeepestRoute (view, tree) {
+function viewIsChildOfDeepestRoute (view) {
   if (!view) {
     return false
   }
 
-  return view.parent === tree.deepestRoute || viewIsChildOfDeepestRoute(view.parent, tree)
+  return view.parent === TREE.deepestRoute || viewIsChildOfDeepestRoute(view.parent)
 }

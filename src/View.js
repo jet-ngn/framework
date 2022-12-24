@@ -11,7 +11,7 @@ export class ViewPermissions extends Object {
 }
 
 export default class View extends PermissionsManager {
-  #children = []
+  #children = new Set
   #config
   #data
   #description
@@ -54,6 +54,10 @@ export default class View extends PermissionsManager {
 
   get description () {
     return this.#description
+  }
+
+  get hasRoutes () {
+    return !!this.#config.routes
   }
 
   get name () {
