@@ -11,7 +11,7 @@ import { PATH } from '../../env'
 //   return !!parent ? `${getFullRoutePath(parent)}${route}` : route
 // }
 
-export function getMatchingRoute (base = '', routes = {}) {
+export function getMatchingRoute (routes = {}, base = '') {
   if (base === '/') {
     base = ''
   }

@@ -10,7 +10,7 @@ export function getViewReconciliationTasks (view) {
   console.log(view.name);
   const { config, name, parent, route } = view
 
-  let match = getMatchingRoute(route?.fullPath, config.routes)
+  let match = getMatchingRoute(config.routes, route?.fullPath)
 
   if (match) {
     console.log(`"${name}" child route "${match.config.name}" matched "${PATH.current}". Render it.`)
@@ -25,7 +25,7 @@ export function getViewReconciliationTasks (view) {
   const tasks = []
 
   if (!!route) {
-    match = getMatchingRoute(parent?.route?.fullPath, { [route]: config })
+    match = getMatchingRoute({ [route]: config }, parent?.route?.fullPath)
 
     if (match) {
       console.log(`"${name}" route "${match.config.name}" matched "${PATH.current}", but it is already rendered. Unmount and Re-Render it.`)

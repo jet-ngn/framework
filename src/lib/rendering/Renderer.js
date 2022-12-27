@@ -1,6 +1,5 @@
 import Session from '../session/Session'
 import View from '../../View'
-import RouteManager from '../routing/RouteManager'
 import Route from '../routing/Route'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import AttributeList from './AttributeList'
@@ -9,7 +8,7 @@ import Unauthorized from '../views/401.js'
 import Forbidden from '../views/403.js'
 import NotFound from '../views/404.js'
 
-import { getView, registerView } from './ViewRegistry'
+import { registerView } from './ViewRegistry'
 import { parseHTML } from './HTMLParser'
 import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
 import { logBindings, removeBindingsByView } from '../data/DataRegistry'
@@ -27,8 +26,7 @@ import {
 import { getMatchingRoute } from '../routing/utilities'
 
 export function getViewRoutingTasks (view, options) {
-  const match = getMatchingRoute(view.parent?.route?.path, view.config.routes)
-  // const { matched } = new RouteManager(view.config.routes)
+  const match = getMatchingRoute(view.config.routes)
 
   if (match) {
     return getViewInitializationTasks({
@@ -234,7 +232,7 @@ function getExistingAttributeValue (node, name) {
 
 async function replaceView (view, config, abort) {
   const isRoot = view === TREE.rootView
-  view = registerView(view.parent, view.rootNode, config, new Route({ url: new URL(PATH.current, PATH.base) }))
+  view = registerView(view.parent, view.rootNode, config, new Route(view.parent, { url: new URL(PATH.current, PATH.base) }))
   
   await fireBeforeMountEvent(view, abort)
   view.parent?.children.add(view)
