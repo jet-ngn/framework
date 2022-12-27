@@ -79,7 +79,7 @@ function setPaths () {
 async function updateHistory () {
   PATH.previous = PATH.current
   setPaths()
-  await App.rerender()
+  await App.reconcile()
 }
 
 export { css, html, svg } from './lib/rendering/tags'

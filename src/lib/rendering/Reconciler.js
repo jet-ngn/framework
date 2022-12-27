@@ -1,67 +1,56 @@
+import Route from '../routing/Route'
 import { removeDOMEventsByNode } from '../events/DOMBus'
 import { escapeString } from '../../utilities/StringUtils'
-import RouteManager from '../routing/RouteManager'
+import { getMatchingRoute } from '../routing/utilities'
 import { PATH } from '../../env'
-import { getViewInitializationTasks, getViewRenderingTasks, unmountView } from './Renderer'
-import Route from '../routing/Route'
+import { getViewInitializationTasks, getViewRenderingTasks, getViewRoutingTasks, unmountView } from './Renderer'
+import { logBindings } from '../data/DataRegistry'
 
-function getViewChildMatchTasks (view, remainingPath) {
-  PATH.remaining = remainingPath
-  const { routes } = view.config
+export function getViewReconciliationTasks (view) {
+  console.log(view.name);
+  const { config, name, parent, route } = view
 
-  const { matched } = new RouteManager(Object.keys(routes).reduce((result, route) => ({
-    ...result,
-    [`${parent.route?.path ?? ''}${route}`]: routes[route]
-  }), {}))
+  let match = getMatchingRoute(route?.fullPath, config.routes)
 
-  if (!!matched) {
+  if (match) {
+    console.log(`"${name}" child route "${match.config.name}" matched "${PATH.current}". Render it.`)
     return getViewInitializationTasks({
       parent: view,
       rootNode: view.rootNode,
-      config: matched.config,
-      route: new Route(matched)
-    }, { setDeepestRoute: true })
+      config: match.config,
+      route: new Route(parent, match)
+    },{ setDeepestRoute: true })
   }
 
-  console.log(`No Route matched "${PATH.current}". Render 404`)
-}
-
-function getViewMatchTasks (view, remainingPath) {
   const tasks = []
-  const { name, parent } = view
 
-  if (!!view.route) {
-    let { matched } = new RouteManager({ [`${parent.route?.path ?? ''}${view.route.path}`]: view.config })
+  if (!!route) {
+    match = getMatchingRoute(parent?.route?.fullPath, { [route]: config })
 
-    if (!!matched) {
-      return getViewRenderingTasks(view, { setDeepestRoute: true })
+    if (match) {
+      console.log(`"${name}" route "${match.config.name}" matched "${PATH.current}", but it is already rendered. Unmount and Re-Render it.`)
+      return [...tasks, ...getViewRenderingTasks(view, { setDeepestRoute: true })]
     }
 
-    if (!!parent) {
-      tasks.push({
-        name: `Unmount "${name}"`,
-        meta: { view },
-        callback: async () => {
-          unmountView(view)
-          view.parent?.children.delete(view)
-        }
-      })
-    }
+    tasks.push({
+      name: `Unmount "${name}"`,
+      callback: async () => {
+        await unmountView(view)
+        parent?.children.delete(view)
+      }
+    })
+
+    console.log(`"${name}" route did not match "${PATH.current}". Try parent`)
   }
 
-  return !!parent ? [...tasks, ...getViewReconciliationTasks(parent)] : getViewRenderingTasks(view, { setDeepestRoute: true })
-}
+  if (!!parent) {
+    return [...tasks, ...getViewReconciliationTasks(parent)]
+  }
 
-export function getViewReconciliationTasks (view) {
-  const { remaining } = PATH,
-        { routes } = view.config
+  console.log(`"${name}" does not have a parent. This is the top level, so re-render the whole app.`)
+  const options = { setDeepestRoute: true }
 
-  let { matched } = new RouteManager(Object.keys(routes ?? {}).reduce((result, route) => ({
-    ...result,
-    [`${view.route?.path ?? ''}${route}`]: routes[route]
-  }), {}))
-
-  return !!matched ? getViewChildMatchTasks(view, remaining) : getViewMatchTasks(view, remaining)
+  return [...tasks, ...(!!routes ? getViewRoutingTasks(view, options) : getViewRenderingTasks(view, options))]
 }
 
 export function reconcileNodes (original, update) {

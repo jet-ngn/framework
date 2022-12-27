@@ -98,7 +98,6 @@ export default class StateObject extends State {
 
       if (this.#states.hasOwnProperty(key)) {
         this.addChildProxy(this.getProxy(this.#states[key]))
-        console.log('HEYYY');
         continue
       }
 

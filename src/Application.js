@@ -31,7 +31,15 @@ export default class Application {
     }
   }
 
-  async rerender () {
+  async reconcile () {
+    if (!TREE.rootView.mounted) {
+      // await unmountView(TREE.rootView)
+      // removeDOMEvents()
+      // removeEvents()
+      // removeBindings()
+      return await this.render()
+    }
+
     const tasks = getViewReconciliationTasks(TREE.deepestRoute)
     
     for (let { callback, name } of tasks) {
@@ -42,11 +50,5 @@ export default class Application {
         break
       }
     }
-
-    // await unmountView(TREE.rootView)
-    // removeDOMEvents()
-    // removeEvents()
-    // removeBindings()
-    // await this.render()
   }
 }

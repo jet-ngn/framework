@@ -15,6 +15,7 @@ export default class View extends PermissionsManager {
   #config
   #data
   #description
+  #mounted = false
   #name
   #parent
   #permissions
@@ -60,6 +61,10 @@ export default class View extends PermissionsManager {
     return !!this.#config.routes
   }
 
+  get mounted () {
+    return this.#mounted
+  }
+
   get name () {
     return this.#name
   }
@@ -99,6 +104,10 @@ export default class View extends PermissionsManager {
 
     if (!!RESERVED_EVENT_NAMES.includes(evt) && key !== INTERNAL_ACCESS_KEY) {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
+    }
+
+    if (evt === 'mount') {
+      this.#mounted = true
     }
 
     await Bus.emit(`${this.scope}.${evt}`, ...args)

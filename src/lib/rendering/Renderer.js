@@ -24,19 +24,22 @@ import {
   registerPropertyBinding,
   registerViewBinding
 } from '../data/DataRegistry'
+import { getMatchingRoute } from '../routing/utilities'
 
 export function getViewRoutingTasks (view, options) {
-  const { matched } = new RouteManager(view.config.routes)
+  const match = getMatchingRoute(view.parent?.route?.path, view.config.routes)
+  // const { matched } = new RouteManager(view.config.routes)
 
-  if (matched) {
+  if (match) {
     return getViewInitializationTasks({
       parent: view,
       rootNode: view.rootNode,
-      config: matched.config,
-      route: new Route(matched)
+      config: match.config,
+      route: new Route(view.parent, match)
     }, { setDeepestRoute: true })
   }
 
+  // If no route matches, render view template (if one exists)
   return getViewRenderingTasks(...arguments)
 }
 
@@ -57,12 +60,9 @@ export function getViewRenderingTasks (view, { rootLevel = false, setDeepestRout
 
 export function getViewInitializationTasks ({ parent = null, rootNode, config, route = null }, options) {
   const view = new View(parent, rootNode, config, route)
-  
-  if (!!parent) {
-    parent.children.add(view)
-  }
+  parent?.children.add(view)
 
-  return getViewRoutingTasks(view, options)
+  return !!config.routes ? getViewRoutingTasks(view, options) : getViewRenderingTasks(view, options)
 }
 
 export function getTemplateRenderingTasks ({ view, template, placeholder = null } = {}) {
@@ -151,7 +151,6 @@ export function getTemplateRenderingTasks ({ view, template, placeholder = null 
 
     callback: async (abort) => {
       if (PATH.remaining.length > 0) {
-        console.log(PATH.remaining);
         if (view === TREE.deepestRoute) {
           return await replaceView(view, NotFound, abort)
         }
