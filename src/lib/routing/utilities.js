@@ -6,11 +6,13 @@ export function getMatchingRoute (routes = {}, { base = null, exact = false } = 
       base = ''
     }
 
-    routes = parseRoutes(Object.keys(routes).reduce((result, route) => ({
+    routes = Object.keys(routes).reduce((result, route) => ({
       ...result,
       [`${base}${route}`]: routes[route]
-    }), {}))
+    }), {})
   }
+
+  routes = parseRoutes(routes)
 
   if (PATH.remaining.length === 0) {
     const defaultRoute = routes['/'] ?? null
