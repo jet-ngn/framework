@@ -1,18 +1,18 @@
 import { PATH } from '../../env'
 
-export function getMatchingRoute (routes = {}, base = '') {
-  if (base === '/') {
-    base = ''
+export function getMatchingRoute (routes = {}, { base = null, exact = false } = {}) {
+  if (!!base) {
+    if (base === '/') {
+      base = ''
+    }
+
+    routes = parseRoutes(Object.keys(routes).reduce((result, route) => ({
+      ...result,
+      [`${base}${route}`]: routes[route]
+    }), {}))
   }
 
-  routes = parseRoutes(Object.keys(routes).reduce((result, route) => ({
-    ...result,
-    [`${base}${route}`]: routes[route]
-  }), {}))
-
-  const minimum = PATH.remaining.length
-
-  if (minimum === 0) {
+  if (PATH.remaining.length === 0) {
     const defaultRoute = routes['/'] ?? null
     
     return defaultRoute ? {
@@ -21,6 +21,7 @@ export function getMatchingRoute (routes = {}, base = '') {
     } : null
   }
 
+  const max = getScore(PATH.remaining)
   let match = null
   let current = 0
   
@@ -28,6 +29,10 @@ export function getMatchingRoute (routes = {}, base = '') {
     const { slugs, value } = route
     const scores = new Array(slugs.length).fill(0)
     const vars = {}
+
+    if (exact && value !== max) {
+      continue
+    }
 
     if (value < current) {
       continue

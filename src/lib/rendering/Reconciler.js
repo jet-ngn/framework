@@ -18,7 +18,10 @@ export function getViewReconciliationTasks (view) {
   let match = null
 
   if (!!routes) {
-    match = getMatchingRoute(routes, route?.path)
+    match = getMatchingRoute(routes, {
+      base: route?.path,
+      exact: true
+    })
 
     if (match) {
       console.log(`"${name}" child route "${match.config.name}" matched "${PATH.current}". Render it.`)
@@ -30,8 +33,8 @@ export function getViewReconciliationTasks (view) {
       },{ setDeepestRoute: true })
     }
   }
-
-  match = getMatchingRoute({ [route.path]: config }, parent?.route?.path)
+  
+  match = getMatchingRoute({ [route.path]: config }, { exact: true })
 
   if (match) {
     console.log(`"${name}" route matched "${PATH.current}"`)
