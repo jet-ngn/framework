@@ -8,7 +8,6 @@ import Unauthorized from '../views/401.js'
 import Forbidden from '../views/403.js'
 import NotFound from '../views/404.js'
 
-import { registerView } from './ViewRegistry'
 import { parseHTML } from './HTMLParser'
 import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
 import { logBindings, removeBindingsByView } from '../data/DataRegistry'
@@ -24,6 +23,27 @@ import {
   registerViewBinding
 } from '../data/DataRegistry'
 import { getMatchingRoute } from '../routing/utilities'
+
+async function fireBeforeMountEvent (view, abort) {
+  let stop = false
+
+  await view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
+    abort: async () => {
+      stop = true
+
+      await view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
+        resume: () => stop = false,
+
+        retry: async () => {
+          stop = false
+          await fireBeforeMountEvent(...arguments)
+        }
+      })
+    }
+  })
+
+  stop && abort()
+}
 
 export function getViewRoutingTasks (view, options) {
   const match = getMatchingRoute(view.config.routes)
@@ -41,11 +61,7 @@ export function getViewRoutingTasks (view, options) {
   return getViewRenderingTasks(...arguments)
 }
 
-export function getViewRenderingTasks (view, { rootLevel = false, setDeepestRoute = false } = {}) {
-  if (rootLevel) {
-    TREE.rootView = view
-  }
-
+export function getViewRenderingTasks (view, { setDeepestRoute = false } = {}) {
   if (setDeepestRoute) {
     TREE.deepestRoute = view
   }
@@ -56,10 +72,20 @@ export function getViewRenderingTasks (view, { rootLevel = false, setDeepestRout
   })
 }
 
-export function getViewInitializationTasks ({ parent = null, rootNode, config, route = null }, options) {
+export function getViewInitializationTasks ({ parent = null, rootNode, config, route = null }, { init = null, setDeepestRoute = false } = {}) {
   const view = new View(parent, rootNode, config, route)
-  parent?.children.add(view)
 
+  if (!!init) {
+    init(view)
+  }
+
+  if (!!parent) {
+    parent.children.add(view)
+  } else {
+    TREE.rootView = view
+  }
+
+  const options = arguments[1]
   return !!config.routes ? getViewRoutingTasks(view, options) : getViewRenderingTasks(view, options)
 }
 
@@ -138,41 +164,46 @@ export function getTemplateRenderingTasks ({ view, template, placeholder = null 
     }
   }
 
-  tasks.push(!!placeholder ? {
-    name: `Replace "${name}" placeholder "${placeholder.id}" template`,
-    meta: { view, placeholder, fragment },
+  if (!!placeholder) {
+    return [...tasks, {
+      name: `Replace "${name}" placeholder "${placeholder.id}" template`,
+      meta: { view, placeholder, fragment },
+      callback: () => placeholder.replaceWith(fragment)
+    }]
+  }
 
-    callback: () => placeholder.replaceWith(fragment)
-  } : {
+  return [...tasks, {
+    name: `Render "${name}"`,
+    callback: async abort => await renderView(view, fragment, abort)
+  }, {
     name: `Mount "${name}"`,
-    meta: { view, fragment },
+    meta: { view },
+    callback: async () => await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+  }]
+}
 
-    callback: async (abort) => {
-      if (PATH.remaining.length > 0) {
-        if (view === TREE.deepestRoute) {
-          return await replaceView(view, NotFound, abort)
-        }
-  
-        if (viewIsChildOfDeepestRoute(view)) {
-          return
-        }
-      }
-
-      if (!!view.permissions) {
-        if (!Session.user) {
-          return replaceView(view, Unauthorized, abort)
-        }
-  
-        if (!view.isAccessibleTo(...Session.user.roles)) {
-          return await replaceView(view, Forbidden, abort)
-        }
-      }
-
-      await mountView(view, fragment)
+export async function renderView (view, fragment, abort) {
+  if (PATH.remaining.length > 0) {
+    if (view === TREE.deepestRoute) {
+      return await replaceView(view, NotFound, abort)
     }
-  })
 
-  return tasks
+    if (viewIsChildOfDeepestRoute(view)) {
+      return
+    }
+  }
+
+  if (!!view.permissions) {
+    if (!Session.user) {
+      return replaceView(view, Unauthorized, abort)
+    }
+
+    if (!view.isAccessibleTo(...Session.user.roles)) {
+      return await replaceView(view, Forbidden, abort)
+    }
+  }
+
+  view.rootNode.replaceChildren(fragment)
 }
 
 export async function unmountView (view) {
@@ -204,27 +235,6 @@ function bindListeners (view, listeners, root, hasMultipleRoots) {
   })
 }
 
-async function fireBeforeMountEvent (view, abort) {
-  let stop = false
-
-  await view.emit(INTERNAL_ACCESS_KEY, 'beforeMount', {
-    abort: async () => {
-      stop = true
-
-      await view.emit(INTERNAL_ACCESS_KEY, 'abortMount', {
-        resume: () => stop = false,
-
-        retry: async () => {
-          stop = false
-          await fireBeforeMountEvent(...arguments)
-        }
-      })
-    }
-  })
-
-  stop && abort()
-}
-
 function getExistingAttributeValue (node, name) {
   const value = node.getAttribute(name)
   return value ? value.trim().split(' ').map(item => item.trim()) : []
@@ -232,7 +242,7 @@ function getExistingAttributeValue (node, name) {
 
 async function replaceView (view, config, abort) {
   const isRoot = view === TREE.rootView
-  view = registerView(view.parent, view.rootNode, config, new Route(view.parent, { url: new URL(PATH.current, PATH.base) }))
+  view = new View(view.parent, view.rootNode, config, new Route(view.parent, { url: new URL(PATH.current, PATH.base) }))
   
   await fireBeforeMountEvent(view, abort)
   view.parent?.children.add(view)
@@ -241,12 +251,8 @@ async function replaceView (view, config, abort) {
     TREE.rootView = view
   }
 
-  return await mountView(view, parseHTML(config.render?.call(view) ?? html``).fragment)
-}
-
-async function mountView (view, fragment) {
-  view.rootNode.replaceChildren(fragment)
-  await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+  view.rootNode.replaceChildren(parseHTML(config.render?.call(view) ?? html``).fragment)
+  return await view.emit(INTERNAL_ACCESS_KEY, 'mount')
 }
 
 function processBindings (view, fragment, bindings, retainFormatting) {

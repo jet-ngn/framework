@@ -1,16 +1,5 @@
 import { PATH } from '../../env'
 
-// export function getFullRoutePath (view) {
-//   const { parent } = view
-//   let route = `${view.route?.path ?? ''}`
-
-//   if (route === '/') {
-//     route = ''
-//   }
-
-//   return !!parent ? `${getFullRoutePath(parent)}${route}` : route
-// }
-
 export function getMatchingRoute (routes = {}, base = '') {
   if (base === '/') {
     base = ''

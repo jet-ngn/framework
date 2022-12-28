@@ -1,22 +1,21 @@
 import { getRouteSlugs } from './utilities'
+import { PATH } from '../../env'
 
 export default class Route {
+  #base
   #hash
-  #parent
   #path
+  #parent
   #vars
   #query
 
   constructor (parent = null, { url, vars }) {
+    this.#base = url.base
     this.#hash = url.hash ?? null
-    this.#parent = parent?.route ?? null
+    this.#parent = parent?.route
     this.#path = url.pathname ?? null
     this.#vars = vars
     this.#query = parseSearch(url.search)
-  }
-
-  get fullPath () {
-    return `${this.#parent?.fullPath ?? ''}${this.#path}`
   }
 
   get hash () {
@@ -24,7 +23,8 @@ export default class Route {
   }
 
   get path () {
-    return this.#path
+    const parent = this.#parent?.path ?? ''
+    return `${parent === '/' ? '' : parent}${this.#path ?? ''}`
   }
 
   get vars () {
@@ -36,9 +36,20 @@ export default class Route {
   }
 
   matches (path) {
-    const ref = getRouteSlugs(this.fullPath)
+    const ref = getRouteSlugs(this.path)
     const slugs = getRouteSlugs(path)
     return slugs.length === ref.length && slugs.every((entry, i) => slugs[i] === entry)
+  }
+
+  update () {
+    const ref = getRouteSlugs(this.path)
+    const slugs = getRouteSlugs(PATH.current)
+
+    for (let [index, slug] of ref.entries()) {
+      if (slug.startsWith(':')) {
+        this.#vars[slug.substring(1)] = slugs[index]
+      }
+    }
   }
 }
 

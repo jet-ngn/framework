@@ -24,15 +24,12 @@ export default class ViewBinding extends DataBinding {
         return
       }
 
-      const tree = {}
-
       const tasks = getViewInitializationTasks({
         parent: this.view,
         rootNode: this.#node,
         config: current
-      }, { rootLevel: true }, tree)
+      }, { init: view => this.#boundView = view })
 
-      this.#boundView = tree.rootView
       children.add(this.#boundView)
 
       for (let { callback } of tasks) {

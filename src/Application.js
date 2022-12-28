@@ -32,11 +32,7 @@ export default class Application {
   }
 
   async reconcile () {
-    if (!TREE.rootView.mounted) {
-      // await unmountView(TREE.rootView)
-      // removeDOMEvents()
-      // removeEvents()
-      // removeBindings()
+    if (!TREE.rootView || !TREE.rootView.mounted) {
       return await this.render()
     }
 
@@ -52,3 +48,8 @@ export default class Application {
     }
   }
 }
+
+// await unmountView(TREE.rootView)
+      // removeDOMEvents()
+      // removeEvents()
+      // removeBindings()

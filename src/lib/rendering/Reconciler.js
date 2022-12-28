@@ -2,46 +2,62 @@ import Route from '../routing/Route'
 import { removeDOMEventsByNode } from '../events/DOMBus'
 import { escapeString } from '../../utilities/StringUtils'
 import { getMatchingRoute } from '../routing/utilities'
-import { PATH } from '../../env'
-import { getViewInitializationTasks, getViewRenderingTasks, getViewRoutingTasks, unmountView } from './Renderer'
-import { logBindings } from '../data/DataRegistry'
+import { INTERNAL_ACCESS_KEY, PATH } from '../../env'
+
+import {
+  getViewInitializationTasks,
+  getViewRenderingTasks,
+  getViewRoutingTasks,
+  unmountView
+} from './Renderer'
 
 export function getViewReconciliationTasks (view) {
   console.log(view.name);
   const { config, name, parent, route } = view
+  const { routes } = config
+  let match = null
 
-  let match = getMatchingRoute(config.routes, route?.fullPath)
-
-  if (match) {
-    console.log(`"${name}" child route "${match.config.name}" matched "${PATH.current}". Render it.`)
-    return getViewInitializationTasks({
-      parent: view,
-      rootNode: view.rootNode,
-      config: match.config,
-      route: new Route(parent, match)
-    },{ setDeepestRoute: true })
-  }
-
-  const tasks = []
-
-  if (!!route) {
-    match = getMatchingRoute({ [route]: config }, parent?.route?.fullPath)
+  if (!!routes) {
+    match = getMatchingRoute(routes, route?.path)
 
     if (match) {
-      console.log(`"${name}" route "${match.config.name}" matched "${PATH.current}", but it is already rendered. Unmount and Re-Render it.`)
-      return [...tasks, ...getViewRenderingTasks(view, { setDeepestRoute: true })]
+      console.log(`"${name}" child route "${match.config.name}" matched "${PATH.current}". Render it.`)
+      return getViewInitializationTasks({
+        parent: view,
+        rootNode: view.rootNode,
+        config: match.config,
+        route: new Route(parent, match)
+      },{ setDeepestRoute: true })
     }
-
-    tasks.push({
-      name: `Unmount "${name}"`,
-      callback: async () => {
-        await unmountView(view)
-        parent?.children.delete(view)
-      }
-    })
-
-    console.log(`"${name}" route did not match "${PATH.current}". Try parent`)
   }
+
+  match = getMatchingRoute({ [route.path]: config }, parent?.route?.path)
+
+  if (match) {
+    console.log(`"${name}" route matched "${PATH.current}"`)
+
+    if (view.mounted) {
+      console.log('...and it is already mounted. Re-render it.')
+      return [{
+        name: `Update "${name}" route`,
+        callback: () => view.emit(INTERNAL_ACCESS_KEY, 'reconcile')
+      }, ...getViewRenderingTasks(view, { setDeepestRoute: true })]
+    } else {
+      console.log('...and it is not yet rendered. Render it.')
+      return getViewRenderingTasks(view, { setDeepestRoute: true })
+    }
+  }
+
+  console.log(`"${name}" route did not match "${PATH.current}". Try parent`)
+
+  const tasks = [{
+    name: `Unmount "${name}"`,
+
+    callback: async () => {
+      await unmountView(view)
+      parent?.children.delete(view)
+    }
+  }]
 
   if (!!parent) {
     return [...tasks, ...getViewReconciliationTasks(parent)]
