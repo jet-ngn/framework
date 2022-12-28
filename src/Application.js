@@ -19,7 +19,7 @@ export default class Application {
     const tasks = getViewInitializationTasks({
       rootNode: this.#rootNode,
       config: this.#config
-    }, { rootLevel: true, setDeepestRoute: true })
+    }, { setDeepestRoute: true })
     
     for (let { callback, name } of tasks) {
       let stop = false
@@ -29,6 +29,8 @@ export default class Application {
         break
       }
     }
+
+    console.log(TREE)
   }
 
   async reconcile () {
@@ -46,6 +48,8 @@ export default class Application {
         break
       }
     }
+
+    console.log(TREE)
   }
 }
 

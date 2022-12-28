@@ -49,12 +49,15 @@ export function getViewRoutingTasks (view, options) {
   const match = getMatchingRoute(view.config.routes)
 
   if (match) {
-    return getViewInitializationTasks({
+    return [...getViewInitializationTasks({
       parent: view,
       rootNode: view.rootNode,
       config: match.config,
       route: new Route(view.parent, match)
-    }, { setDeepestRoute: true })
+    }, { setDeepestRoute: true }), {
+      name: `Mount "${view.name}"`,
+      callback: async () => await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+    }]
   }
 
   // If no route matches, render view template (if one exists)
