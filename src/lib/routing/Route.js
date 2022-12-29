@@ -10,11 +10,11 @@ export default class Route {
   #query
 
   constructor (parent = null, { url, vars }) {
-    this.#base = url.base
+    this.#base = url.base ?? null
     this.#hash = url.hash ?? null
     this.#parent = parent?.route
     this.#path = url.pathname ?? null
-    this.#vars = vars
+    this.#vars = vars ?? {}
     this.#query = parseSearch(url.search)
   }
 
@@ -22,9 +22,13 @@ export default class Route {
     return this.#hash
   }
 
-  get path () {
+  get absolutePath () {
     const parent = this.#parent?.path ?? ''
     return `${parent === '/' ? '' : parent}${this.#path ?? ''}`
+  }
+
+  get relativePath () {
+    return this.#path
   }
 
   get vars () {

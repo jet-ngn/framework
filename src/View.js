@@ -2,7 +2,6 @@ import PermissionsManager from './lib/session/PermissionsManager'
 import Bus, { addHandler } from './lib/events/Bus'
 import { registerState } from './lib/data/DataRegistry'
 import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES, PATH } from './env'
-import Route from './lib/routing/Route'
 
 export class ViewPermissions extends Object {
   constructor (obj) {
@@ -20,7 +19,6 @@ export default class View extends PermissionsManager {
   #name
   #parent
   #permissions
-  #rendered = false
   #rootNode
   #route
   #scope
@@ -36,7 +34,7 @@ export default class View extends PermissionsManager {
     this.#parent = parent ?? null
     this.#permissions = permissions ? registerState(new ViewPermissions(permissions), false) : null
     this.#rootNode = rootNode ?? null
-    this.#route = route ?? new Route(parent, { url: new URL('', PATH.base) })
+    this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version ?? null
 
@@ -79,10 +77,6 @@ export default class View extends PermissionsManager {
     return this.#permissions
   }
 
-  get rendered () {
-    return this.#rendered
-  }
-
   get rootNode () {
     return this.#rootNode
   }
@@ -119,14 +113,9 @@ export default class View extends PermissionsManager {
 
       case 'unmount':
         this.#mounted = false
-        this.#rendered = false
         break
 
       case 'reconcile': return this.#route.update()
-
-      case 'render':
-        this.#rendered = true
-        break
     }
 
     await Bus.emit(`${this.scope}.${evt}`, ...args)
