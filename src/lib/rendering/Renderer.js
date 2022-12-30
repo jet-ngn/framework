@@ -29,15 +29,28 @@ export function getViewRoutingTasks (view, options) {
   if (match) {
     !STACK.includes(view) && STACK.push(view)
 
-    return [...getViewInitializationTasks({
+    const tasks = getViewInitializationTasks({
       parent: view,
       rootNode: view.rootNode,
       config: match.config,
       route: new Route(view.parent, match)
-    }, { setDeepestRoute: true, addToTree: true }), {
-      name: `Mount "${view.name}"`,
-      callback: async () => !view.mounted && await view.emit(INTERNAL_ACCESS_KEY, 'mount')
-    }]
+    }, { setDeepestRoute: true, addToTree: true })
+
+    if (!view.mounted) {
+      tasks.unshift({
+        name: `Fire "${view.name}" beforeMount event`,
+        meta: { view },
+  
+        callback: async abort => await fireBeforeMountEvent(view, abort)
+      })
+
+      tasks.push({
+        name: `Mount "${view.name}"`,
+        callback: async () => !view.mounted && await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+      })
+    }
+
+    return tasks
   }
 
   // If no route matches, render view template (if one exists)
@@ -82,7 +95,7 @@ export function getTemplateRenderingTasks ({ view, template, placeholder = null 
         hasMultipleNodes = fragment.children.length > 1,
         args = [node, hasMultipleNodes]
 
-  !placeholder && tasks.push({
+  !placeholder && !view.mounted && tasks.push({
     name: `Fire "${name}" beforeMount event`,
     meta: { view },
 
