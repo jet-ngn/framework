@@ -1,6 +1,6 @@
 import { getViewInitializationTasks, getViewRoutingTasks, unmountView } from './lib/rendering/Renderer'
 import { getMatchingRoute } from './lib/routing/utilities'
-import { Plugins, TREE, PATH, APP } from './env'
+import { Plugins, STACK, PATH, APP } from './env'
 
 async function runTasks (tasks) {
   for (let { callback, name } of tasks) {
@@ -24,7 +24,7 @@ export default class Application {
   }
 
   async render () {
-    TREE.length = 0
+    STACK.length = 0
 
     const tasks = getViewInitializationTasks({
       rootNode: this.#rootNode,
@@ -40,7 +40,7 @@ export default class Application {
     const initial = PATH.remaining
     const remaining = []
 
-    for (const [i, view] of TREE.entries()) {
+    for (const [i, view] of STACK.entries()) {
       if (view === APP.rootView) {
         matches.push(view)
         continue
@@ -56,22 +56,33 @@ export default class Application {
       }
 
       if (PATH.remaining.length === 0) {
-        trash.push(...TREE.slice(i + 1))
+        trash.push(...STACK.slice(i + 1))
         break
       }
     }
 
-    TREE.length = 0
-    TREE.push(...matches)
+    STACK.length = 0
+    STACK.push(...matches)
     
     if (PATH.remaining.length === 0) {
       PATH.remaining = remaining.at(-2) ?? initial
     }
 
+    const deepest = STACK.at(-1)
+
     const tasks = [...trash.map(view => ({
       name: `Unmount "${view.name}"`,
       callback: async () => await unmountView(view)
-    })), ...getViewRoutingTasks(TREE.at(-1), { setDeepestRoute: true, addToTree: true })]
+    })), ...[...deepest.children].reduce((result, child) => {
+      if (child.mounted) {
+        result.push({
+          name: `Unmount "${child.name}"`,
+          callback: async () => await unmountView(child)
+        })
+      }
+
+      return result
+    }, []), ...getViewRoutingTasks(deepest, { setDeepestRoute: true, addToTree: true })]
 
     await runTasks(tasks)
   } 

@@ -1,7 +1,7 @@
 import PermissionsManager from './lib/session/PermissionsManager'
 import Bus, { addHandler } from './lib/events/Bus'
 import { registerState } from './lib/data/DataRegistry'
-import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES, PATH } from './env'
+import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
 
 export class ViewPermissions extends Object {
   constructor (obj) {

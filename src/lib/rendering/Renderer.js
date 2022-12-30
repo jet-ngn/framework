@@ -12,7 +12,7 @@ import { parseHTML } from './HTMLParser'
 import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
 import { removeBindingsByView } from '../data/DataRegistry'
 import { removeEventsByView } from '../events/Bus'
-import { INTERNAL_ACCESS_KEY, PATH, APP, TREE } from '../../env'
+import { INTERNAL_ACCESS_KEY, PATH, APP, STACK } from '../../env'
 import { html } from './tags'
 
 import {
@@ -27,7 +27,7 @@ export function getViewRoutingTasks (view, options) {
   const match = getMatchingRoute(view.config.routes)
 
   if (match) {
-    !TREE.includes(view) && TREE.push(view)
+    !STACK.includes(view) && STACK.push(view)
 
     return [...getViewInitializationTasks({
       parent: view,
@@ -36,7 +36,7 @@ export function getViewRoutingTasks (view, options) {
       route: new Route(view.parent, match)
     }, { setDeepestRoute: true, addToTree: true }), {
       name: `Mount "${view.name}"`,
-      callback: async () => await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+      callback: async () => !view.mounted && await view.emit(INTERNAL_ACCESS_KEY, 'mount')
     }]
   }
 
@@ -49,7 +49,7 @@ export function getViewRenderingTasks (view, { setDeepestRoute = false, addToTre
     APP.deepestRoute = view
   }
 
-  !!addToTree && !TREE.includes(view) && TREE.push(view)
+  !!addToTree && !STACK.includes(view) && STACK.push(view)
   
   return getTemplateRenderingTasks({
     view,
@@ -63,7 +63,7 @@ export function getViewInitializationTasks ({ parent = null, rootNode, config, r
   !!init && init(view)
 
   if (!!parent) {
-    parent.children.add(view)
+    !parent.children.has(view) && parent.children.add(view)
   } else {
     APP.rootView = view
   }
@@ -161,7 +161,7 @@ export function getTemplateRenderingTasks ({ view, template, placeholder = null 
   }, {
     name: `Mount "${name}"`,
     meta: { view },
-    callback: async () => await view.emit(INTERNAL_ACCESS_KEY, 'mount')
+    callback: async () => !view.mounted && await view.emit(INTERNAL_ACCESS_KEY, 'mount')
   }]
 }
 
@@ -194,7 +194,12 @@ export async function unmountView (view) {
     await unmountView(child)
   }
 
-  view.children.clear()
+  const { parent } = view
+
+  if (!!parent) {
+    parent.children.delete(view)
+  }
+
   await view.emit(INTERNAL_ACCESS_KEY, 'unmount')
   
   removeDOMEventsByNode(view.rootNode)
@@ -249,7 +254,12 @@ async function replaceView (view, config, abort) {
   view = new View(view.parent, view.rootNode, config, new Route(view.parent, { url: new URL(PATH.current, PATH.base) }))
   
   await fireBeforeMountEvent(view, abort)
-  view.parent?.children.add(view)
+
+  const { parent } = view
+
+  if (!!parent) {
+    !parent.children.has(view) && parent.children.add(view)
+  }
 
   if (isRoot) {
     APP.rootView = view
