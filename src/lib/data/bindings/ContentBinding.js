@@ -30,7 +30,7 @@ export default class ContentBinding extends DataBinding {
         }
       }
 
-      if (current.length === 0) {
+      if (current?.length === 0) {
         return this.#replace([this.#placeholder])
       }
 
@@ -45,6 +45,8 @@ export default class ContentBinding extends DataBinding {
   }
 
   #getNodes (value) {
+    value = value ?? ''
+
     if (Array.isArray(value)) {
       if (value.length === 0) {
         return []

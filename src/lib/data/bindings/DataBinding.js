@@ -33,7 +33,7 @@ export default class DataBinding extends DataBindingInterpolation {
     newValue = Array.isArray(newValue) ? [...newValue] : newValue
 
     if (newValue !== this.#value) {
-      this.#value = newValue
+      this.#value = newValue ?? null
 
       cb && await cb({
         previous,
