@@ -5,10 +5,10 @@ import { sanitizeString } from '../../utilities/StringUtils'
 const htmlTemplate = document.createElement('template')
 const svgTemplate = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 
-export function parseHTML (template, retainFormatting) {
+export function parseHTML (template, { retainFormatting }) {
   const result = {
-    bindings: null,
-    templates: null 
+    bindings: {},
+    templates: {} 
   }
 
   const { strings, interpolations } = template
@@ -36,11 +36,7 @@ export function parseHTML (template, retainFormatting) {
 }
 
 function createTemplate (collection, property, { id }) {
-  collection[property] = {
-    ...(collection[property] ?? {}),
-    [id]: arguments[2]
-  }
-
+  collection[property][id] = arguments[2]
   return `<template id="${id}"></template>`
 }
 

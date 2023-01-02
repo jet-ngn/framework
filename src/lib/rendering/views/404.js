@@ -1,4 +1,4 @@
-import { html } from '../rendering/tags'
+import { html } from '../tags'
 
 export default {
   name: '404 Not Found',

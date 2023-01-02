@@ -4,6 +4,7 @@ export default class HTMLTemplate extends Template {
   #attributes = null
   #listeners = null
   #properties = null
+  #routeConfig = null
   #viewConfig = null
 
   constructor (strings, ...interpolations) {
@@ -22,68 +23,81 @@ export default class HTMLTemplate extends Template {
     return this.#properties
   }
 
+  get routeConfig () {
+    return this.#routeConfig
+  }
+
   get viewConfig () {
     return this.#viewConfig
   }
 
-  attachView (config) {
-    this.#viewConfig = config
-    return this
+  attachRoutes (config) {
+    if (!!this.#viewConfig) {
+      throw new Error(`Cannot attach Routes to element with attached View.`)
+    }
+
+    return this.#apply(() => this.#routeConfig = config)
   }
 
-  config ({ attributes, properties, on, view }) {
-    attributes && this.setAttributes(attributes)
-    on && this.on(on)
-    properties && this.setProperties(properties)
-    view && this.attachView(view)
-    return this
+  attachView (config) {
+    if (!!this.#routeConfig) {
+      throw new Error(`Cannot attach View to element with attached Routes.`)
+    }
+
+    return this.#apply(() => this.#viewConfig = config)
   }
 
   on (evt, handler, cfg = null) {
-    if (!this.#listeners) {
-      this.#listeners = {}
-    }
-
-    if (typeof evt === 'object') {
-      Object.keys(evt).forEach(name => this.on(name, evt[name]))
-    } else if (this.#listeners.hasOwnProperty(evt)) {
-      this.#listeners[evt].push({ handler, cfg })
-    } else {
-      this.#listeners[evt] = [{ handler, cfg }]
-    }
-
-    return this
+    return this.#apply(() => {
+      if (!this.#listeners) {
+        this.#listeners = {}
+      }
+  
+      if (typeof evt === 'object') {
+        Object.keys(evt).forEach(name => this.on(name, evt[name]))
+      } else if (this.#listeners.hasOwnProperty(evt)) {
+        this.#listeners[evt].push({ handler, cfg })
+      } else {
+        this.#listeners[evt] = [{ handler, cfg }]
+      }
+    })
   }
 
-  set ({ attributes, properties }) {
-    return this.config(...arguments)
+  set ({ attributes = null, properties = null }) {
+    return this.#apply(() => {
+      attributes && this.setAttributes(attributes)
+      properties && this.setProperties(properties)
+    })
   }
 
   setAttribute (name, value) {
-    this.#attributes = {
-      ...(this.#attributes ?? {}),
-      [name]: value
-    }
-
-    return this
+    return this.#apply(() => {
+      this.#attributes = {
+        ...(this.#attributes ?? {}),
+        [name]: value
+      }
+    })
   }
 
   setAttributes (cfg) {
-    this.#attributes = { ...(this.#attributes ?? {}), ...cfg }
-    return this
+    return this.#apply(() => this.#attributes = { ...(this.#attributes ?? {}), ...cfg })
   }
 
   setProperty (name, value) {
-    this.#properties = {
-      ...(this.#properties ?? {}),
-      [name]: value
-    }
-
-    return this
+    return this.#apply(() => {
+      this.#properties = {
+        ...(this.#properties ?? {}),
+        [name]: value
+      }
+    })
   }
 
   setProperties (cfg) {
-    this.#properties = { ...(this.#properties ?? {}), ...cfg }
+    return this.#apply(() => this.#properties = { ...(this.#properties ?? {}), ...cfg })
+  }
+
+  #apply (fn) {
+    fn()
     return this
   }
 }
