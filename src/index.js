@@ -1,5 +1,5 @@
 import Application from './Application'
-import { PATH, Plugins } from './env'
+import { Path, Plugins } from './env'
 import { createId } from './utilities/IDUtils'
 import { append, bind, clear, load } from './lib/data/DataRegistry'
 import StateFactory from './lib/data/StateFactory'
@@ -13,48 +13,66 @@ const Data = {
   State: StateFactory
 }
 
+class Router {
+  static get base () {
+    return Path.base
+  }
+
+  static get path () {
+    const { pathname } = location
+    const base = Path.base.pathname
+    return base === '/' ? pathname : pathname.replace(base, '')
+  }
+
+  static get vars () {
+    return { ...(Path.vars ?? {}) }
+  }
+}
+
 let App
-let config
-let created = false
-let ready = false
+let appConfig
+let appCreated = false
+let DOMReady = false
 
 document.addEventListener('DOMContentLoaded', async (evt) => {
-  ready = true
-  created && await run()
+  DOMReady = true
+  appCreated && await run()
 })
 
 window.addEventListener('popstate', async (evt) => {
   // TODO: If history has no entries, do default action (this is if you navigate
   // to the jet app, then navigate back from where you came from outside of the app)
   evt.preventDefault()
-  await updateHistory()
+  await App.update()
 })
 
 export async function createApp ({ baseURL, selector }) {
-  if (created) {
+  if (appCreated) {
     throw new Error(`App has already been created`)
   }
 
-  config = arguments[0]
-  config.selector = selector ?? 'body'
-  PATH.base = new URL(baseURL ?? '', location.origin)
-  created = true
+  appConfig = arguments[0]
+  appConfig.selector = selector ?? 'body'
+  Path.base = new URL(baseURL ?? '', location.origin)
+  appCreated = true
 
-  ready && await run()
+  DOMReady && await run()
 }
 
-export async function navigate (to, { append = false, data = null } = {}) {
-  if (to === PATH.current) {
+export async function navigate (to, { append = false } = {}) {
+  const { pathname } = location
+
+  if (to === pathname) {
     throw new Error(`Cannot navigate: "${to}" is already the current location`)
   }
 
-  history.pushState(data, null, `${append ? PATH.current : ''}${to}`)
-  await updateHistory()
+  history.pushState(null, null, `${append ? pathname : ''}${to}`)
+  await App.update()
 }
 
 async function run () {
-  const nodes = document.querySelectorAll(config.selector)
-  const error = `Invalid app root element selector: "${config.selector}"`
+  const nodes = document.querySelectorAll(appConfig.selector)
+  const error = `Invalid app root element selector: "${appConfig.selector}"`
 
   if (nodes.length === 0) {
     throw new Error(`${error} returned no node.`)
@@ -64,25 +82,11 @@ async function run () {
     throw new Error(`${error} returned multiple nodes.`)
   }
 
-  delete config.selector
-  setPaths()
-
-  App = new Application(nodes[0], config)
+  App = new Application(nodes[0], appConfig)
   await App.render()
-}
-
-function setPaths () {
-  PATH.current = location.pathname
-  PATH.remaining = PATH.current.split('/').filter(Boolean)
-}
-
-async function updateHistory () {
-  PATH.previous = PATH.current
-  setPaths()
-  await App.reconcile()
 }
 
 export { css, html, svg } from './lib/rendering/tags'
 export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
-export { Data, Plugins }
+export { Data, Plugins, Router }

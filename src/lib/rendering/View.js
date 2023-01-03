@@ -1,7 +1,7 @@
-import PermissionsManager from './lib/session/PermissionsManager'
-import Bus, { addHandler } from './lib/events/Bus'
-import { registerState } from './lib/data/DataRegistry'
-import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from './env'
+import PermissionsManager from '../session/PermissionsManager'
+import Bus, { addHandler } from '../events/Bus'
+import { registerState } from '../data/DataRegistry'
+import { INTERNAL_ACCESS_KEY, RESERVED_EVENT_NAMES } from '../../env'
 
 export class ViewPermissions extends Object {
   constructor (obj) {
@@ -11,38 +11,34 @@ export class ViewPermissions extends Object {
 }
 
 export default class View extends PermissionsManager {
-  #children = new Set
   #config
   #data
   #description
+  #element
+  #fragment
   #mounted = false
   #name
   #parent
   #permissions
-  #rootNode
-  #route
+  #rendered = false
   #scope
   #version
 
-  constructor (parent, rootNode, { data, description, name, on, permissions, scope, version } = {}, route) {
+  constructor ({ parent = null, element = null, config = null } = {}) {
+    const { data = null, description = null, name = null, on = {}, permissions = null, scope = null, version = null } = config
     super(permissions, 'view')
-
-    this.#config = arguments[2]
+    
+    this.#config = config
     this.#data = data ? registerState(data) : null
-    this.#description = description ?? null
-    this.#name = name ?? `${rootNode.tagName.toLowerCase()}::${this.id}${version ? `@${version}` : ''}`
-    this.#parent = parent ?? null
+    this.#description = description
+    this.#element = element
+    this.#name = this.#name = name ?? this.id
+    this.#parent = parent
     this.#permissions = permissions ? registerState(new ViewPermissions(permissions), false) : null
-    this.#rootNode = rootNode ?? null
-    this.#route = route ?? null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
-    this.#version = version ?? null
+    this.#version = version
 
-    Object.keys(on ?? {}).forEach(evt => addHandler(this, evt, on[evt]))
-  }
-
-  get children () {
-    return this.#children
+    Object.keys(on).forEach(evt => addHandler(this, evt, on[evt]))
   }
 
   get config () {
@@ -57,8 +53,8 @@ export default class View extends PermissionsManager {
     return this.#description
   }
 
-  get hasRoutes () {
-    return !!this.#config.routes
+  get element () {
+    return this.#element
   }
 
   get mounted () {
@@ -77,12 +73,8 @@ export default class View extends PermissionsManager {
     return this.#permissions
   }
 
-  get rootNode () {
-    return this.#rootNode
-  }
-
-  get route () {
-    return this.#route
+  get rendered () {
+    return this.#rendered
   }
 
   get scope () {
@@ -102,23 +94,29 @@ export default class View extends PermissionsManager {
       args = args.slice(1)
     }
 
-    if (!!RESERVED_EVENT_NAMES.includes(evt) && key !== INTERNAL_ACCESS_KEY) {
+    const isReserved = RESERVED_EVENT_NAMES.includes(evt)
+
+    if (isReserved && key !== INTERNAL_ACCESS_KEY) {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
     }
 
     switch (evt) {
-      case 'mount':
-        this.#mounted = true
-        break
+      case 'render':
+        this.#rendered = true  
+        return
 
-      case 'unmount':
-        this.#mounted = false
-        break
+      case 'remount': return this.#element.replaceChildren(this.#fragment)
 
-      case 'reconcile': return this.#route.update()
+      case 'unmount': 
+        this.#fragment = document.createDocumentFragment()
+        this.#fragment.append(...this.#element.childNodes)
+        break
+    
+      default: break
     }
 
     await Bus.emit(`${this.scope}.${evt}`, ...args)
+    this.#mounted = evt === 'mount' ? true : evt === 'unmount' ? false : this.#mounted
   }
 
   find (...selectors) {
@@ -126,7 +124,7 @@ export default class View extends PermissionsManager {
     const result = []
 
     for (let selector of selectors) {
-      result.push(...this.#rootNode.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`))
+      result.push(...this.#element.querySelectorAll(`${selector.startsWith('>') ? `:scope ` : ''}${selector}`))
     }
     return result
   }

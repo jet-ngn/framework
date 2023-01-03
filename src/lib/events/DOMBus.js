@@ -57,10 +57,26 @@ function applyListeners (eventName) {
   return document.body.addEventListener(eventName, handler)
 }
 
-export function removeDOMEvents () {
-  listeners = new Map
-  events.forEach(event => document.body.removeEventListener(event, handlers[event]))
-  events = new Set
+// export function removeDOMEvents () {
+//   listeners = new Map
+//   events.forEach(event => document.body.removeEventListener(event, handlers[event]))
+//   events = new Set
+// }
+
+export function removeDOMEventsByView (target) {
+  const remainingEvents = new Set
+
+  ;[...listeners.keys()].filter(({ event, view }) => {
+    const match = view === target
+
+    if (!match) {
+      remainingEvents.add(event)
+    }
+
+    return match
+  }).forEach(key => listeners.delete(key))
+
+  events = remainingEvents
 }
 
 export function removeDOMEventsByNode (target) {

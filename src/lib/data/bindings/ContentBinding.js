@@ -1,6 +1,6 @@
 import DataBinding from './DataBinding'
 import Template from '../../rendering/Template'
-import { getTemplateRenderingTasks } from '../../rendering/Renderer'
+// import { getTemplateRenderingTasks } from '../../rendering/Renderer'
 import { reconcileNodes } from '../../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../../events/DOMBus'
 import { sanitizeString } from '../../../utilities/StringUtils'
@@ -11,10 +11,10 @@ export default class ContentBinding extends DataBinding {
   #placeholder
   #retainFormatting
 
-  constructor (view, node, interpolation, retainFormatting) {
+  constructor (view, element, interpolation, { retainFormatting }) {
     super(view, interpolation)
-    this.#placeholder = node
-    this.#nodes = [node]
+    this.#placeholder = element
+    this.#nodes = [element]
     this.#retainFormatting = retainFormatting
   }
 

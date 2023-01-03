@@ -5,7 +5,7 @@ import AttributeListBooleanBinding from './bindings/AttributeListBooleanBinding'
 import ContentBinding from './bindings/ContentBinding'
 import PropertyBinding from './bindings/PropertyBinding'
 import ViewBinding from './bindings/ViewBinding'
-import { ViewPermissions } from '../../View'
+import { ViewPermissions } from '../rendering/View'
 import StateArray from './states/StateArray'
 import StateObject from './states/StateObject'
 
@@ -53,7 +53,7 @@ export function registerAttributeListBooleanBinding (view, list, name, interpola
   return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
-export function registerContentBinding (view, node, interpolation, retainFormatting) {
+export function registerContentBinding (view, element, interpolation, { retainFormatting }) {
   return registerBinding(new ContentBinding(...arguments))
 }
 
