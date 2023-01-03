@@ -46,6 +46,16 @@ export default class HTMLTemplate extends Template {
 
     return this.#apply(() => this.#viewConfig = config)
   }
+  
+  config ({ attributes, properties, routes, view, on }) {
+    return this.#apply(() => {
+      routes && this.attachRoutes(routes)
+      view && this.attachView(view)
+      attributes && this.setAttributes(attributes)
+      properties && this.setProperties(properties)
+      on && this.on(on)
+    })
+  }
 
   on (evt, handler, cfg = null) {
     return this.#apply(() => {

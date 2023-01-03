@@ -1,7 +1,7 @@
 {
   "name": "@jet-ngn/framework",
   "type": "module",
-  "version": "1.0.0-beta.21",
+  "version": "1.0.0-beta.22",
   "description": "Jet NGN UI Framework",
   "main": "index.js",
   "module": "index.js",
