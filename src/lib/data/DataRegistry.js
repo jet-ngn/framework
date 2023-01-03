@@ -53,7 +53,7 @@ export function registerAttributeListBooleanBinding (app, view, list, name, inte
   return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
-export function registerContentBinding (app, view, element, interpolation, { retainFormatting }) {
+export function registerContentBinding (app, view, collection, element, interpolation, { retainFormatting }, routers) {
   return registerBinding(new ContentBinding(...arguments))
 }
 

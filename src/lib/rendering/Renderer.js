@@ -34,7 +34,7 @@ export async function renderTemplate (app, parentView, template, targetElement, 
   }
 
   for (const id in bindings) {
-    registerContentBinding(app, parentView, fragment.getElementById(id), bindings[id], { retainFormatting }).reconcile()
+    await registerContentBinding(app, parentView, childViews, fragment.getElementById(id), bindings[id], { retainFormatting }, arguments[6]).reconcile()
   }
 
   if (!!viewConfig) {
@@ -107,7 +107,7 @@ function getExistingAttributeValue (element, name) {
 
 async function processChildView (app, parent, childViews, { element, config }, { tasks }, routers) {
   if (config instanceof DataBindingInterpolation) {
-    return registerViewBinding(app, parent, childViews, element, config, routers).reconcile()
+    return await registerViewBinding(app, parent, childViews, element, config, routers).reconcile()
   }
 
   await mountView(app, ...app.tree.addChildView(childViews, { parent, element, config }), { tasks }, routers)

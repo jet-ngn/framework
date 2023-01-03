@@ -1,25 +1,29 @@
 import DataBinding from './DataBinding'
 import Template from '../../rendering/Template'
-// import { getTemplateRenderingTasks } from '../../rendering/Renderer'
+import { renderTemplate } from '../../rendering/Renderer'
 import { reconcileNodes } from '../../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../../events/DOMBus'
 import { sanitizeString } from '../../../utilities/StringUtils'
 
 export default class ContentBinding extends DataBinding {
   // #children = []
+  #collection
   #nodes
   #placeholder
   #retainFormatting
+  #routers
 
-  constructor (app, view, element, interpolation, { retainFormatting }) {
+  constructor (app, view, collection, element, interpolation, { retainFormatting }, routers) {
     super(app, view, interpolation)
+    this.#collection = collection
     this.#placeholder = element
     this.#nodes = [element]
     this.#retainFormatting = retainFormatting
+    this.#routers = routers
   }
 
-  reconcile (method) {
-    super.reconcile(({ previous, current }) => {
+  async reconcile (method) {
+    super.reconcile(async ({ previous, current }) => {
       if (!!method && this.targets.length === 1 && Array.isArray(this.targets[0])) {
         switch (method) {
           case 'push': return this.#push(previous, current)
@@ -34,7 +38,7 @@ export default class ContentBinding extends DataBinding {
         return this.#replace([this.#placeholder])
       }
 
-      const update = this.#getNodes(current)
+      const update = await this.#getNodes(current)
 
       if (!previous || [previous, current].every(item => item instanceof Template)) {
         return this.#replace(update)
@@ -44,7 +48,7 @@ export default class ContentBinding extends DataBinding {
     })
   }
 
-  #getNodes (value) {
+  async #getNodes (value) {
     value = value ?? ''
 
     if (Array.isArray(value)) {
@@ -61,16 +65,21 @@ export default class ContentBinding extends DataBinding {
       
       fragment.append(template)
 
-      const tree = {}
+      const tasks = []
+      await renderTemplate(this.app, this.view, value, template, this.#collection, { tasks }, this.#routers)
+
+      console.log(fragment)
+
+      // const tree = {}
       
-      const tasks = getTemplateRenderingTasks({
-        view: this.view,
-        template: value,
-        placeholder: template,
-        tree
-      })
+      // const tasks = getTemplateRenderingTasks({
+      //   view: this.view,
+      //   template: value,
+      //   placeholder: template,
+      //   tree
+      // })
       
-      tasks.forEach(({ callback }) => callback())
+      // tasks.forEach(({ callback }) => callback())
 
       return [...fragment.children]
     }
