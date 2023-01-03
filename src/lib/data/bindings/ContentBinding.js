@@ -38,7 +38,6 @@ export default class ContentBinding extends DataBinding {
       }
 
       const update = await this.#getNodes(current)
-      console.log(update);
 
       if (!previous || [previous, current].every(item => item instanceof Template)) {
         return this.#replace(update)
