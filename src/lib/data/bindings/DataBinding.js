@@ -3,12 +3,18 @@ import PermissionsManager from '../../session/PermissionsManager'
 import { ViewPermissions } from '../../rendering/View'
 
 export default class DataBinding extends DataBindingInterpolation {
+  #app
   #view
   #value = null
 
-  constructor (view, { targets, transform }) {
+  constructor (app, view, { targets, transform }) {
     super(targets, transform)
+    this.#app = app
     this.#view = view
+  }
+
+  get app () {
+    return this.#app
   }
 
   get view () {

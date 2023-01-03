@@ -4,19 +4,17 @@ import AttributeList from './AttributeList'
 
 import Unauthorized from './views/401.js'
 import Forbidden from './views/403.js'
-import NotFound from './views/404.js'
 
 import { parseHTML } from './HTMLParser'
-import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
-import { emitInternal, removeEventsByView } from '../events/Bus'
+import { addDOMEventHandler } from '../events/DOMBus'
+import { emitInternal } from '../events/Bus'
 import { html } from './tags'
 
 import {
   registerContentBinding,
   registerAttributeBinding,
   registerPropertyBinding,
-  registerViewBinding//,
-  // removeBindingsByView
+  registerViewBinding
 } from '../data/DataRegistry'
 
 export async function renderTemplate (app, parentView, template, targetElement, childViews, { tasks, replace = false, replaceChildren = false } = {}, { parentRouter, childRouters } = {}) {
@@ -27,8 +25,8 @@ export async function renderTemplate (app, parentView, template, targetElement, 
         hasMultipleNodes = fragment.children.length > 1,
         args = [element, hasMultipleNodes]
 
-  !!properties && bind('properties', parentView, properties, ...args, setProperty)
-  !!attributes && bind('attributes', parentView, attributes, ...args, setAttribute)
+  !!properties && bind('properties', app, parentView, properties, ...args, setProperty)
+  !!attributes && bind('attributes', app, parentView, attributes, ...args, setAttribute)
   !!listeners && bindListeners(parentView, listeners, ...args)
 
   for (const id in templates) {
@@ -36,7 +34,7 @@ export async function renderTemplate (app, parentView, template, targetElement, 
   }
 
   for (const id in bindings) {
-    registerContentBinding(parentView, fragment.getElementById(id), bindings[id], { retainFormatting }).reconcile()
+    registerContentBinding(app, parentView, fragment.getElementById(id), bindings[id], { retainFormatting }).reconcile()
   }
 
   if (!!viewConfig) {
@@ -83,16 +81,13 @@ export async function mountView (app, view, childViews, { tasks, deferMount = fa
 }
 
 export async function unmountView (view) {
-  // removeDOMEventsByView(view)
-  // removeEventsByView(view)
-  // removeBindingsByView(view)
   await emitInternal(view, 'unmount')
 }
 
-function bind (type, view, collection, root, hasMultipleRoots, cb) {
+function bind (app, type, view, collection, root, hasMultipleRoots, cb) {
   validateBinding(type, root, hasMultipleRoots, () => {
     for (let item in collection ?? {}) {
-      cb(view, root, item, collection[item])
+      cb(app, view, root, item, collection[item])
     }
   })
 }
@@ -112,44 +107,44 @@ function getExistingAttributeValue (element, name) {
 
 async function processChildView (app, parent, childViews, { element, config }, { tasks }, routers) {
   if (config instanceof DataBindingInterpolation) {
-    return registerViewBinding(parent, element, config).reconcile()
+    return registerViewBinding(app, parent, childViews, element, config, routers).reconcile()
   }
 
   await mountView(app, ...app.tree.addChildView(childViews, { parent, element, config }), { tasks }, routers)
 }
 
-function setAttribute (view, element, name, value) {
+function setAttribute (app, view, element, name, value) {
   if (value instanceof DataBindingInterpolation) {
-    return registerAttributeBinding(view, element, name, value).reconcile()
+    return registerAttributeBinding(app, view, element, name, value).reconcile()
   }
 
   const existing = getExistingAttributeValue(element, name)
 
   if (Array.isArray(value)) {
-    return element.setAttribute(name, new AttributeList(view, element, name, [...(existing ?? []), ...value]).value)
+    return element.setAttribute(name, new AttributeList(app, view, element, name, [...(existing ?? []), ...value]).value)
   }
 
   switch (typeof value) {
     case 'string':
     case 'number': return element.setAttribute(name, `${existing.join(' ')} ${value}`.trim())
     case 'boolean': return value && element.setAttribute(name, '')
-    case 'object': return setNamespacedAttribute(view, element, name, value)
+    case 'object': return setNamespacedAttribute(app, view, element, name, value)
 
     default: throw new TypeError(`"${view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
   }
 }
 
-function setNamespacedAttribute (view, element, name, cfg) {
+function setNamespacedAttribute (app, view, element, name, cfg) {
   if (typeof cfg === 'object') {
-    return Object.keys(cfg).forEach(slug => setAttribute(view, element, `${name}-${slug}`, cfg[slug]))
+    return Object.keys(cfg).forEach(slug => setAttribute(app, view, element, `${name}-${slug}`, cfg[slug]))
   }
 
-  setAttribute(view, element, `${name}-${slug}`, cfg)
+  setAttribute(app, view, element, `${name}-${slug}`, cfg)
 }
 
-function setProperty (view, element, name, value) {
+function setProperty (app, view, element, name, value) {
   if (value instanceof DataBindingInterpolation) {
-    return registerPropertyBinding(view, element, name, value).reconcile()
+    return registerPropertyBinding(app, view, element, name, value).reconcile()
   }
 
   element[name] = value

@@ -11,8 +11,8 @@ export default class ContentBinding extends DataBinding {
   #placeholder
   #retainFormatting
 
-  constructor (view, element, interpolation, { retainFormatting }) {
-    super(view, interpolation)
+  constructor (app, view, element, interpolation, { retainFormatting }) {
+    super(app, view, interpolation)
     this.#placeholder = element
     this.#nodes = [element]
     this.#retainFormatting = retainFormatting

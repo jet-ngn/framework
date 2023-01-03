@@ -41,27 +41,27 @@ export function logBindings () {
   console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
 }
 
-export function registerAttributeBinding (view, node, name, interpolation) {
+export function registerAttributeBinding (app, view, node, name, interpolation) {
   return registerBinding(new AttributeBinding(...arguments))
 }
 
-export function registerAttributeListBinding (view, list, interpolation) {
+export function registerAttributeListBinding (app, view, list, interpolation) {
   return registerBinding(new AttributeListBinding(...arguments))
 }
 
-export function registerAttributeListBooleanBinding (view, list, name, interpolation) {
+export function registerAttributeListBooleanBinding (app, view, list, name, interpolation) {
   return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
-export function registerContentBinding (view, element, interpolation, { retainFormatting }) {
+export function registerContentBinding (app, view, element, interpolation, { retainFormatting }) {
   return registerBinding(new ContentBinding(...arguments))
 }
 
-export function registerPropertyBinding (view, node, name, interpolation) {
+export function registerPropertyBinding (app, view, node, name, interpolation) {
   return registerBinding(new PropertyBinding(...arguments))
 }
 
-export function registerViewBinding (view, node, interpolation) {
+export function registerViewBinding (app, view, collection, node, interpolation, routers) {
   return registerBinding(new ViewBinding(...arguments))
 }
 

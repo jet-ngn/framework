@@ -2,12 +2,14 @@ import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import { registerAttributeListBinding, registerAttributeListBooleanBinding } from '../data/DataRegistry'
 
 export default class AttributeList {
+  #app
   #list
   #name
   #node
   #parent
 
-  constructor (parent, node, name, list) {
+  constructor (app, parent, node, name, list) {
+    this.#app = app
     this.#node = node
     this.#name = name
     this.#list = list
@@ -68,7 +70,7 @@ export default class AttributeList {
 
   #processListItem (item) {
     if (item instanceof DataBindingInterpolation) {
-      const binding = registerAttributeListBinding(this.#parent, this, item)
+      const binding = registerAttributeListBinding(this.#app, this.#parent, this, item)
       return [binding.initialValue]
     }
 
@@ -85,7 +87,7 @@ export default class AttributeList {
       const value = obj[name]
       
       if (value instanceof DataBindingInterpolation) {
-        const binding = registerAttributeListBooleanBinding(this.#parent, this, name, value)
+        const binding = registerAttributeListBooleanBinding(this.#app, this.#parent, this, name, value)
         binding.initialValue === true && result.push(name)
       } else if (typeof value !== 'boolean') {
         throw new TypeError(`Invalid conditional attribute list entry. Expected "boolean" but received "${typeof value}"`)

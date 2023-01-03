@@ -1,4 +1,4 @@
-import { createId } from '../../utilities/IDUtils'
+// import { createId } from '../../utilities/IDUtils'
 import DOMEventListener from './DOMEventListener'
 
 export let listeners = new Map
@@ -63,21 +63,21 @@ function applyListeners (eventName) {
 //   events = new Set
 // }
 
-export function removeDOMEventsByView (target) {
-  const remainingEvents = new Set
+// export function removeDOMEventsByView (target) {
+//   const remainingEvents = new Set
 
-  ;[...listeners.keys()].filter(({ event, view }) => {
-    const match = view === target
+//   ;[...listeners.keys()].filter(({ event, view }) => {
+//     const match = view === target
 
-    if (!match) {
-      remainingEvents.add(event)
-    }
+//     if (!match) {
+//       remainingEvents.add(event)
+//     }
 
-    return match
-  }).forEach(key => listeners.delete(key))
+//     return match
+//   }).forEach(key => listeners.delete(key))
 
-  events = remainingEvents
-}
+//   events = remainingEvents
+// }
 
 export function removeDOMEventsByNode (target) {
   const remainingEvents = new Set

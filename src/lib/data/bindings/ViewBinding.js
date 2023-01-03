@@ -1,21 +1,24 @@
+import View from '../../rendering/View'
+import { mountView } from '../../rendering/Renderer'
 import DataBinding from './DataBinding'
 // import { getViewInitializationTasks, unmountView } from '../../rendering/Renderer'
 
 export default class ViewBinding extends DataBinding {
-  #node
   #boundView = null
+  #collection
+  #element
+  #routers
 
-  constructor (view, node, interpolation) {
-    super(view, interpolation)
-    this.#node = node
+  constructor (app, view, collection, element, interpolation, routers) {
+    super(app, view, interpolation)
+    this.#collection = collection
+    this.#element = element
+    this.#routers = routers ?? null
   }
 
   async reconcile () {
     await super.reconcile(async ({ current }) => {
-      const { children } = this.view
-
       if (this.#boundView) {
-        children.delete(this.#boundView)
         await unmountView(this.#boundView)
       }
 
@@ -24,17 +27,10 @@ export default class ViewBinding extends DataBinding {
         return
       }
 
-      const tasks = getViewInitializationTasks({
-        parent: this.view,
-        rootNode: this.#node,
-        config: current
-      }, { init: view => this.#boundView = view })
-
-      children.add(this.#boundView)
-
-      for (let { callback } of tasks) {
-        await callback()
-      }
+      const tasks = []
+      const view = new View({ parent: this.view, element: this.#element, config: current })
+      
+      await mountView(this.app, view, this.#collection, { tasks, replaceChildren: true }, this.#routers)
     })
   }
 }

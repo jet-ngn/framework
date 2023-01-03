@@ -95,18 +95,18 @@ function remove (name, handlers, handler) {
   listeners.set(name, handlers)
 }
 
-export function removeEvents () {
-  listeners = new Map
-  views = new Map
-}
+// export function removeEvents () {
+//   listeners = new Map
+//   views = new Map
+// }
 
-export function removeEventsByView (view) {
-  const stored = views.get(view)
+// export function removeEventsByView (view) {
+//   const stored = views.get(view)
 
-  if (!stored) {
-    return
-  }
+//   if (!stored) {
+//     return
+//   }
 
-  Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
-  views.delete(view)
-}
+//   Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
+//   views.delete(view)
+// }
