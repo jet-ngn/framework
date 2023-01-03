@@ -66,7 +66,8 @@ export default class Tree {
     }
 
     // TODO: Unmount children if parent didn't match
-
-    await this.#updateRouters(router.path.remaining, children, { tasks })
+    // if (!!router.path.remaining) {
+      await this.#updateRouters(router.path.remaining, children, { tasks })
+    // }
   }
 }

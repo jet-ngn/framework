@@ -75,12 +75,14 @@ export default class Router {
   }
 
   get #matchingRoute () {
+    console.log(this.#remainingPath);
     const slugs = getRouteSlugs(this.#remainingPath)
+    let match = this.#routes.find(({ path }) => path === '/') ?? null
 
     if (slugs.length === 0) {
       this.#matchedPath = '/'
       this.#remainingPath = null
-      return this.#routes.find(({ path }) => path === '/') ?? null
+      return match
     }
 
     for (const route of this.#routes.filter(({ path }) => path !== '/')) {
@@ -88,9 +90,12 @@ export default class Router {
 
       if (this.#routeMatches(route, slugs, vars)) {
         Path.vars = vars
-        return route
+        match = route
+        break
       }
     }
+
+    return match
   }
 
   #routeMatches (route, slugs, vars) {
