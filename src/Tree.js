@@ -2,6 +2,8 @@ import { mountView } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
 import Router from './lib/routing/Router'
 
+import NotFound from './lib/rendering/views/404.js'
+
 export default class Tree {
   #app
   #map = new Map
@@ -10,27 +12,16 @@ export default class Tree {
 
   constructor (app, element, config) {
     this.#app = app
-
-    const view = new View({ element, config })
-
-    this.#map.set(view, this.#getMappings(view))
-    this.#root = this.#map.entries().next().value
+    this.#root = this.addChildView(this.#map, new View({ element, config }))
   }
 
   get root () {
     return this.#root
   }
 
-  get routers () {
-    return this.#routers
-  }
-
   addChildView (collection, config) {
-    const view = new View(config),
-          mappings = this.#getMappings(view)
-    
-    collection.set(view, mappings)
-    return [view, mappings]
+    const view = config instanceof View ? config : new View(config)
+    return collection.set(view, this.#getMappings(view)).entries().next().value
   }
 
   addChildRouter (collection, config) {
@@ -45,41 +36,40 @@ export default class Tree {
       return console.log('There are no routers. The result of the route match will affect the root view.')
     }
 
-    await this.#updateRouters(...this.#root, { tasks })
+    await this.#updateRouters(location.pathname, this.#root[1], { tasks })
+
+    for (const task of tasks) {
+      await task()
+    }
   }
 
-  // Views shouldn't be created unless they don't already exist. They should prolly be stored on the
-  // routers to facilitate this. That way they can be mounted or unmounted without the need to nuke them.
-  async #updateRouters (parentView, { routers, children }, { tasks }) {
-    const { pathname } = location
-
+  async #updateRouters (path, { routers, children }, { tasks }) {
     for (const router of routers) {
-      const path = {
+      const stats = {
         matched: null,
-        remaining: pathname
+        remaining: path
       }
 
-      const config = router.getViewConfig(pathname, path)
+      let view = router.getView(stats)
 
-      if (!!config) {
-        const { element } = router
-        const view = new View({ parent: parentView, element, config })
-
-        if (!children.has(view)) {
-          children.set(view, this.#getMappings(view))
-        }
-
-        await mountView(this.#app, view, children.get(view), { tasks })
+      if (!view || stats.remaining) {
+        view = new View({ parent: view.parent, element: view.element, config: NotFound })
       }
 
-      console.log(path)
+      !children.has(view) && children.set(view, this.#getMappings(view))
+      !view.mounted && await mountView(this.#app, view, children.get(view), { tasks, deferMount: true })
+    }
+
+    if (children.size > 0) {
+      for (const child of children.values()) {
+        await this.#updateRouters(path, child, { tasks })
+      }
     }
   }
 
   #getMappings (view) {
     const routers = []
     this.#routers.set(routers, view)
-    
     return { routers, children: new Map }
   }
 }

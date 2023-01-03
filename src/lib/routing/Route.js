@@ -5,11 +5,11 @@ export default class Route {
   #slugs
   #url
   #value
-  #viewConfig
+  #view
 
-  constructor (path, viewConfig) {
+  constructor (path, view) {
     this.#url = new URL(path.trim(), Path.base.toString())
-    this.#viewConfig = viewConfig
+    this.#view = view
     this.#slugs = getRouteSlugs(this.#url.pathname)
     this.#value = getScore(this.#slugs)
   }
@@ -26,16 +26,52 @@ export default class Route {
     return this.#slugs
   }
 
-  get viewConfig () {
-    return this.#viewConfig
+  get view () {
+    return this.#view
   }
 
-  matches (slugs) {
-    return slugs.reduce((score, slug, index) => {
-      return this.#slugs[index] === slug ? score += 1 : score
-    }, 0) === this.#slugs.length
+  matches (slugs, path) {
+    let matched = null,
+        remaining = null
+
+    const matches = slugs.reduce((score, slug, index) => {
+      const candidate = this.#slugs[index]
+
+      if (candidate?.startsWith(':')) {
+        matched = `${matched ?? ''}/${slug}`
+        return score += 1
+      }
+
+      if (candidate === slug) {
+        matched = `${matched ?? ''}/${slug}`
+        return score += 2
+      }
+
+      remaining = `${remaining ?? ''}/${slug}`
+      return score
+    }, 0) === this.#value
+
+    if (matches) {
+      path.matched = matched
+      path.remaining = remaining
+    }
+
+    return matches
   }
 }
+
+// if (match) {
+    //   path.matched = match.path
+    //   path.remaining = getRemainingPath(match.path, path.remaining)
+    //   // const remaining = (path.remaining ?? '').replace(path.matched, '')
+    //   // path.remaining = remaining === '' ? null : remaining
+    // }
+
+    // function getRemainingPath (matched, remaining) {
+    //   return getRouteSlugs(remaining).reduce((result, slug, index) => {
+    
+    //   }, '')
+    // }
 
 // export default class Route extends View {
 //   #hash

@@ -41,7 +41,7 @@ export async function renderTemplate (app, parentView, template, targetElement, 
   if (!!viewConfig) {
     await processChildView(app, parentView, { children }, { element, config: viewConfig }, { tasks })
   } else if (!!routeConfig) {
-    app.tree.addChildRouter(routers, { element, routes: routeConfig })
+    app.tree.addChildRouter(routers, { parentView, element, routes: routeConfig })
   }
 
   targetElement[replace ? 'replaceWith' : 'append'](fragment)
