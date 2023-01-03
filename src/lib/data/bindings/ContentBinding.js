@@ -6,7 +6,6 @@ import { removeDOMEventsByNode } from '../../events/DOMBus'
 import { sanitizeString } from '../../../utilities/StringUtils'
 
 export default class ContentBinding extends DataBinding {
-  // #children = []
   #collection
   #nodes
   #placeholder
@@ -39,6 +38,7 @@ export default class ContentBinding extends DataBinding {
       }
 
       const update = await this.#getNodes(current)
+      console.log(update);
 
       if (!previous || [previous, current].every(item => item instanceof Template)) {
         return this.#replace(update)
@@ -56,32 +56,21 @@ export default class ContentBinding extends DataBinding {
         return []
       }
 
-      return value.reduce((result, item) => [...result, ...this.#getNodes(item)], [])
+      const result = []
+
+      for (const item of value) {
+        result.push(...(await this.#getNodes(item)))
+      }
+
+      return result
     }
 
     if (value instanceof Template) {
-      const fragment = document.createDocumentFragment()
       const template = document.createElement('template')
-      
-      fragment.append(template)
-
       const tasks = []
+
       await renderTemplate(this.app, this.view, value, template, this.#collection, { tasks }, this.#routers)
-
-      console.log(fragment)
-
-      // const tree = {}
-      
-      // const tasks = getTemplateRenderingTasks({
-      //   view: this.view,
-      //   template: value,
-      //   placeholder: template,
-      //   tree
-      // })
-      
-      // tasks.forEach(({ callback }) => callback())
-
-      return [...fragment.children]
+      return [...template.children]
     }
 
     switch (typeof value) {
