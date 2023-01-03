@@ -112,7 +112,7 @@ function getExistingAttributeValue (element, name) {
 
 async function processChildView (app, parent, childViews, { element, config }, { tasks }, routers) {
   if (config instanceof DataBindingInterpolation) {
-    return registerViewBinding(parentView, element, config).reconcile()
+    return registerViewBinding(parent, element, config).reconcile()
   }
 
   await mountView(app, ...app.tree.addChildView(childViews, { parent, element, config }), { tasks }, routers)
