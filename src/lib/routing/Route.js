@@ -31,19 +31,6 @@ export default class Route {
   }
 }
 
-// if (match) {
-    //   path.matched = match.path
-    //   path.remaining = getRemainingPath(match.path, path.remaining)
-    //   // const remaining = (path.remaining ?? '').replace(path.matched, '')
-    //   // path.remaining = remaining === '' ? null : remaining
-    // }
-
-    // function getRemainingPath (matched, remaining) {
-    //   return getRouteSlugs(remaining).reduce((result, slug, index) => {
-    
-    //   }, '')
-    // }
-
 // export default class Route extends View {
 //   #hash
 //   #path

@@ -26,12 +26,9 @@ export default class Application {
     for (const task of tasks) {
       await task()
     }
-
-    // console.log(this.#tree)
   }
 
   async update () {
     await this.#tree.updateRouters()
-    // console.log(this.#tree)
   }
 }

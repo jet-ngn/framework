@@ -44,7 +44,6 @@ window.addEventListener('popstate', async (evt) => {
   // to the jet app, then navigate back from where you came from outside of the app)
   evt.preventDefault()
   await App.update()
-  // await updateHistory()
 })
 
 export async function createApp ({ baseURL, selector }) {
@@ -86,17 +85,6 @@ async function run () {
   App = new Application(nodes[0], appConfig)
   await App.render()
 }
-
-// function setPaths () {
-//   PATH.current = location.pathname
-//   PATH.remaining = PATH.current.split('/').filter(Boolean)
-// }
-
-// async function updateHistory () {
-//   // PATH.previous = PATH.current
-//   // setPaths()
-//   App.reconcile()
-// }
 
 export { css, html, svg } from './lib/rendering/tags'
 export { default as Bus } from './lib/events/Bus'
