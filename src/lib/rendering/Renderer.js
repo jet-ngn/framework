@@ -7,18 +7,19 @@ import Forbidden from './views/403.js'
 import NotFound from './views/404.js'
 
 import { parseHTML } from './HTMLParser'
-import { addDOMEventHandler } from '../events/DOMBus'
-import { emitInternal } from '../events/Bus'
+import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
+import { emitInternal, removeEventsByView } from '../events/Bus'
 import { html } from './tags'
 
 import {
   registerContentBinding,
   registerAttributeBinding,
   registerPropertyBinding,
-  registerViewBinding
+  registerViewBinding//,
+  // removeBindingsByView
 } from '../data/DataRegistry'
 
-export async function renderTemplate (app, parentView, template, targetElement, { routers, children }, { tasks, replace = false } = {}) {
+export async function renderTemplate (app, parentView, template, targetElement, childViews, { tasks, replace = false, replaceChildren = false } = {}, { parentRouter, childRouters } = {}) {
   const retainFormatting = targetElement.tagName === 'PRE',
         { attributes, properties, listeners, routeConfig, viewConfig } = template,
         { bindings, fragment, templates } = parseHTML(template, { retainFormatting }),
@@ -31,25 +32,24 @@ export async function renderTemplate (app, parentView, template, targetElement, 
   !!listeners && bindListeners(parentView, listeners, ...args)
 
   for (const id in templates) {
-    await renderTemplate(app, parentView, templates[id], fragment.getElementById(id), arguments[4], { tasks, replace: true })
+    await renderTemplate(app, parentView, templates[id], fragment.getElementById(id), arguments[4], { tasks, replace: true }, arguments[6])
   }
 
   for (const id in bindings) {
-    registerContentBinding(view, fragment.getElementById(id), bindings[id], { retainFormatting }).reconcile()
+    registerContentBinding(parentView, fragment.getElementById(id), bindings[id], { retainFormatting }).reconcile()
   }
 
   if (!!viewConfig) {
-    await processChildView(app, parentView, { children }, { element, config: viewConfig }, { tasks })
+    await processChildView(app, parentView, childViews, { element, config: viewConfig }, { tasks }, arguments[6])
   } else if (!!routeConfig) {
-    app.tree.addChildRouter(routers, { parentView, element, routes: routeConfig })
+    app.tree.addChildRouter(childRouters, childViews, { parentView, parentRouter, element, routes: routeConfig })
   }
 
-  targetElement[replace ? 'replaceWith' : 'append'](fragment)
+  targetElement[replace ? 'replaceWith' : replaceChildren ? 'replaceChildren' : 'append'](fragment)
 }
 
-export async function mountView (app, view, mappings, { tasks, deferMount = false } = {}) {
+export async function mountView (app, view, childViews, { tasks, deferMount = false, replaceChildren = false } = {}, routers) {
   // TODO: Check permissions
-
   let stop = false
 
   await emitInternal(view, 'beforeMount', {
@@ -71,13 +71,22 @@ export async function mountView (app, view, mappings, { tasks, deferMount = fals
     return
   }
 
-  if (!view.rendered) {
+  if (view.rendered) {
+    await emitInternal(view, 'remount')
+  } else {
     await emitInternal(view, 'render')
-    await renderTemplate(app, view, view.config.render?.call(view) ?? html``, view.element, mappings, { tasks })
+    await renderTemplate(app, view, view.config.render?.call(view) ?? html``, view.element, childViews, { tasks, replaceChildren }, routers)
   }
 
   const mountTask = async () => await emitInternal(view, 'mount')
   deferMount ? tasks.push(mountTask) : await mountTask()
+}
+
+export async function unmountView (view) {
+  // removeDOMEventsByView(view)
+  // removeEventsByView(view)
+  // removeBindingsByView(view)
+  await emitInternal(view, 'unmount')
 }
 
 function bind (type, view, collection, root, hasMultipleRoots, cb) {
@@ -101,12 +110,12 @@ function getExistingAttributeValue (element, name) {
   return value ? value.trim().split(' ').map(item => item.trim()) : []
 }
 
-async function processChildView (app, parent, { children }, { element, config }, { tasks }) {
+async function processChildView (app, parent, childViews, { element, config }, { tasks }, routers) {
   if (config instanceof DataBindingInterpolation) {
     return registerViewBinding(parentView, element, config).reconcile()
   }
 
-  await mountView(app, ...app.tree.addChildView(children, { parent, element, config }), { tasks })
+  await mountView(app, ...app.tree.addChildView(childViews, { parent, element, config }), { tasks }, routers)
 }
 
 function setAttribute (view, element, name, value) {

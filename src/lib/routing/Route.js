@@ -18,45 +18,16 @@ export default class Route {
     return this.#url.pathname
   }
 
-  get value () {
-    return this.#value
-  }
-
   get slugs () {
     return this.#slugs
   }
 
-  get view () {
-    return this.#view
+  get value () {
+    return this.#value
   }
 
-  matches (slugs, path) {
-    let matched = null,
-        remaining = null
-
-    const matches = slugs.reduce((score, slug, index) => {
-      const candidate = this.#slugs[index]
-
-      if (candidate?.startsWith(':')) {
-        matched = `${matched ?? ''}/${slug}`
-        return score += 1
-      }
-
-      if (candidate === slug) {
-        matched = `${matched ?? ''}/${slug}`
-        return score += 2
-      }
-
-      remaining = `${remaining ?? ''}/${slug}`
-      return score
-    }, 0) === this.#value
-
-    if (matches) {
-      path.matched = matched
-      path.remaining = remaining
-    }
-
-    return matches
+  get view () {
+    return this.#view
   }
 }
 

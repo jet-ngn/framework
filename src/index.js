@@ -13,6 +13,22 @@ const Data = {
   State: StateFactory
 }
 
+class Router {
+  static get base () {
+    return Path.base
+  }
+
+  static get path () {
+    const { pathname } = location
+    const base = Path.base.pathname
+    return base === '/' ? pathname : pathname.replace(base, '')
+  }
+
+  static get vars () {
+    return { ...(Path.vars ?? {}) }
+  }
+}
+
 let App
 let appConfig
 let appCreated = false
@@ -85,4 +101,4 @@ async function run () {
 export { css, html, svg } from './lib/rendering/tags'
 export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
-export { Data, Plugins }
+export { Data, Plugins, Router }

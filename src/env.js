@@ -1,5 +1,5 @@
 export const INTERNAL_ACCESS_KEY = Symbol('INTERNAL_ACCESS_KEY')
-export const RESERVED_EVENT_NAMES = ['abortMount', 'beforeMount', 'mount', 'unmount', 'render']
+export const RESERVED_EVENT_NAMES = ['abortMount', 'beforeMount', 'mount', 'unmount', 'remount', 'render']
 
 // export const PATH = {
 //   base: null,
@@ -16,7 +16,8 @@ export const RESERVED_EVENT_NAMES = ['abortMount', 'beforeMount', 'mount', 'unmo
 // export const STACK = []
 
 export const Path = {
-  base: '/'
+  base: '/',
+  vars: null
 }
 
 export const Plugins = {}

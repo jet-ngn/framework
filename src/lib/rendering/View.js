@@ -19,6 +19,7 @@ export default class View extends PermissionsManager {
   #parent
   #rendered = false
   #scope
+  #fragment
 
   constructor ({ parent = null, element = null, config = null } = {}) {
     const { name = null, on = {}, permissions = null, scope = null } = config
@@ -49,6 +50,10 @@ export default class View extends PermissionsManager {
     return this.#name
   }
 
+  get parent () {
+    return this.#parent
+  }
+
   get rendered () {
     return this.#rendered
   }
@@ -75,6 +80,16 @@ export default class View extends PermissionsManager {
     if (evt === 'render') {
       this.#rendered = true
       return 
+    }
+
+    if (evt === 'remount') {
+      this.#element.replaceChildren(this.#fragment)
+      return
+    }
+
+    if (evt === 'unmount') {
+      this.#fragment = document.createDocumentFragment()
+      this.#fragment.append(...this.#element.childNodes)
     }
 
     await Bus.emit(`${this.scope}.${evt}`, ...args)

@@ -1,8 +1,6 @@
-import { mountView } from './lib/rendering/Renderer'
+import { mountView, unmountView } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
 import Router from './lib/routing/Router'
-
-import NotFound from './lib/rendering/views/404.js'
 
 export default class Tree {
   #app
@@ -21,55 +19,54 @@ export default class Tree {
 
   addChildView (collection, config) {
     const view = config instanceof View ? config : new View(config)
-    return collection.set(view, this.#getMappings(view)).entries().next().value
+    const map = new Map
+    collection.set(view, map)
+    return [view, map]
   }
 
-  addChildRouter (collection, config) {
-    collection.push(new Router(config))
+  addChildRouter (collection, target, config) {
+    const router = new Router(config)
+    
+    const value = {
+      views: target,
+      children: new Map
+    }
+
+    collection ? collection.set(router, value) : this.#routers.set(router, value)
   }
 
   async updateRouters () {
     const tasks = []
-    const routers = [...this.#routers.keys()].reduce((result, routers) => [...result, ...routers], [])
 
-    if (routers.length === 0) {
+    if (this.#routers.size === 0) {
       return console.log('There are no routers. The result of the route match will affect the root view.')
     }
 
-    await this.#updateRouters(location.pathname, this.#root[1], { tasks })
+    await this.#updateRouters(location.pathname, this.#routers, { tasks })
 
     for (const task of tasks) {
       await task()
     }
   }
-
-  async #updateRouters (path, { routers, children }, { tasks }) {
-    for (const router of routers) {
-      const stats = {
-        matched: null,
-        remaining: path
-      }
-
-      let view = router.getView(stats)
-
-      if (!view || stats.remaining) {
-        view = new View({ parent: view.parent, element: view.element, config: NotFound })
-      }
-
-      !children.has(view) && children.set(view, this.#getMappings(view))
-      !view.mounted && await mountView(this.#app, view, children.get(view), { tasks, deferMount: true })
-    }
-
-    if (children.size > 0) {
-      for (const child of children.values()) {
-        await this.#updateRouters(path, child, { tasks })
-      }
+  
+  async #updateRouters (path, routers, options) {
+    for (const entry of routers) {
+      await this.#updateRouter(path, ...entry, options)
     }
   }
 
-  #getMappings (view) {
-    const routers = []
-    this.#routers.set(routers, view)
-    return { routers, children: new Map }
+  async #updateRouter (path, router, { views, children }, { tasks }) {
+    let view = router.getView(path)
+    const { previousView } = router
+    
+    if (view !== previousView) {
+      !!previousView && await unmountView(previousView)
+      !views.has(view) && views.set(view, new Map)
+      !view.mounted && await mountView(this.#app, view, views.get(view), { tasks, deferMount: true, replaceChildren: true }, { parentRouter: router, childRouters: children })
+    }
+
+    // TODO: Unmount children if parent didn't match
+
+    await this.#updateRouters(router.path.remaining, children, { tasks })
   }
 }

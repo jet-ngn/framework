@@ -27,13 +27,11 @@ export default class Application {
       await task()
     }
 
-    console.log(this.#tree)
+    // console.log(this.#tree)
   }
 
   async update () {
-    const tasks = []
-    await this.#tree.updateRouters(tasks)
-
-    console.log(tasks)
+    await this.#tree.updateRouters()
+    // console.log(this.#tree)
   }
 }
