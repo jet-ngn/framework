@@ -10,7 +10,7 @@ export default class PropertyBinding extends DataBinding {
     this.#node = node
   }
 
-  reconcile () {
-    super.reconcile(({ current }) => this.#node[this.#name] = current)
+  async reconcile () {
+    await super.reconcile(async ({ current }) => this.#node[this.#name] = current)
   }
 }

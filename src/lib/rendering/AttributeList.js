@@ -16,16 +16,20 @@ export default class AttributeList {
     this.#parent = parent
   }
 
-  get node () {
-    return this.#node
-  }
-
   get name () {
     return this.#name
   }
 
-  get value () {
-    return this.#processList().join(' ')
+  get node () {
+    return this.#node
+  }
+
+  get slugs () {
+    return this.#node.getAttribute(this.#name).split(' ')
+  }
+
+  async getValue () {
+    return await this.#processList().join(' ')
   }
 
   add (name) {
@@ -36,10 +40,6 @@ export default class AttributeList {
     const { slugs } = this
     slugs.push(name)
     this.#node.setAttribute(this.#name, slugs.join(' '))
-  }
-
-  get slugs () {
-    return this.#node.getAttribute(this.#name).split(' ')
   }
 
   reconcile ({ previous, current }) {
@@ -64,14 +64,22 @@ export default class AttributeList {
     slugs.length === 0 ? this.#node.removeAttribute(this.#name) : this.#node.setAttribute(this.#name, slugs.join(' '))
   }
 
-  #processList () {
-    return this.#list.reduce((result, item) => [...result, ...this.#processListItem(item)], []).filter(Boolean)
+  async #processList () {
+    const result = []
+
+    for (const item of this.#list) {
+      result.push(await this.#processListItem(item))
+    }
+
+    return result.filter(Boolean)
+
+    // return this.#list.reduce((result, item) => [...result, ...(await this.#processListItem(item))], []).filter(Boolean)
   }
 
-  #processListItem (item) {
+  async #processListItem (item) {
     if (item instanceof DataBindingInterpolation) {
       const binding = registerAttributeListBinding(this.#app, this.#parent, this, item)
-      return [binding.initialValue]
+      return [await binding.getInitialValue()]
     }
 
     switch (typeof item) {

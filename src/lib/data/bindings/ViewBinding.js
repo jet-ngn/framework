@@ -1,7 +1,6 @@
 import View from '../../rendering/View'
 import { mountView } from '../../rendering/Renderer'
 import DataBinding from './DataBinding'
-// import { getViewInitializationTasks, unmountView } from '../../rendering/Renderer'
 
 export default class ViewBinding extends DataBinding {
   #boundView = null

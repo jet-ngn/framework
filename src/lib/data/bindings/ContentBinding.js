@@ -22,13 +22,13 @@ export default class ContentBinding extends DataBinding {
   }
 
   async reconcile (method) {
-    super.reconcile(async ({ previous, current }) => {
+    await super.reconcile(async ({ previous, current }) => {
       if (!!method && this.targets.length === 1 && Array.isArray(this.targets[0])) {
         switch (method) {
-          case 'push': return this.#push(previous, current)
+          case 'push': return await this.#push(previous, current)
           case 'pop': return this.#pop()
           case 'shift': return this.#shift()
-          case 'unshift': return this.#unshift(previous)
+          case 'unshift': return await this.#unshift(previous)
           default: break
         }
       }
@@ -110,8 +110,8 @@ export default class ContentBinding extends DataBinding {
     removeDOMEventsByNode(this.#nodes.pop())
   }
 
-  #push (previous, current) {
-    let newNodes = this.#getNodes(current.slice((current.length - previous.length) * -1))
+  async #push (previous, current) {
+    let newNodes = await this.#getNodes(current.slice((current.length - previous.length) * -1))
     const last = this.#nodes.at(-1)
 
     if (!last || last === this.#placeholder) {
@@ -137,8 +137,8 @@ export default class ContentBinding extends DataBinding {
     removeDOMEventsByNode(this.#nodes.shift())
   }
 
-  #unshift (...args) {
-    let newNodes = this.#getNodes(this.value.slice(0, args.length))
+  async #unshift (...args) {
+    let newNodes = await this.#getNodes(this.value.slice(0, args.length))
     const first = this.#nodes[0]
 
     if (!first || first === this.#placeholder) {

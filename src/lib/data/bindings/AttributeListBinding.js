@@ -8,12 +8,12 @@ export default class AttributeListBinding extends DataBinding {
     this.#list = list
   }
 
-  get initialValue () {
-    super.reconcile()
+  async getInitialValue () {
+    await super.reconcile()
     return this.value
   }
 
-  reconcile () {
-    super.reconcile(value => this.#list.reconcile(value))
+  async reconcile () {
+    await super.reconcile(async value => this.#list.reconcile(value))
   }
 }

@@ -10,12 +10,12 @@ export default class AttributeListBooleanBinding extends DataBinding {
     this.#name = name
   }
 
-  get initialValue () {
-    super.reconcile()
+  async getInitialValue () {
+    await super.reconcile()
     return this.value
   }
 
-  reconcile () {
-    super.reconcile(({ current }) => this.#list[current === true ? 'add' : 'remove'](this.#name))
+  async reconcile () {
+    await super.reconcile(async ({ current }) => this.#list[current === true ? 'add' : 'remove'](this.#name))
   }
 }
