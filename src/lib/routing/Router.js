@@ -75,7 +75,6 @@ export default class Router {
   }
 
   get #matchingRoute () {
-    console.log(this.#remainingPath);
     const slugs = getRouteSlugs(this.#remainingPath)
     let match = this.#routes.find(({ path }) => path === '/') ?? null
 
