@@ -115,7 +115,7 @@ async function processChildView (app, parent, childViews, { element, config }, {
 
 async function setAttribute (app, view, element, name, value) {
   if (value instanceof DataBindingInterpolation) {
-    return registerAttributeBinding(app, view, element, name, value).reconcile()
+    return await registerAttributeBinding(app, view, element, name, value).reconcile()
   }
 
   const existing = getExistingAttributeValue(element, name)
@@ -146,9 +146,9 @@ async function setNamespacedAttribute (app, view, element, name, cfg) {
   await setAttribute(app, view, element, `${name}-${slug}`, cfg)
 }
 
-function setProperty (app, view, element, name, value) {
+async function setProperty (app, view, element, name, value) {
   if (value instanceof DataBindingInterpolation) {
-    return registerPropertyBinding(app, view, element, name, value).reconcile()
+    return await registerPropertyBinding(app, view, element, name, value).reconcile()
   }
 
   element[name] = value
