@@ -29,7 +29,7 @@ export default class AttributeList {
   }
 
   async getValue () {
-    return await this.#processList().join(' ')
+    return (await this.#processList()).join(' ')
   }
 
   add (name) {
