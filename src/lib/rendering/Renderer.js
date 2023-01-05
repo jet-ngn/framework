@@ -6,15 +6,16 @@ import Unauthorized from './views/401.js'
 import Forbidden from './views/403.js'
 
 import { parseHTML } from './HTMLParser'
-import { emitInternal } from '../events/Bus'
-import { addDOMEventHandler } from '../events/DOMBus'
+import { emitInternal, removeEventsByView } from '../events/Bus'
+import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
 import { html } from './tags'
 
 import {
   registerContentBinding,
   registerAttributeBinding,
   registerPropertyBinding,
-  registerViewBinding
+  registerViewBinding,
+  removeBindingsByView
 } from '../data/DataRegistry'
 
 export function renderView (app, view, childViews, routers, options, callback) {
@@ -24,6 +25,10 @@ export function renderView (app, view, childViews, routers, options, callback) {
 
 export function unmountView (view) {
   emitInternal(view, 'unmount')
+
+  removeDOMEventsByNode(view.element)
+  removeEventsByView(view)
+  removeBindingsByView(view)
 }
 
 export function runTasks (tasks, app, view, childViews, routers, options, callback) {
