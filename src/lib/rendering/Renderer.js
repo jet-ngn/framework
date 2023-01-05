@@ -68,9 +68,8 @@ function * getTemplateRenderingTasks (app, view, template, targetElement, childV
     }
   } else if (routeConfig) {
     yield [`Initialize "${name}" child router`, ({ next }) => {
-      console.log(routers);
-      // const { childRouters, parentRouter } = routers
-      // app.tree.addChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig })
+      const { childRouters, parentRouter } = routers ?? {}
+      app.tree.addChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig })
       next()
     }]
   }
@@ -82,7 +81,6 @@ function * getTemplateRenderingTasks (app, view, template, targetElement, childV
 }
 
 function * getViewRenderingTasks (app, view, childViews, routers, { replaceChildren = false } = {}) {
-  console.log(routers);
   const { name, config } = view
 
   if (config.on?.hasOwnProperty('beforeMount')) {
@@ -104,13 +102,7 @@ function * getViewRenderingTasks (app, view, childViews, routers, { replaceChild
     }]
   }
 
-  if (view.rendered) {
-    console.log('TODO: REMOUNT')
-    // await emitInternal(view, 'remount')
-  } else {
-    emitInternal(view, 'render')
-    yield * getTemplateRenderingTasks(app, view, Reflect.get(view.config, 'template', view) ?? html``, view.element, childViews, routers, { replaceChildren })
-  }
+  yield * getTemplateRenderingTasks(app, view, Reflect.get(view.config, 'template', view) ?? html``, view.element, childViews, routers, { replaceChildren })
 
   yield [`Run "${name}" mount handler`, async ({ next }) => {
     await emitInternal(view, 'mount')

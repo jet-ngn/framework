@@ -1,4 +1,5 @@
 // import { mountView, unmountView } from './lib/rendering/Renderer'
+import { renderView, unmountView } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
 import Router from './lib/routing/Router'
 
@@ -36,43 +37,37 @@ export default class Tree {
   }
 
   removeChildView (collection, view) {
+    unmountView(view)
     collection.delete(view)
   }
 
-  async updateRouters () {
-    const tasks = []
-
+  updateRouters () {
     if (this.#routers.size === 0) {
       return console.log('There are no routers. The result of the route match will affect the root view.')
     }
 
-    await this.#updateRouters(location.pathname, this.#routers, { tasks })
-
-    for (const task of tasks) {
-      await task()
-    }
+    this.#updateRouters(location.pathname, this.#routers)
   }
   
-  async #updateRouters (path, routers, options) {
+  #updateRouters (path, routers) {
     for (const entry of routers) {
-      await this.#updateRouter(path, ...entry, options)
+      this.#updateRouter(path, ...entry)
     }
   }
 
-  async #updateRouter (path, router, { views, children }, { tasks }) {
-    console.log('UPDATE ROUTER')
-    // let view = router.getView(path)
-    // const { previousView } = router
-    
-    // if (view !== previousView) {
-    //   !!previousView && await unmountView(previousView)
-    //   !views.has(view) && views.set(view, new Map)
-    //   !view.mounted && await mountView(this.#app, view, views.get(view), { tasks, deferMount: true, replaceChildren: true }, { parentRouter: router, childRouters: children })
-    // }
+  #updateRouter (path, router, { views, children }) {
+    let view = router.getView(path)
+    const { previousView } = router
 
-    // // TODO: Unmount children if parent didn't match
-    // // if (!!router.path.remaining) {
-    //   await this.#updateRouters(router.path.remaining, children, { tasks })
-    // // }
+    const callback = () => this.#updateRouters(router.path.remaining, children)
+
+    if (view !== previousView) {
+      !!previousView && this.removeChildView(views, previousView)
+      !views.has(view) && views.set(view, new Map)
+      return renderView(this.#app, view, views.get(view), { parentRouter: router, childRouters: children }, { replaceChildren: true }, callback)
+    }
+
+    // TODO: Unmount children if parent didn't match
+    callback()
   }
 }

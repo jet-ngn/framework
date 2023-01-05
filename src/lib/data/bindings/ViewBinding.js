@@ -17,9 +17,7 @@ export default class ViewBinding extends DataBinding {
   reconcile (cb) {
     super.reconcile(({ current }) => {
       if (this.#boundView) {
-        console.log('UNMOUNT ', this.#boundView.name)
         this.app.tree.removeChildView(this.#childViews, this.#boundView)
-        // unmountView(this.#boundView)
       }
 
       if (!current) {

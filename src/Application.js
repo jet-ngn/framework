@@ -16,11 +16,10 @@ export default class Application {
 
   render () {
     renderView(this, ...this.#tree.root)
-    // console.log(this.#tree);
+    this.#tree.updateRouters()
   }
 
   update () {
-    console.log('UPDATE')
-    // this.#tree.updateRouters()
+    this.#tree.updateRouters()
   }
 }
