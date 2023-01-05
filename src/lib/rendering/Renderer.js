@@ -17,6 +17,14 @@ import {
   registerViewBinding
 } from '../data/DataRegistry'
 
+export function renderView (app, view, childViews, routers, options, callback) {
+  runTasks(getViewRenderingTasks(...arguments), ...arguments)
+}
+
+export function unmountView (view) {
+  emitInternal(view, 'unmount')
+}
+
 function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, { replace = false, replaceChildren = false } = {}) {
   const retainFormatting = targetElement.tagName === 'PRE',
         { name } = view,
@@ -26,58 +34,52 @@ function * getTemplateRenderingTasks (app, view, template, targetElement, childV
         hasMultipleNodes = fragment.children.length > 1,
         args = [element, hasMultipleNodes]
 
-  if (properties) {
-    yield [`Apply properties`, ({ next }) => {
-      bind('properties', app, view, properties, ...args, setProperty)
-      next()
-    }]
-  }
+  if (properties) yield [`Apply properties`, ({ next }) => {
+    bind('properties', app, view, properties, ...args, setProperty)
+    next()
+  }]
 
-  if (attributes) {
-    yield [`Apply attributes`, ({ next }) => {
-      bind('attributes', app, view, attributes, ...args, setAttribute)
-      next()
-    }]
-  }
+  if (attributes) yield [`Apply attributes`, ({ next }) => {
+    bind('attributes', app, view, attributes, ...args, setAttribute)
+    next()
+  }]
 
-  if (listeners) {
-    yield [`Apply listeners`, ({ next }) => {
-      bindListeners(view, listeners, ...args)
-      next()
-    }]
-  }
+  if (listeners) yield [`Apply listeners`, ({ next }) => {
+    bindListeners(view, listeners, ...args)
+    next()
+  }]
 
-  for (const id in templates) {
-    yield * getTemplateRenderingTasks(app, view, templates[id], fragment.getElementById(id), childViews, routers, { replace: true })
-  }
+  for (const id in templates) yield * getTemplateRenderingTasks(app, view, templates[id], fragment.getElementById(id), childViews, routers, { replace: true })
 
-  for (const id in bindings) {
-    yield [`Initialize Content Binding "${id}"`, ({ next }) => {
-      registerContentBinding(app, view, bindings[id], fragment.getElementById(id), childViews, routers, { retainFormatting }).reconcile()
-      next()
-    }]
-  }
+  for (const id in bindings) yield [`Initialize Content Binding "${id}"`, ({ next }) => {
+    registerContentBinding(app, view, bindings[id], fragment.getElementById(id), childViews, routers, { retainFormatting }).reconcile()
+    next()
+  }]
 
-  if (viewConfig) {
-    if (viewConfig instanceof DataBindingInterpolation) {
-      yield [`Initialize "${name}" View Binding`, ({ next }) => {
-        registerViewBinding(app, view, viewConfig, element, childViews, routers).reconcile(next)
-      }]
-    } else {
-      yield * getViewRenderingTasks(app, ...app.tree.addChildView(childViews, { parent: view, element, config: viewConfig }), childViews, routers)
-    }
-  } else if (routeConfig) {
-    yield [`Initialize "${name}" child router`, ({ next }) => {
-      const { childRouters, parentRouter } = routers ?? {}
-      app.tree.addChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig })
-      next()
-    }]
-  }
+  if (viewConfig) yield * processChildView(app, view, viewConfig, element, childViews, routers)
+    
+  else if (routeConfig) yield [`Initialize "${name}" child router`, ({ next }) => {
+    const { childRouters, parentRouter } = routers ?? {}
+    app.tree.addChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig })
+    next()
+  }]
 
   yield [`Render ${replace ? `child template to "${name}"` : replaceChildren ? `bound view "${name}" template` : `"${name}" template`}`, ({ next }) => {
     targetElement[replace ? 'replaceWith' : replaceChildren ? 'replaceChildren' : 'append'](fragment)
     next()
   }]
+}
+
+function * processChildView (app, view, viewConfig, element, childViews, routers) {
+  if (viewConfig instanceof DataBindingInterpolation) yield [`Initialize "${view.name}" View Binding`, ({ next }) => {
+    registerViewBinding(...arguments).reconcile(next)
+  }]
+    
+  else yield * getViewRenderingTasks(app, ...app.tree.addChildView(childViews, {
+    parent: view,
+    element,
+    config: viewConfig
+  }), childViews, routers)
 }
 
 function * getViewRenderingTasks (app, view, childViews, routers, { replaceChildren = false } = {}) {
@@ -119,19 +121,11 @@ function runTasks (tasks, app, view, childViews, routers, options, callback) {
 
   const [name, handler] = value
 
-  console.log(name)
+  // console.log(name)
   handler({
     next: () => runTasks(...arguments),
     restart: () => renderView(...[...arguments].slice(1))
   })
-}
-
-export function renderView (app, view, childViews, routers, options, callback) {
-  runTasks(getViewRenderingTasks(...arguments), ...arguments)
-}
-
-export function unmountView (view) {
-  emitInternal(view, 'unmount')
 }
 
 function bind (app, type, view, collection, root, hasMultipleRoots, cb) {
@@ -195,13 +189,7 @@ function setProperty (app, view, element, name, value) {
 }
 
 function validateBinding (item, element, hasMultipleRoots, cb) {
-  if (!element) {
-    throw new Error(`Cannot bind ${item} to non-element nodes`)
-  }
-
-  if (hasMultipleRoots) {
-    throw new Error(`Cannot bind ${item} to more than one node`)
-  }
-
+  if (!element) throw new Error(`Cannot bind ${item} to non-element nodes`)
+  if (hasMultipleRoots) throw new Error(`Cannot bind ${item} to more than one node`)
   cb()
 }
