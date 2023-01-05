@@ -1,6 +1,6 @@
 import DataBinding from './DataBinding'
 import Template from '../../rendering/Template'
-import { runTasks } from '../../rendering/Renderer'
+import { runTasks, getTemplateRenderingTasks } from '../../rendering/Renderer'
 import { reconcileNodes } from '../../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../../events/DOMBus'
 import { sanitizeString } from '../../../utilities/StringUtils'
