@@ -26,7 +26,23 @@ export function unmountView (view) {
   emitInternal(view, 'unmount')
 }
 
-function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, { replace = false, replaceChildren = false } = {}) {
+export function runTasks (tasks, app, view, childViews, routers, options, callback) {
+  const { value, done } = tasks.next()
+
+  if (done) {
+    return callback && callback()
+  }
+
+  const [name, handler] = value
+
+  // console.log(name)
+  handler({
+    next: () => runTasks(...arguments),
+    restart: () => renderView(...[...arguments].slice(1))
+  })
+}
+
+export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, { replace = false, replaceChildren = false } = {}) {
   const retainFormatting = targetElement.tagName === 'PRE',
         { name } = view,
         { attributes, properties, listeners, viewConfig, routeConfig } = template,
@@ -71,18 +87,6 @@ function * getTemplateRenderingTasks (app, view, template, targetElement, childV
   }]
 }
 
-function * processChildView (app, view, viewConfig, element, childViews, routers) {
-  if (viewConfig instanceof DataBindingInterpolation) yield [`Initialize "${view.name}" View Binding`, ({ next }) => {
-    registerViewBinding(...arguments).reconcile(next)
-  }]
-    
-  else yield * getViewRenderingTasks(app, ...app.tree.addChildView(childViews, {
-    parent: view,
-    element,
-    config: viewConfig
-  }), childViews, routers)
-}
-
 function * getViewRenderingTasks (app, view, childViews, routers, { replaceChildren = false } = {}) {
   const { name, config } = view
 
@@ -113,20 +117,16 @@ function * getViewRenderingTasks (app, view, childViews, routers, { replaceChild
   }]
 }
 
-function runTasks (tasks, app, view, childViews, routers, options, callback) {
-  const { value, done } = tasks.next()
-
-  if (done) {
-    return callback && callback()
-  }
-
-  const [name, handler] = value
-
-  // console.log(name)
-  handler({
-    next: () => runTasks(...arguments),
-    restart: () => renderView(...[...arguments].slice(1))
-  })
+function * processChildView (app, view, viewConfig, element, childViews, routers) {
+  if (viewConfig instanceof DataBindingInterpolation) yield [`Initialize "${view.name}" View Binding`, ({ next }) => {
+    registerViewBinding(...arguments).reconcile(next)
+  }]
+    
+  else yield * getViewRenderingTasks(app, ...app.tree.addChildView(childViews, {
+    parent: view,
+    element,
+    config: viewConfig
+  }), childViews, routers)
 }
 
 function bind (app, type, view, collection, root, hasMultipleRoots, cb) {

@@ -1,5 +1,6 @@
 import DataBinding from './DataBinding'
 import Template from '../../rendering/Template'
+import { runTasks } from '../../rendering/Renderer'
 import { reconcileNodes } from '../../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../../events/DOMBus'
 import { sanitizeString } from '../../../utilities/StringUtils'
@@ -65,10 +66,9 @@ export default class ContentBinding extends DataBinding {
 
     if (value instanceof Template) {
       const template = document.createElement('template')
-      const tasks = []
+      const args = [this.app, this.view, template, this.element, this.#childViews, this.#routers]
 
-      console.log('TODO: Render TEMPLATE')
-      // await renderTemplate(this.app, this.view, value, template, this.#childViews, { tasks }, this.#routers)
+      runTasks(getTemplateRenderingTasks(...args), ...args)
       return [...template.children]
     }
 
