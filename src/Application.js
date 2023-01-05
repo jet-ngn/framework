@@ -1,5 +1,5 @@
 import Tree from './Tree'
-import { mountView } from './lib/rendering/Renderer'
+import { renderView } from './lib/rendering/Renderer'
 import { Plugins } from './env'
 
 export default class Application {
@@ -7,9 +7,6 @@ export default class Application {
 
   constructor (element, config) {
     config.plugins?.forEach(({ install }) => install(Plugins))
-    delete config.plugins
-    delete config.selector
-
     this.#tree = new Tree(this, element, config)
   }
 
@@ -17,18 +14,13 @@ export default class Application {
     return this.#tree
   }
 
-  async render () {
-    const tasks = []
-
-    await mountView(this, ...this.#tree.root, { tasks, deferMount: true })
-    await this.#tree.updateRouters()
-
-    for (const task of tasks) {
-      await task()
-    }
+  render () {
+    renderView(this, ...this.#tree.root)
+    // console.log(this.#tree);
   }
 
-  async update () {
-    await this.#tree.updateRouters()
+  update () {
+    console.log('UPDATE')
+    // this.#tree.updateRouters()
   }
 }

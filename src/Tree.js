@@ -1,4 +1,4 @@
-import { mountView, unmountView } from './lib/rendering/Renderer'
+// import { mountView, unmountView } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
 import Router from './lib/routing/Router'
 
@@ -35,6 +35,10 @@ export default class Tree {
     collection ? collection.set(router, value) : this.#routers.set(router, value)
   }
 
+  removeChildView (collection, view) {
+    collection.delete(view)
+  }
+
   async updateRouters () {
     const tasks = []
 
@@ -56,18 +60,19 @@ export default class Tree {
   }
 
   async #updateRouter (path, router, { views, children }, { tasks }) {
-    let view = router.getView(path)
-    const { previousView } = router
+    console.log('UPDATE ROUTER')
+    // let view = router.getView(path)
+    // const { previousView } = router
     
-    if (view !== previousView) {
-      !!previousView && await unmountView(previousView)
-      !views.has(view) && views.set(view, new Map)
-      !view.mounted && await mountView(this.#app, view, views.get(view), { tasks, deferMount: true, replaceChildren: true }, { parentRouter: router, childRouters: children })
-    }
-
-    // TODO: Unmount children if parent didn't match
-    // if (!!router.path.remaining) {
-      await this.#updateRouters(router.path.remaining, children, { tasks })
+    // if (view !== previousView) {
+    //   !!previousView && await unmountView(previousView)
+    //   !views.has(view) && views.set(view, new Map)
+    //   !view.mounted && await mountView(this.#app, view, views.get(view), { tasks, deferMount: true, replaceChildren: true }, { parentRouter: router, childRouters: children })
     // }
+
+    // // TODO: Unmount children if parent didn't match
+    // // if (!!router.path.remaining) {
+    //   await this.#updateRouters(router.path.remaining, children, { tasks })
+    // // }
   }
 }

@@ -38,7 +38,7 @@ export default class View extends PermissionsManager {
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version
 
-    Object.keys(on).forEach(evt => addHandler(this, evt, on[evt]))
+    new Map(Object.entries(on ?? {})).forEach((handler, evt) => addHandler(this, evt, handler))
   }
 
   get config () {

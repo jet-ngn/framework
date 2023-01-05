@@ -25,7 +25,7 @@ export default class DataBinding extends DataBindingInterpolation {
     return this.#value
   }
 
-  async reconcile (cb) {
+  reconcile (cb) {
     const previous = this.#value
 
     let newValue = this.transform(...this.targets.map(target => {
@@ -41,7 +41,7 @@ export default class DataBinding extends DataBindingInterpolation {
     if (newValue !== this.#value) {
       this.#value = newValue ?? null
 
-      cb && await cb({
+      cb && cb({
         previous,
         current: this.#value
       })

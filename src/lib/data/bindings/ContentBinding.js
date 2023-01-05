@@ -1,34 +1,33 @@
 import DataBinding from './DataBinding'
 import Template from '../../rendering/Template'
-import { renderTemplate } from '../../rendering/Renderer'
 import { reconcileNodes } from '../../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../../events/DOMBus'
 import { sanitizeString } from '../../../utilities/StringUtils'
 
 export default class ContentBinding extends DataBinding {
-  #collection
+  #childViews
   #nodes
   #placeholder
   #retainFormatting
   #routers
 
-  constructor (app, view, collection, element, interpolation, { retainFormatting }, routers) {
+  constructor (app, view, interpolation, element, childViews, routers, { retainFormatting }) {
     super(app, view, interpolation)
-    this.#collection = collection
+    this.#childViews = childViews
     this.#placeholder = element
     this.#nodes = [element]
     this.#retainFormatting = retainFormatting
     this.#routers = routers
   }
 
-  async reconcile (method) {
-    await super.reconcile(async ({ previous, current }) => {
+  reconcile (method) {
+    super.reconcile(({ previous, current }) => {
       if (!!method && this.targets.length === 1 && Array.isArray(this.targets[0])) {
         switch (method) {
-          case 'push': return await this.#push(previous, current)
+          case 'push': return this.#push(previous, current)
           case 'pop': return this.#pop()
           case 'shift': return this.#shift()
-          case 'unshift': return await this.#unshift(previous)
+          case 'unshift': return this.#unshift(previous)
           default: break
         }
       }
@@ -37,7 +36,7 @@ export default class ContentBinding extends DataBinding {
         return this.#replace([this.#placeholder])
       }
 
-      const update = await this.#getNodes(current)
+      const update = this.#getNodes(current)
 
       if (!previous || [previous, current].every(item => item instanceof Template)) {
         return this.#replace(update)
@@ -47,7 +46,7 @@ export default class ContentBinding extends DataBinding {
     })
   }
 
-  async #getNodes (value) {
+  #getNodes (value) {
     value = value ?? ''
 
     if (Array.isArray(value)) {
@@ -58,7 +57,7 @@ export default class ContentBinding extends DataBinding {
       const result = []
 
       for (const item of value) {
-        result.push(...(await this.#getNodes(item)))
+        result.push(...this.#getNodes(item))
       }
 
       return result
@@ -68,7 +67,8 @@ export default class ContentBinding extends DataBinding {
       const template = document.createElement('template')
       const tasks = []
 
-      await renderTemplate(this.app, this.view, value, template, this.#collection, { tasks }, this.#routers)
+      console.log('TODO: Render TEMPLATE')
+      // await renderTemplate(this.app, this.view, value, template, this.#childViews, { tasks }, this.#routers)
       return [...template.children]
     }
 
@@ -110,8 +110,8 @@ export default class ContentBinding extends DataBinding {
     removeDOMEventsByNode(this.#nodes.pop())
   }
 
-  async #push (previous, current) {
-    let newNodes = await this.#getNodes(current.slice((current.length - previous.length) * -1))
+  #push (previous, current) {
+    let newNodes = this.#getNodes(current.slice((current.length - previous.length) * -1))
     const last = this.#nodes.at(-1)
 
     if (!last || last === this.#placeholder) {
@@ -137,8 +137,8 @@ export default class ContentBinding extends DataBinding {
     removeDOMEventsByNode(this.#nodes.shift())
   }
 
-  async #unshift (...args) {
-    let newNodes = await this.#getNodes(this.value.slice(0, args.length))
+  #unshift (...args) {
+    let newNodes = this.#getNodes(this.value.slice(0, args.length))
     const first = this.#nodes[0]
 
     if (!first || first === this.#placeholder) {
