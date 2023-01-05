@@ -35,7 +35,6 @@ export function runTasks (tasks, app, view, childViews, routers, options, callba
 
   const [name, handler] = value
 
-  // console.log(name)
   handler({
     next: () => runTasks(...arguments),
     restart: () => renderView(...[...arguments].slice(1))
