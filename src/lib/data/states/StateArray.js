@@ -101,7 +101,7 @@ export default class StateArray extends State {
 }
 
 function getArrayMethodHandler (state, target, property, method, { reconcile = false, model = null, index = null } = {}) {
-  return async (...args) => {
+  return (...args) => {
     const additive = index !== null
     
     if (additive) {
@@ -139,7 +139,7 @@ function getArrayMethodHandler (state, target, property, method, { reconcile = f
     history.add(change)
 
     for (let binding of bindings) {
-      await binding.reconcile(reconcile ? undefined : property)
+      binding.reconcile(reconcile ? undefined : property)
     }
 
     return output

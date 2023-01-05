@@ -18,6 +18,7 @@ import {
 } from '../data/DataRegistry'
 
 export function renderView (app, view, childViews, routers, options, callback) {
+  // TODO: Check permissions
   runTasks(getViewRenderingTasks(...arguments), ...arguments)
 }
 
