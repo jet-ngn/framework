@@ -86,7 +86,8 @@ export function * getTemplateRenderingTasks (app, view, template, targetElement,
   }]
 }
 
-function * getViewRenderingTasks (app, view, childViews, routers, { replaceChildren = false } = {}) {
+function * getViewRenderingTasks (app, view, childViews, routers, options) {
+  const { replaceChildren = false } = options ?? {}
   const { name, config } = view
 
   if (config.on?.hasOwnProperty('beforeMount')) {
