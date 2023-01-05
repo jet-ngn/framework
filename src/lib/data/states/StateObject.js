@@ -12,7 +12,7 @@ export default class StateObject extends State {
     super(new Proxy(obj, {
       get: (target, property) => target[property],
   
-      set: async (target, property, value) => {
+      set: (target, property, value) => {
         const currentValue = target[property]
   
         if (currentValue === value) {
@@ -34,7 +34,7 @@ export default class StateObject extends State {
         })
   
         for (let binding of bindings) {
-          binding.targets.includes(proxy) && await binding.reconcile()
+          binding.targets.includes(proxy) && binding.reconcile()
         }
   
         return true

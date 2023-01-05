@@ -10,11 +10,11 @@ export default class AttributeBinding extends DataBinding {
     this.#node = node
   }
 
-  async reconcile () {
-    await super.reconcile(async ({ current }) => {
+  reconcile () {
+    super.reconcile(({ current }) => {
       if (Array.isArray(current)) {
         const list = new AttributeList(this.view, this.#node, this.#name, current)
-        current = await list.getValue()
+        current = list.value
       }
       
       if (typeof current !== 'boolean') {

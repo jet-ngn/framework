@@ -47,7 +47,7 @@ export async function emitInternal (view, evt, ...args) {
 }
 
 function pool (view, namespace, cfg) {
-  Object.keys(cfg).forEach(evt => addHandler(view, `${namespace}.${evt}`, cfg[evt]))
+  new Map(Object.entries(cfg)).forEach((handler, evt) => addHandler(view, `${namespace}.${evt}`, handler))
 }
 
 function registerHandler (view, evt, cb, cfg = {}) {

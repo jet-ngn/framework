@@ -15,12 +15,10 @@ export default class View extends PermissionsManager {
   #data
   #description
   #element
-  #fragment
   #mounted = false
   #name
   #parent
   #permissions
-  #rendered = false
   #scope
   #version
 
@@ -38,7 +36,7 @@ export default class View extends PermissionsManager {
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version
 
-    Object.keys(on).forEach(evt => addHandler(this, evt, on[evt]))
+    new Map(Object.entries(on ?? {})).forEach((handler, evt) => addHandler(this, evt, handler))
   }
 
   get config () {
@@ -73,10 +71,6 @@ export default class View extends PermissionsManager {
     return this.#permissions
   }
 
-  get rendered () {
-    return this.#rendered
-  }
-
   get scope () {
     return this.#scope
   }
@@ -98,21 +92,6 @@ export default class View extends PermissionsManager {
 
     if (isReserved && key !== INTERNAL_ACCESS_KEY) {
       throw new Error(`Invalid event name: "${evt}" is reserved by Jet for internal use`)
-    }
-
-    switch (evt) {
-      case 'render':
-        this.#rendered = true  
-        return
-
-      case 'remount': return this.#element.replaceChildren(this.#fragment)
-
-      case 'unmount': 
-        this.#fragment = document.createDocumentFragment()
-        this.#fragment.append(...this.#element.childNodes)
-        break
-    
-      default: break
     }
 
     await Bus.emit(`${this.scope}.${evt}`, ...args)

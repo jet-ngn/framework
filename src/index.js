@@ -34,19 +34,19 @@ let appConfig
 let appCreated = false
 let DOMReady = false
 
-document.addEventListener('DOMContentLoaded', async (evt) => {
+document.addEventListener('DOMContentLoaded', evt => {
   DOMReady = true
-  appCreated && await run()
+  appCreated && run()
 })
 
-window.addEventListener('popstate', async (evt) => {
+window.addEventListener('popstate', evt => {
   // TODO: If history has no entries, do default action (this is if you navigate
   // to the jet app, then navigate back from where you came from outside of the app)
   evt.preventDefault()
-  await App.update()
+  App.update()
 })
 
-export async function createApp ({ baseURL, selector }) {
+export function createApp ({ baseURL, selector }) {
   if (appCreated) {
     throw new Error(`App has already been created`)
   }
@@ -56,10 +56,10 @@ export async function createApp ({ baseURL, selector }) {
   Path.base = new URL(baseURL ?? '', location.origin)
   appCreated = true
 
-  DOMReady && await run()
+  DOMReady && run()
 }
 
-export async function navigate (to, { append = false } = {}) {
+export function navigate (to, { append = false } = {}) {
   const { pathname } = location
 
   if (to === pathname) {
@@ -67,10 +67,10 @@ export async function navigate (to, { append = false } = {}) {
   }
 
   history.pushState(null, null, `${append ? pathname : ''}${to}`)
-  await App.update()
+  App.update()
 }
 
-async function run () {
+function run () {
   const nodes = document.querySelectorAll(appConfig.selector)
   const error = `Invalid app root element selector: "${appConfig.selector}"`
 
@@ -83,7 +83,7 @@ async function run () {
   }
 
   App = new Application(nodes[0], appConfig)
-  await App.render()
+  App.render()
 }
 
 export { css, html, svg } from './lib/rendering/tags'
