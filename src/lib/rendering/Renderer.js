@@ -41,8 +41,9 @@ export function runTasks (tasks, app, view, childViews, routers, options, callba
   })
 }
 
-export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, { replace = false, replaceChildren = false } = {}) {
+export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, options) {
   const retainFormatting = targetElement.tagName === 'PRE',
+        { replace = false, replaceChildren = false } = options ?? {},
         { name } = view,
         { attributes, properties, listeners, viewConfig, routeConfig } = template,
         { bindings, fragment, templates } = parseHTML(template, { retainFormatting }),

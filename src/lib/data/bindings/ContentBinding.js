@@ -66,9 +66,7 @@ export default class ContentBinding extends DataBinding {
 
     if (value instanceof Template) {
       const template = document.createElement('template')
-      const args = [this.app, this.view, template, this.element, this.#childViews, this.#routers]
-
-      runTasks(getTemplateRenderingTasks(...args), ...args)
+      runTasks(getTemplateRenderingTasks(this.app, this.view, value, template, this.#childViews, this.#routers), this.app, this.view, this.#childViews, this.#routers)
       return [...template.children]
     }
 
