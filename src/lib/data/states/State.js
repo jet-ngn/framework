@@ -1,4 +1,4 @@
-import { load, registerState, removeStateByProxy } from '../DataRegistry'
+import { registerState, removeStateByProxy } from '../DataRegistry'
 import StateHistory from '../StateHistory'
 
 export default class State {

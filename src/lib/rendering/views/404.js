@@ -3,7 +3,7 @@ import { html } from '../tags'
 export default {
   name: '404 Not Found',
 
-  render () {
+  get template () {
     return html`
       <div class="not_found">
         404 Not Found

@@ -1,4 +1,3 @@
-// import { mountView, unmountView } from './lib/rendering/Renderer'
 import { renderView, unmountView } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
 import Router from './lib/routing/Router'
@@ -26,6 +25,7 @@ export default class Tree {
   }
 
   addChildRouter (collection, target, config) {
+    console.log('HEY');
     const router = new Router(config)
     
     const value = {
@@ -42,10 +42,6 @@ export default class Tree {
   }
 
   updateRouters () {
-    if (this.#routers.size === 0) {
-      return console.log('There are no routers. The result of the route match will affect the root view.')
-    }
-
     this.#updateRouters(location.pathname, this.#routers)
   }
   

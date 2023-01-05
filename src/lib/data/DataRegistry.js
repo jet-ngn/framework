@@ -36,10 +36,10 @@ export function load (proxy, data) {
   state.load(data)
 }
 
-export function logBindings () {
-  console.log(states);
-  console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
-}
+// export function logBindings () {
+//   console.log(states);
+//   console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
+// }
 
 export function registerAttributeBinding (app, view, node, name, interpolation) {
   return registerBinding(new AttributeBinding(...arguments))
