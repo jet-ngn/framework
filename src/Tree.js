@@ -25,7 +25,6 @@ export default class Tree {
   }
 
   addChildRouter (collection, target, config) {
-    console.log('HEY');
     const router = new Router(config)
     
     const value = {
