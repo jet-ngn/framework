@@ -69,8 +69,8 @@ export default class Router {
     this.#previousView = this.#currentView
     
     this.#currentView = new View({
-      parent: this.parent,
-      element: this.element,
+      parent: this.#parentView,
+      element: this.#element,
       config: this.#matchingRoute?.config ?? this.#notFoundConfig
     })
 
