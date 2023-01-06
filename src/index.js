@@ -4,31 +4,6 @@ import { createId } from './utilities/IDUtils'
 import { append, bind, clear, load } from './lib/data/DataRegistry'
 import StateFactory from './lib/data/StateFactory'
 
-const Data = {
-  append,
-  bind,
-  clear,
-  createId,
-  load,
-  State: StateFactory
-}
-
-class Router {
-  static get base () {
-    return Path.base
-  }
-
-  static get path () {
-    const { pathname } = location
-    const base = Path.base.pathname
-    return base === '/' ? pathname : pathname.replace(base, '')
-  }
-
-  static get vars () {
-    return { ...(Path.vars ?? {}) }
-  }
-}
-
 let App
 let appConfig
 let appCreated = false
@@ -89,4 +64,5 @@ function run () {
 export { css, html, svg } from './lib/rendering/tags'
 export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
-export { Data, Plugins, Router }
+export { default as Router } from './lib/routing/Router'
+export { append, bind, clear, createId, load, Plugins, StateFactory as State }

@@ -1,17 +1,21 @@
 import { Path } from '../../env'
-import { getRouteSlugs, getScore } from './Router'
+import { getRouteSlugs, getScore } from './RouteManager'
 
 export default class Route {
   #slugs
   #url
   #value
-  #view
+  #config
 
-  constructor (path, view) {
+  constructor (path, config) {
+    this.#config = config
     this.#url = new URL(path.trim(), Path.base.toString())
-    this.#view = view
     this.#slugs = getRouteSlugs(this.#url.pathname)
     this.#value = getScore(this.#slugs)
+  }
+
+  get config () {
+    return this.#config
   }
 
   get path () {
@@ -24,9 +28,5 @@ export default class Route {
 
   get value () {
     return this.#value
-  }
-
-  get view () {
-    return this.#view
   }
 }

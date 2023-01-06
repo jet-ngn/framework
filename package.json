@@ -1,6 +1,6 @@
 {
   "name": "@jet-ngn/framework-dev-environment",
-  "version": "1.0.0-beta.39",
+  "version": "1.0.0-beta.40",
   "private": true,
   "description": "Jet NGN JavaScript UI Framework Development Environment",
   "type": "module",

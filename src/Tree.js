@@ -1,6 +1,6 @@
 import { renderView, unmountView } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
-import Router from './lib/routing/Router'
+import RouteManager from './lib/routing/RouteManager'
 
 export default class Tree {
   #app
@@ -25,7 +25,7 @@ export default class Tree {
   }
 
   addChildRouter (collection, target, config) {
-    const router = new Router(config)
+    const router = new RouteManager(config)
     
     const value = {
       views: target,
@@ -51,7 +51,7 @@ export default class Tree {
   }
 
   #updateRouter (path, router, { views, children }) {
-    let view = router.getView(path)
+    let view = router.getViewConfig(path)
     const { previousView } = router
 
     const callback = () => this.#updateRouters(router.path.remaining, children)
@@ -62,7 +62,6 @@ export default class Tree {
       return renderView(this.#app, view, views.get(view), { parentRouter: router, childRouters: children }, { replaceChildren: true }, callback)
     }
 
-    // TODO: Unmount children if parent didn't match
     callback()
   }
 }

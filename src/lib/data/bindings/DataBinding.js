@@ -1,4 +1,5 @@
 import DataBindingInterpolation from '../DataBindingInterpolation'
+import Router from '../../routing/Router'
 import PermissionsManager from '../../session/PermissionsManager'
 import { ViewPermissions } from '../../rendering/View'
 
@@ -31,6 +32,11 @@ export default class DataBinding extends DataBindingInterpolation {
     let newValue = this.transform(...this.targets.map(target => {
       if (target instanceof ViewPermissions) {
         return new PermissionsManager(target)
+      }
+
+      if (target === Router) {
+        console.log('ROUTER')
+        return {}
       }
 
       return target
