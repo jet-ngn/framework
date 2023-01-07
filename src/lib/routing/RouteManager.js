@@ -4,10 +4,12 @@ import NotFound from '../rendering/views/404.js'
 import { Path } from '../../env'
 
 export default class Router {
+  #currentConfig = null
   #currentView = null
   #element
   #parent
   #parentView
+  #previousConfig = null
   #previousView = null
   #routes
   #matchedPath = null
@@ -40,6 +42,10 @@ export default class Router {
       })
   }
 
+  get currentConfig () {
+    return this.#currentConfig
+  }
+
   get element () {
     return this.#element
   }
@@ -59,20 +65,31 @@ export default class Router {
     }
   }
 
+  get previousConfig () {
+    return this.#previousConfig
+  }
+
   get previousView () {
     return this.#previousView
   }
 
-  getViewConfig (path) {
+  getMatchingView (path) {
     this.#matchedPath = null
-    this.#remainingPath = path?.replace(this.#parent?.path.matched ?? '', '') ?? ''
+    this.#remainingPath = path
+
+    const match = this.#matchingRoute
     this.#previousView = this.#currentView
+    this.#previousConfig = this.#currentConfig
+
+    if (match?.config !== this.#currentConfig) {
+      this.#currentConfig = match?.config ?? this.#notFoundConfig
     
-    this.#currentView = new View({
-      parent: this.#parentView,
-      element: this.#element,
-      config: this.#matchingRoute?.config ?? this.#notFoundConfig
-    })
+      this.#currentView = new View({
+        parent: this.#parentView,
+        element: this.#element,
+        config: this.#currentConfig
+      })
+    }
 
     return this.#currentView
   }

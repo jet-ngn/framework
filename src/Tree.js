@@ -1,4 +1,4 @@
-import { renderView, unmountView } from './lib/rendering/Renderer'
+import { renderView, unmountView, runTasks } from './lib/rendering/Renderer'
 import View from './lib/rendering/View'
 import RouteManager from './lib/routing/RouteManager'
 
@@ -18,21 +18,14 @@ export default class Tree {
   }
 
   addChildView (collection, config) {
-    const view = config instanceof View ? config : new View(config)
-    const map = new Map
-    collection.set(view, map)
-    return [view, map]
+    return collection.set(config instanceof View ? config : new View(config), new Map).entries().next().value
   }
 
   addChildRouter (collection, target, config) {
-    const router = new RouteManager(config)
-    
-    const value = {
+    return (collection ?? this.#routers)?.set(new RouteManager(config), {
       views: target,
       children: new Map
-    }
-
-    collection ? collection.set(router, value) : this.#routers.set(router, value)
+    }).entries().next().value
   }
 
   removeChildView (collection, view) {
@@ -40,28 +33,30 @@ export default class Tree {
     collection.delete(view)
   }
 
-  updateRouters () {
-    this.#updateRouters(location.pathname, this.#routers)
+  updateRouters (callback) {
+    runTasks(this.#getRouterUpdateTasks(location.pathname, this.#routers), null, callback)
   }
-  
-  #updateRouters (path, routers) {
-    for (const entry of routers) {
-      this.#updateRouter(path, ...entry)
+
+  * #getRouterUpdateTasks (path, routers) {
+    for (const [router, { views, children }] of routers) {
+      yield [`Update Router`, ({ next }) => {
+        this.#updateRouter(path, router, { views, children }, next)
+      }]
+
+      yield * this.#getRouterUpdateTasks(router.path.remaining, children)
     }
   }
 
-  #updateRouter (path, router, { views, children }) {
-    let view = router.getViewConfig(path)
-    const { previousView } = router
+  #updateRouter (path, router, { views, children }, next) {
+    const view = router.getMatchingView(path),
+          { previousView } = router
 
-    const callback = () => this.#updateRouters(router.path.remaining, children)
-
-    if (view !== previousView) {
-      !!previousView && this.removeChildView(views, previousView)
-      !views.has(view) && views.set(view, new Map)
-      return renderView(this.#app, view, views.get(view), { parentRouter: router, childRouters: children }, { replaceChildren: true }, callback)
+    if (view === previousView) {
+      return next()
     }
 
-    callback()
+    !!previousView && this.removeChildView(views, previousView)
+    !views.has(view) && views.set(view, new Map)
+    renderView(this.#app, view, views.get(view), { parentRouter: router, childRouters: children }, { replaceChildren: true }, next)
   }
 }

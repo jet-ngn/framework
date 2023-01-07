@@ -60,7 +60,7 @@ export function removeDOMEventsByNode (target) {
   const remainingEvents = new Set
 
   ;[...listeners.keys()].filter(({ event, node }) => {
-    const match = node === target
+    const match = node === target || node.contains(target)
 
     if (!match) {
       remainingEvents.add(event)

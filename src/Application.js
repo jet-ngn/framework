@@ -14,7 +14,7 @@ export default class Application {
     return this.#tree
   }
 
-  render () {
+  async render () {
     renderView(this, ...this.#tree.root, null, null, () => this.#tree.updateRouters())
   }
 

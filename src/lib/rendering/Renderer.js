@@ -7,7 +7,7 @@ import Forbidden from './views/403.js'
 
 import { parseHTML } from './HTMLParser'
 import { emitInternal, removeEventsByView } from '../events/Bus'
-import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
+import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
 import { html } from './tags'
 
 import {
@@ -19,19 +19,20 @@ import {
 } from '../data/DataRegistry'
 
 export function renderView (app, view, childViews, routers, options, callback) {
+  const config = { app, view, childViews, routers, options }
   // TODO: Check permissions
-  runTasks(getViewRenderingTasks(...arguments), ...arguments)
+  runTasks(getViewRenderingTasks(...Object.values(config)), config, callback)
 }
 
 export function unmountView (view) {
   emitInternal(view, 'unmount')
 
-  removeDOMEventsByNode(view.element)
+  removeDOMEventsByView(view)
   removeEventsByView(view)
   removeBindingsByView(view)
 }
 
-export function runTasks (tasks, app, view, childViews, routers, options, callback) {
+export function runTasks (tasks, config, callback) {
   const { value, done } = tasks.next()
 
   if (done) {
@@ -39,7 +40,7 @@ export function runTasks (tasks, app, view, childViews, routers, options, callba
   }
 
   const [name, handler] = value
-
+  // console.log(name);
   handler({
     next: () => runTasks(...arguments),
     restart: () => renderView(...[...arguments].slice(1))
@@ -114,9 +115,9 @@ function * getViewRenderingTasks (app, view, childViews, routers, options) {
       })
     }]
   }
-
+  
   yield * getTemplateRenderingTasks(app, view, Reflect.get(view.config, 'template', view) ?? html``, view.element, childViews, routers, { replaceChildren })
-
+  
   yield [`Run "${name}" mount handler`, async ({ next }) => {
     await emitInternal(view, 'mount')
     next()
