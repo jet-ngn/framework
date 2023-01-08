@@ -44,8 +44,8 @@ export default class DataBinding extends IdentifiedClass {
     let args = []
 
     for (const [proxy, properties] of this.#proxies) {
-      if (target instanceof ViewPermissions) {
-        args.push(new PermissionsManager(target))
+      if (proxy instanceof ViewPermissions) {
+        args.push(new PermissionsManager(proxy))
       } else if (properties.length === 0) {
         args.push(proxy)
       } else {
