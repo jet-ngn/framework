@@ -52,7 +52,7 @@ function parseInterpolation (interpolation, result, retainFormatting) {
   if (Array.isArray(interpolation)) {
     return interpolation.reduce((output, item) => output + parseInterpolation(item, result, retainFormatting), '')
   }
-
+  
   if (interpolation instanceof Template) {
     return createTemplate(result, 'templates', interpolation)
   }
