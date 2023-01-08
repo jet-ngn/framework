@@ -1,7 +1,6 @@
 import Tree from './Tree'
 import { renderView } from './lib/rendering/Renderer'
 import { Plugins } from './env'
-import { logBindings } from './lib/data/DataRegistry'
 
 export default class Application {
   #tree
@@ -16,13 +15,10 @@ export default class Application {
   }
 
   async render () {
-    renderView(this, ...this.#tree.root, null, null, () => {
-      this.#tree.updateRouters(/*logBindings*/)
-    })
+    renderView(this, ...this.#tree.root, null, null, () => this.#tree.updateRouters())
   }
 
   update () {
     this.#tree.updateRouters()
-    // logBindings()
   }
 }
