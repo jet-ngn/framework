@@ -18,14 +18,17 @@ export default class Tree {
   }
 
   addChildView (collection, config) {
-    return collection.set(config instanceof View ? config : new View(config), new Map).entries().next().value
+    const view = config instanceof View ? config : new View(config)
+    const map = new Map
+    collection.set(view, map)
+    return [view, map]
   }
 
   addChildRouter (collection, target, config) {
-    return (collection ?? this.#routers)?.set(new RouteManager(config), {
+    (collection ?? this.#routers)?.set(new RouteManager(config), {
       views: target,
       children: new Map
-    }).entries().next().value
+    })
   }
 
   removeChildView (collection, view) {
