@@ -34,7 +34,12 @@ export default class StateObject extends State {
         })
   
         for (let binding of bindings) {
-          binding.targets.includes(proxy) && binding.reconcile()
+          const properties = binding.proxies.get(proxy)
+
+          if (properties.length === 0 || properties.includes(property)) {
+            binding.reconcile()
+          }
+          // (properties.length === 0 || properties.includes(property)) && binding.reconcile()
         }
   
         return true

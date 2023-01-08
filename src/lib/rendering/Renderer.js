@@ -26,7 +26,6 @@ export function renderView (app, view, childViews, routers, options, callback) {
 
 export function unmountView (view) {
   emitInternal(view, 'unmount')
-
   removeDOMEventsByView(view)
   removeEventsByView(view)
   removeBindingsByView(view)
@@ -61,7 +60,7 @@ export function * getTemplateRenderingTasks (app, view, template, targetElement,
     bind('properties', app, view, properties, ...args, setProperty)
     next()
   }]
-
+  
   if (attributes) yield [`Apply attributes`, ({ next }) => {
     bind('attributes', app, view, attributes, ...args, setAttribute)
     next()

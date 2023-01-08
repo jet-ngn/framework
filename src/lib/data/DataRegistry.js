@@ -17,9 +17,8 @@ export function append (proxy, data) {
   // state.append(data)
 }
 
-export function bind (...targets) {
-  let transform = targets.pop()
-  return new DataBindingInterpolation(targets, transform)
+export function bind (...args) {
+  return new DataBindingInterpolation(...args)
 }
 
 export function clear (proxy) {
@@ -36,10 +35,10 @@ export function load (proxy, data) {
   state.load(data)
 }
 
-// export function logBindings () {
-//   console.log(states);
-//   console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
-// }
+export function logBindings () {
+  console.log(states);
+  console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
+}
 
 export function registerAttributeBinding (app, view, node, name, interpolation) {
   return registerBinding(new AttributeBinding(...arguments))
@@ -83,21 +82,25 @@ export function registerState (target, config) {
   return state.proxy
 }
 
-export function removeBindings () {
-  for (let [key, state] of states) {
-    state.clearBindings()
-    const { proxy } = state
+// export function removeBindings () {
+//   for (let [key, state] of states) {
+//     state.clearBindings()
+//     const { proxy } = state
 
-    if (proxy instanceof ViewPermissions) {
-      state.removeChildProxies()
-      states.delete(key)
-    }
-  }
-}
+//     if (proxy instanceof ViewPermissions) {
+//       state.removeChildProxies()
+//       states.delete(key)
+//     }
+//   }
+// }
 
 export function removeBindingsByView (view) {
   for (let [key, state] of states) {
     state.removeBindingsByView(view)
+
+    if (state.bindings.length === 0) {
+      states.delete(key)
+    }
   }
 }
 
@@ -119,15 +122,15 @@ function makeState (target, type, config) {
 }
 
 function registerBinding (binding) {
-  binding.targets.forEach(target => {
-    const state = getStateByProxy(target)
+  for (const [proxy, properties] of binding.proxies) {
+    const state = getStateByProxy(proxy)
 
     if (!state) {
       throw new ReferenceError(`Cannot bind to unregistered Data State`)
     }
 
     state.addBinding(binding)
-  })
+  }
 
   return binding
 }
