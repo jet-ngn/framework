@@ -80,9 +80,12 @@ export function removeBindingsByView (view) {
   for (let [key, state] of states) {
     state.removeBindingsByView(view)
 
-    if (state.bindings.length === 0) {
-      states.delete(key)
+    if (state === view.data) {
+      console.log('TODO: State is view.data. Remove.')
     }
+    // if (state.bindings.length === 0) {
+    //   states.delete(key)
+    // }
   }
 }
 
