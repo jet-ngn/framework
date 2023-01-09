@@ -17,7 +17,31 @@ export function append (proxy, data) {
 }
 
 export function bind (...args) {
-  return new DataBindingInterpolation(...args)
+  let properties = args[1]
+  let transform = args[2] ?? null
+
+  if (typeof properties === 'function') {
+    transform = properties
+    properties = []
+  }
+
+  return new DataBindingInterpolation({
+    proxies: new Map([[args[0], Array.isArray(properties) ? properties : [properties]]]),
+    transform: transform ?? (data => data)
+  })
+}
+
+export function bindAll (...args) {
+  const config = {
+    proxies: new Map,
+    transform: args.pop()
+  }
+
+  for (const [proxy, ...props] of args) {
+    config.proxies.set(proxy, props)
+  }
+
+  return new DataBindingInterpolation(config)
 }
 
 export function clear (proxy) {
@@ -107,6 +131,8 @@ function makeState (target, type, config) {
 }
 
 function registerBinding (binding) {
+  console.log(binding);
+
   for (const [proxy, properties] of binding.proxies) {
     const state = getStateByProxy(proxy)
 

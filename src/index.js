@@ -1,7 +1,5 @@
 import Application from './Application'
 import { Path, Plugins } from './env'
-import { createId } from './utilities/IDUtils'
-import { append, bind, clear, load } from './lib/data/DataRegistry'
 import StateFactory from './lib/data/StateFactory'
 
 let App
@@ -65,4 +63,5 @@ export { css, html, svg } from './lib/rendering/tags'
 export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
 export { default as Router } from './lib/routing/Router'
-export { append, bind, clear, createId, load, Plugins, StateFactory as State }
+export { append, bind, bindAll, clear, load } from './lib/data/DataRegistry'
+export { Plugins, StateFactory as State }
