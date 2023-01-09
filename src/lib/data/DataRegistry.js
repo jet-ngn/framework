@@ -131,8 +131,6 @@ function makeState (target, type, config) {
 }
 
 function registerBinding (binding) {
-  console.log(binding);
-
   for (const [proxy, properties] of binding.proxies) {
     const state = getStateByProxy(proxy)
 

@@ -64,4 +64,5 @@ export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
 export { default as Router } from './lib/routing/Router'
 export { append, bind, bindAll, clear, load } from './lib/data/DataRegistry'
+export { createId } from './utilities/IDUtils'
 export { Plugins, StateFactory as State }
