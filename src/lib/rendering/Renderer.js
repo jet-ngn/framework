@@ -24,8 +24,8 @@ export function renderView (app, view, childViews, routers, options, callback) {
   runTasks(getViewRenderingTasks(...Object.values(config)), config, callback)
 }
 
-export function unmountView (view) {
-  emitInternal(view, 'unmount')
+export async function unmountView (view) {
+  await emitInternal(view, 'unmount')
   removeDOMEventsByView(view)
   removeEventsByView(view)
   removeBindingsByView(view)

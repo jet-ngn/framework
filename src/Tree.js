@@ -31,16 +31,16 @@ export default class Tree {
     })
   }
 
-  removeChildView (collection, view) {
+  async removeChildView (collection, view) {
     const kids = collection.get(view)
 
     if (kids) {
       for (const [child] of kids) {
-        this.removeChildView(kids, child)
+        await this.removeChildView(kids, child)
       }
     }
 
-    unmountView(view)
+    await unmountView(view)
     collection.delete(view)
   }
 
@@ -50,15 +50,15 @@ export default class Tree {
 
   * #getRouterUpdateTasks (path, routers) {
     for (const [router, { views, children }] of routers) {
-      yield [`Update Router`, ({ next }) => {
-        this.#updateRouter(path, router, { views, children }, next)
+      yield [`Update Router`, async ({ next }) => {
+        await this.#updateRouter(path, router, { views, children }, next)
       }]
 
       yield * this.#getRouterUpdateTasks(router.path.remaining, children)
     }
   }
 
-  #updateRouter (path, router, { views, children }, next) {
+  async #updateRouter (path, router, { views, children }, next) {
     const view = router.getMatchingView(path),
           { previousView } = router
 
@@ -66,7 +66,7 @@ export default class Tree {
       return next()
     }
 
-    !!previousView && this.removeChildView(views, previousView)
+    !!previousView && await this.removeChildView(views, previousView)
     !views.has(view) && views.set(view, new Map)
     renderView(this.#app, view, views.get(view), { parentRouter: router, childRouters: children }, { replaceChildren: true }, next)
   }
