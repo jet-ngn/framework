@@ -32,6 +32,14 @@ export default class Tree {
   }
 
   removeChildView (collection, view) {
+    const kids = collection.get(view)
+
+    if (kids) {
+      for (const [child] of kids) {
+        this.removeChildView(kids, child)
+      }
+    }
+
     unmountView(view)
     collection.delete(view)
   }
