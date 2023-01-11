@@ -23,7 +23,7 @@ export default class ContentBinding extends DataBinding {
 
   reconcile (method) {
     super.reconcile(({ previous, current }) => {
-      if (!!method && this.targets.length === 1 && Array.isArray(this.targets[0])) {
+      if (!!method && this.proxies.size === 1 && Array.isArray([...this.proxies][0][0])) {
         switch (method) {
           case 'push': return this.#push(previous, current)
           case 'pop': return this.#pop()
