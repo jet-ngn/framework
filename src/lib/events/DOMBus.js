@@ -84,7 +84,7 @@ export function removeDOMEventsByView (target) {
   ;[...listeners.keys()].filter(({ event, view }) => {
     const match = view === target
 
-    if (!match) {
+    if (!match || node === view.element) {
       remainingEvents.add(event)
     }
 
