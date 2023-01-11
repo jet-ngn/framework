@@ -115,7 +115,7 @@ function * getViewRenderingTasks (app, view, childViews, routers, options) {
     }]
   }
   
-  yield * getTemplateRenderingTasks(app, view, Reflect.get(view.config, 'template', view) ?? html``, view.element, childViews, routers, { replaceChildren })
+  yield * getTemplateRenderingTasks(app, view, view.config.render?.call(view) ?? html``, view.element, childViews, routers, { replaceChildren })
   
   yield [`Run "${name}" mount handler`, async ({ next }) => {
     await emitInternal(view, 'mount')
