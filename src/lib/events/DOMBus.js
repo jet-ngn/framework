@@ -72,6 +72,10 @@ export function removeDOMEventsByNode (target) {
   events = remainingEvents
 }
 
+export function logDOMEvents () {
+  console.log(listeners)
+}
+
 // export function removeDOMEvents () {
 //   listeners = new Map
 //   events.forEach(event => document.body.removeEventListener(event, handlers[event]))

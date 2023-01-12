@@ -2,11 +2,16 @@ import DataBindingInterpolation from './DataBindingInterpolation'
 import AttributeBinding from './bindings/AttributeBinding'
 import AttributeListBinding from './bindings/AttributeListBinding'
 import AttributeListBooleanBinding from './bindings/AttributeListBooleanBinding'
+import ArrayContentBinding from './bindings/ArrayContentBinding'
 import ContentBinding from './bindings/ContentBinding'
 import PropertyBinding from './bindings/PropertyBinding'
 import ViewBinding from './bindings/ViewBinding'
 import StateArray from './states/StateArray'
 import StateObject from './states/StateObject'
+import PermissionsManager from '../session/PermissionsManager'
+import { ViewPermissions } from '../rendering/View'
+import DataBinding from './bindings/DataBinding'
+import { runTasks } from '../rendering/TaskRunner'
 
 export const states = new Map
 
@@ -70,8 +75,17 @@ export function registerAttributeListBooleanBinding (app, view, list, name, inte
   return registerBinding(new AttributeListBooleanBinding(...arguments))
 }
 
-export function registerContentBinding (app, view, interpolation, element, childViews, routers, { retainFormatting }) {
-  return registerBinding(new ContentBinding(...arguments))
+export function * getContentBindingRegistrationTasks (app, view, interpolation, element, childViews, routers, { retainFormatting }) {
+  const args = arguments
+  const binding = new DataBinding(app, view, interpolation)
+
+  yield * binding.getReconciliationTasks(true, function * (init, { current }) {
+    if (Array.isArray(current)) {
+      return yield * registerBinding(new ArrayContentBinding(...args)).getReconciliationTasks({ init })
+    }
+
+    yield * registerBinding(new ContentBinding(...args)).getReconciliationTasks(true)
+  })
 }
 
 export function registerPropertyBinding (app, view, node, name, interpolation) {
@@ -144,10 +158,10 @@ function registerBinding (binding) {
   return binding
 }
 
-// export function logBindings () {
-//   console.log(states);
-//   console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
-// }
+export function logBindings () {
+  console.log(states);
+  console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
+}
 
 // export function removeBindings () {
 //   for (let [key, state] of states) {

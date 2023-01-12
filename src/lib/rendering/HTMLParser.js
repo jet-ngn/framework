@@ -61,6 +61,10 @@ function parseInterpolation (interpolation, result, retainFormatting) {
     return createTemplate(result, 'bindings', interpolation, 'data_binding')
   }
 
+  if (interpolation === null) {
+    return ''
+  }
+
   switch (typeof interpolation) {
     case 'undefined':
     case 'boolean': return ''

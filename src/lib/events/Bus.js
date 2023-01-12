@@ -110,3 +110,8 @@ export function removeEventsByView (view) {
   Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
   views.delete(view)
 }
+
+export function logEvents () {
+  console.log(listeners)
+  console.log(views)
+}

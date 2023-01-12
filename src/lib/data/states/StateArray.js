@@ -1,5 +1,6 @@
-import { load } from '../DataRegistry'
 import State from './State'
+import { load } from '../DataRegistry'
+import { runTasks } from '../../rendering/TaskRunner'
 
 export default class StateArray extends State {
   #childConfig
@@ -13,18 +14,18 @@ export default class StateArray extends State {
       get: (target, property) => {
         switch (property) {
           case 'push':
-          case 'fill': return getArrayMethodHandler(this, target, property, target[property], {
+          case 'fill':
+          case 'pop':
+          case 'shift': 
+          case 'unshift': return getArrayMethodHandler(this, target, property, target[property], {
             reconcile: false,
             model,
             index: 0
           })
         
           case 'copyWithin':
-          case 'pop':
           case 'reverse':
-          case 'sort':
-          case 'shift':
-          case 'unshift': return getArrayMethodHandler(this, target, property, target[property], {
+          case 'sort': return getArrayMethodHandler(this, target, property, target[property], {
             reconcile: true
           })
 
@@ -138,10 +139,13 @@ function getArrayMethodHandler (state, target, property, method, { reconcile = f
     change.value.current = [...target]
     history.add(change)
 
-    for (let binding of bindings) {
-      binding.reconcile(reconcile ? undefined : property)
-    }
-
+    runTasks(getBindingUpdateTasks(bindings, reconcile ? undefined : property))
     return output
+  }
+}
+
+function * getBindingUpdateTasks (bindings, method) {
+  for (let binding of bindings) {
+    yield * binding.getReconciliationTasks({ method })
   }
 }

@@ -7,48 +7,20 @@ import Forbidden from './views/403.js'
 
 import { parseHTML } from './HTMLParser'
 import { emitInternal, removeEventsByView } from '../events/Bus'
-import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
+import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
 import { html } from './tags'
 
 import {
-  registerContentBinding,
+  getContentBindingRegistrationTasks,
   registerAttributeBinding,
   registerPropertyBinding,
   registerViewBinding,
   removeBindingsByView
 } from '../data/DataRegistry'
 
-export function renderView (app, view, childViews, routers, options, callback) {
-  const config = { app, view, childViews, routers, options }
-  // TODO: Check permissions
-  runTasks(getViewRenderingTasks(...Object.values(config)), config, callback)
-}
-
-export async function unmountView (view) {
-  await emitInternal(view, 'unmount')
-  removeDOMEventsByView(view)
-  removeEventsByView(view)
-  removeBindingsByView(view)
-}
-
-export function runTasks (tasks, config, callback) {
-  const { value, done } = tasks.next()
-
-  if (done) {
-    return callback && callback()
-  }
-
-  const [name, handler] = value
-  // console.log(name);
-  handler({
-    next: () => runTasks(...arguments),
-    restart: () => renderView(...[...arguments].slice(1))
-  })
-}
-
-export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, options) {
+export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, options, callback) {
   const retainFormatting = targetElement.tagName === 'PRE',
-        { replace = false, replaceChildren = false } = options ?? {},
+        { replace = false, append = false } = options ?? {},
         { name } = view,
         { attributes, properties, listeners, viewConfig, routeConfig } = template,
         { bindings, fragment, templates } = parseHTML(template, { retainFormatting }),
@@ -72,28 +44,37 @@ export function * getTemplateRenderingTasks (app, view, template, targetElement,
   }]
 
   for (const id in templates) yield * getTemplateRenderingTasks(app, view, templates[id], fragment.getElementById(id), childViews, routers, { replace: true })
-
-  for (const id in bindings) yield [`Initialize Content Binding "${id}"`, ({ next }) => {
-    registerContentBinding(app, view, bindings[id], fragment.getElementById(id), childViews, routers, { retainFormatting }).reconcile()
-    next()
-  }]
-
-  if (viewConfig) yield * processChildView(app, view, viewConfig, element, childViews, routers)
-    
+  for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, bindings[id], fragment.getElementById(id), childViews, routers, { retainFormatting })
+  
+  if (viewConfig) yield * processChildView(app, view, viewConfig, element, childViews, routers)  
+  
   else if (routeConfig) yield [`Initialize "${name}" child router`, ({ next }) => {
     const { childRouters, parentRouter } = routers ?? {}
-    app.tree.addChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig })
-    next()
+    app.tree.initChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig }, next)
   }]
 
-  yield [`Render ${replace ? `child template to "${name}"` : replaceChildren ? `bound view "${name}" template` : `"${name}" template`}`, ({ next }) => {
-    targetElement[replace ? 'replaceWith' : replaceChildren ? 'replaceChildren' : 'append'](fragment)
-    next()
+  yield [`${replace ? `Insert child template into "${name}" root element` : `Insert "${name}" view template into DOM`}`, ({ next }) => {
+    if (replace) {
+      removeDOMEventsByNode(targetElement)
+    } else {
+      const observer = new MutationObserver(mutations => {
+        observer.disconnect()
+        next()
+      })
+  
+      observer.observe(targetElement, { childList: true })
+    }
+
+    callback && callback(fragment.childNodes)
+    targetElement[replace ? 'replaceWith' : append ? 'append' : 'replaceChildren'](fragment)
+
+    if (replace) {
+      next()
+    }
   }]
 }
 
-function * getViewRenderingTasks (app, view, childViews, routers, options) {
-  const { replaceChildren = false } = options ?? {}
+export function * getViewRenderingTasks (app, view, childViews, routers, options) {
   const { name, config } = view
 
   if (config.on?.hasOwnProperty('beforeMount')) {
@@ -115,7 +96,7 @@ function * getViewRenderingTasks (app, view, childViews, routers, options) {
     }]
   }
   
-  yield * getTemplateRenderingTasks(app, view, view.config.render?.call(view) ?? html``, view.element, childViews, routers, { replaceChildren })
+  yield * getTemplateRenderingTasks(app, view, view.config.render?.call(view) ?? html``, view.element, childViews, routers, options)
   
   yield [`Run "${name}" mount handler`, async ({ next }) => {
     await emitInternal(view, 'mount')

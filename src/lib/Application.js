@@ -1,6 +1,5 @@
-import Tree from './Tree'
-import { renderView } from './lib/rendering/Renderer'
-import { Plugins } from './env'
+import Tree from './rendering/Tree'
+import { Plugins } from '../env'
 
 export default class Application {
   #tree
@@ -14,8 +13,8 @@ export default class Application {
     return this.#tree
   }
 
-  async render () {
-    renderView(this, ...this.#tree.root, null, null, () => this.#tree.updateRouters())
+  render () {
+    this.#tree.render()
   }
 
   update () {

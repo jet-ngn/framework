@@ -1,5 +1,6 @@
-import { load } from '../DataRegistry'
 import State from './State'
+import { load } from '../DataRegistry'
+import { runTasks } from '../../rendering/TaskRunner'
 
 export default class StateObject extends State {
   #model
@@ -32,16 +33,8 @@ export default class StateObject extends State {
             }
           }
         })
-  
-        for (let binding of bindings) {
-          const properties = binding.proxies.get(proxy)
 
-          if (properties.length === 0 || properties.includes(property)) {
-            binding.reconcile()
-          }
-          // (properties.length === 0 || properties.includes(property)) && binding.reconcile()
-        }
-  
+        runTasks(this.#getBindingUpdateTasks(proxy, bindings, property))
         return true
       }
     }), config)
@@ -51,6 +44,16 @@ export default class StateObject extends State {
     this.#states = states
 
     this.#initialize()
+  }
+
+  * #getBindingUpdateTasks (proxy, bindings, property) {
+    for (let binding of bindings) {
+      const properties = binding.proxies.get(proxy)
+
+      if (properties.length === 0 || properties.includes(property)) {
+        yield * binding.getReconciliationTasks()
+      }
+    }
   }
 
   #initialize () {

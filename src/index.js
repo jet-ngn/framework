@@ -1,6 +1,6 @@
-import Application from './Application'
-import { Path, Plugins } from './env'
+import Application from './lib/Application'
 import StateFactory from './lib/data/StateFactory'
+import { Path, Plugins } from './env'
 
 let App
 let appConfig

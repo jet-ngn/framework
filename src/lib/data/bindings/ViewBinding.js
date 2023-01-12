@@ -1,5 +1,5 @@
 import DataBinding from './DataBinding'
-import { renderView } from '../../rendering/Renderer'
+// import { renderView } from '../../rendering/Renderer'
 
 export default class ViewBinding extends DataBinding {
   #boundView = null
@@ -32,7 +32,7 @@ export default class ViewBinding extends DataBinding {
       })
 
       this.#boundView = view
-      renderView(this.app, view, childViews, this.#routers, { replaceChildren: true }, cb)
+      // renderView(this.app, view, childViews, this.#routers, { replaceChildren: true }, cb)
     })
   }
 }
