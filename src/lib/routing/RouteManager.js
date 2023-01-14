@@ -1,6 +1,6 @@
 import Route from './Route'
 import View from '../rendering/View'
-import NotFound from '../rendering/views/404.js'
+import NotFound from '../views/404.js'
 import { Path } from '../../env'
 
 export default class Router {

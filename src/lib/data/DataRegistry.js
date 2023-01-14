@@ -1,17 +1,12 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 import AttributeBinding from './bindings/AttributeBinding'
-import AttributeListBinding from './bindings/AttributeListBinding'
-import AttributeListBooleanBinding from './bindings/AttributeListBooleanBinding'
 import ArrayContentBinding from './bindings/ArrayContentBinding'
 import ContentBinding from './bindings/ContentBinding'
 import PropertyBinding from './bindings/PropertyBinding'
 import ViewBinding from './bindings/ViewBinding'
 import StateArray from './states/StateArray'
 import StateObject from './states/StateObject'
-import PermissionsManager from '../session/PermissionsManager'
-import { ViewPermissions } from '../rendering/View'
 import DataBinding from './bindings/DataBinding'
-import { runTasks } from '../rendering/TaskRunner'
 
 export const states = new Map
 
@@ -63,19 +58,11 @@ export function load (proxy, data) {
   state.load(data)
 }
 
-export function registerAttributeBinding (app, view, node, name, interpolation) {
-  return registerBinding(new AttributeBinding(...arguments))
+export function * getAttributeBindingRegistrationTasks (app, view, element, name, interpolation) {
+  yield * registerBinding(new AttributeBinding(...arguments)).getReconciliationTasks(true)
 }
 
-export function registerAttributeListBinding (app, view, list, interpolation) {
-  return registerBinding(new AttributeListBinding(...arguments))
-}
-
-export function registerAttributeListBooleanBinding (app, view, list, name, interpolation) {
-  return registerBinding(new AttributeListBooleanBinding(...arguments))
-}
-
-export function * getContentBindingRegistrationTasks (app, view, interpolation, element, childViews, routers, { retainFormatting }) {
+export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, { retainFormatting }) {
   const args = arguments
   const binding = new DataBinding(app, view, interpolation)
 
@@ -88,8 +75,8 @@ export function * getContentBindingRegistrationTasks (app, view, interpolation, 
   })
 }
 
-export function registerPropertyBinding (app, view, node, name, interpolation) {
-  return registerBinding(new PropertyBinding(...arguments))
+export function * getPropertyBindingRegistrationTasks (app, view, node, name, interpolation) {
+  yield * registerBinding(new PropertyBinding(...arguments)).getReconciliationTasks(true)
 }
 
 export function registerViewBinding (app, view, config, element, childViews, routers) {

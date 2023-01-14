@@ -1,4 +1,4 @@
-export function runTasks (tasks, { callback, restart = null } = {}) {
+export async function runTasks (tasks, { callback, restart = null } = {}) {
   const { value, done } = tasks.next()
 
   if (done) {
@@ -7,7 +7,7 @@ export function runTasks (tasks, { callback, restart = null } = {}) {
 
   const [name, handler] = value
   console.log(name)
-  handler({
+  await handler({
     next: () => runTasks(...arguments),
     restart
   })

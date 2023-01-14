@@ -1,4 +1,6 @@
 import DataBindingInterpolation from '../DataBindingInterpolation'
+import PermissionsManager from '../../session/PermissionsManager'
+import { ViewPermissions } from '../../rendering/View'
 
 export default class DataBinding extends DataBindingInterpolation {
   #app
@@ -31,7 +33,7 @@ export default class DataBinding extends DataBindingInterpolation {
       const [proxy, properties] = [...this.proxies][0]
       
       if (properties.length === 0) {
-        args.push(proxy)  
+        args.push(proxy)
       } else {
         args.push(...properties.map(property => proxy[property]))
       }
@@ -50,7 +52,6 @@ export default class DataBinding extends DataBindingInterpolation {
     }
 
     let result = this.transform(...args)
-    // newValue = Array.isArray(newValue) ? [...newValue] : newValue
 
     if (result !== previous) {
       this.#value = result ?? null

@@ -9,7 +9,7 @@ export default class BaseContentBinding extends DataBinding {
 
   nodes
 
-  constructor (app, view, interpolation, element, childViews, routers, { retainFormatting }) {
+  constructor (app, view, element, interpolation, childViews, routers, { retainFormatting }) {
     super(app, view, interpolation)
     this.#childViews = childViews
     this.#placeholder = element

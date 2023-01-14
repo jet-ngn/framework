@@ -1,4 +1,4 @@
-import DataBinding from './DataBinding'
+import DataBinding from '../src/lib/data/bindings/DataBinding'
 
 export default class AttributeListBinding extends DataBinding {
   #list

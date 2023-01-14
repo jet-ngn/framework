@@ -3,6 +3,8 @@ import { getTemplateRenderingTasks } from '../../rendering/Renderer'
 import { reconcileNodes } from '../../rendering/Reconciler'
 import { removeDOMEventsByNode } from '../../events/DOMBus'
 
+// TODO: Support attached views/routers?
+
 export default class ArrayContentBinding extends BaseContentBinding {
   * #getReconciliationTasks (method, init, { previous, current }) {
     if (!!method) {
@@ -25,7 +27,7 @@ export default class ArrayContentBinding extends BaseContentBinding {
     const templateElement = document.createElement('template')
 
     for (const template of current) {
-      yield * getTemplateRenderingTasks(this.app, this.view, template, templateElement, this.childViews, this.routers, { append: true })
+      yield * getTemplateRenderingTasks(this.app, this.view, templateElement, template, this.childViews, this.routers, { append: true })
     }
 
     if (init) {
@@ -60,16 +62,16 @@ export default class ArrayContentBinding extends BaseContentBinding {
   }
 
   * #push (previous, current) {
-    const newTemplates = current.slice((current.length - previous.length) * -1)
-    const template = document.createElement('template')
+    const templates = current.slice((current.length - previous.length) * -1)
+    const element = document.createElement('template')
     
-    for (const newTemplate of newTemplates) {
-      yield * getTemplateRenderingTasks(this.app, this.view, newTemplate, template, this.childViews, this.routers, { append: true })
+    for (const template of templates) {
+      yield * getTemplateRenderingTasks(this.app, this.view, element, template, this.childViews, this.routers, { append: true })
     }
 
     yield [`Append template`, ({ next }) => {
       const last = this.nodes.at(-1)
-      const nodes = [...template.childNodes]
+      const nodes = [...element.childNodes]
 
       if (!last || last === this.placeholder) {
         this.placeholder.replaceWith(...nodes)
@@ -98,16 +100,16 @@ export default class ArrayContentBinding extends BaseContentBinding {
   }
 
   * #unshift (...args) {
-    const newTemplates = this.value.slice(0, args.length)
-    const template = document.createElement('template')
+    const templates = this.value.slice(0, args.length)
+    const element = document.createElement('template')
     
-    for (const newTemplate of newTemplates) {
-      yield * getTemplateRenderingTasks(this.app, this.view, newTemplate, template, this.childViews, this.routers, { append: true })
+    for (const template of templates) {
+      yield * getTemplateRenderingTasks(this.app, this.view, template, element, this.childViews, this.routers, { append: true })
     }
 
     yield [`Prepend template`, ({ next }) => {
       const first = this.nodes[0]
-      const nodes = [...template.childNodes]
+      const nodes = [...element.childNodes]
 
       if (!first || first === this.placeholder) {
         this.placeholder.replaceWith(...nodes)

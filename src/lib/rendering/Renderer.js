@@ -1,72 +1,64 @@
 import Session from '../session/Session'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
-import AttributeList from './AttributeList'
 
-import Unauthorized from './views/401.js'
-import Forbidden from './views/403.js'
+// import Unauthorized from './views/401.js'
+// import Forbidden from './views/403.js'
 
-import { parseHTML } from './HTMLParser'
+import { parseHTML } from '../parsing/HTMLParser'
+import { html } from '../parsing/tags'
 import { emitInternal, removeEventsByView } from '../events/Bus'
 import { addDOMEventHandler, removeDOMEventsByNode } from '../events/DOMBus'
-import { html } from './tags'
 
 import {
   getContentBindingRegistrationTasks,
-  registerAttributeBinding,
-  registerPropertyBinding,
+  getAttributeBindingRegistrationTasks,
+  getPropertyBindingRegistrationTasks,
   registerViewBinding,
-  removeBindingsByView
+  removeBindingsByView,
 } from '../data/DataRegistry'
 
-export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, options, callback) {
-  const retainFormatting = targetElement.tagName === 'PRE',
+export function * getTemplateRenderingTasks (app, view, element, template, childViews, routers, options, callback) {
+  const retainFormatting = element.tagName === 'PRE',
         { replace = false, append = false } = options ?? {},
         { name } = view,
         { attributes, properties, listeners, viewConfig, routeConfig } = template,
         { bindings, fragment, templates } = parseHTML(template, { retainFormatting }),
-        element = fragment.firstElementChild,
-        hasMultipleNodes = fragment.children.length > 1,
-        args = [element, hasMultipleNodes]
+        { firstElementChild } = fragment,
+        hasMultipleNodes = fragment.children.length > 1
 
-  if (properties) yield [`Apply properties`, ({ next }) => {
-    bind('properties', app, view, properties, ...args, setProperty)
-    next()
-  }]
-  
-  if (attributes) yield [`Apply attributes`, ({ next }) => {
-    bind('attributes', app, view, attributes, ...args, setAttribute)
-    next()
-  }]
+  if (properties) yield * getPropertyBindingTasks(app, view, firstElementChild, properties, hasMultipleNodes)
+  if (attributes) yield * getAttributeBindingTasks(app, view, firstElementChild, attributes, hasMultipleNodes)
+  if (listeners) yield * getListenerBindingTasks(view, firstElementChild, listeners, hasMultipleNodes)
 
-  if (listeners) yield [`Apply listeners`, ({ next }) => {
-    bindListeners(view, listeners, ...args)
-    next()
-  }]
-
-  for (const id in templates) yield * getTemplateRenderingTasks(app, view, templates[id], fragment.getElementById(id), childViews, routers, { replace: true })
-  for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, bindings[id], fragment.getElementById(id), childViews, routers, { retainFormatting })
+  for (const id in templates) yield * getTemplateRenderingTasks(app, view, fragment.getElementById(id), templates[id], childViews, routers, { replace: true })
+  for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, fragment.getElementById(id), bindings[id], childViews, routers, { retainFormatting })
   
-  if (viewConfig) yield * processChildView(app, view, viewConfig, element, childViews, routers)  
+  if (viewConfig) yield * getChildViewRenderingTasks(app, view, firstElementChild, viewConfig, childViews, routers)  
   
-  else if (routeConfig) yield [`Initialize "${name}" child router`, ({ next }) => {
+  else if (routeConfig) {
     const { childRouters, parentRouter } = routers ?? {}
-    app.tree.initChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig }, next)
-  }]
+    yield * app.getChildRouterInitializationTasks(childRouters, childViews, {
+      parentView: view,
+      parentRouter,
+      element: firstElementChild,
+      routes: routeConfig
+    }, true)
+  }
 
-  yield [`${replace ? `Insert child template into "${name}" root element` : `Insert "${name}" view template into DOM`}`, ({ next }) => {
+  yield [`${replace ? `Insert child template into "${name}" view root element` : `Insert "${name}" view template into parent element`}`, async ({ next }) => {
     if (replace) {
-      removeDOMEventsByNode(targetElement)
+      removeDOMEventsByNode(element)
     } else {
       const observer = new MutationObserver(mutations => {
         observer.disconnect()
         next()
       })
   
-      observer.observe(targetElement, { childList: true })
+      observer.observe(element, { childList: true })
     }
 
     callback && callback(fragment.childNodes)
-    targetElement[replace ? 'replaceWith' : append ? 'append' : 'replaceChildren'](fragment)
+    element[replace ? 'replaceWith' : append ? 'append' : 'replaceChildren'](fragment)
 
     if (replace) {
       next()
@@ -76,6 +68,8 @@ export function * getTemplateRenderingTasks (app, view, template, targetElement,
 
 export function * getViewRenderingTasks (app, view, childViews, routers, options) {
   const { name, config } = view
+
+  // TODO: Handle permissions
 
   if (config.on?.hasOwnProperty('beforeMount')) {
     let stop = false
@@ -96,88 +90,110 @@ export function * getViewRenderingTasks (app, view, childViews, routers, options
     }]
   }
   
-  yield * getTemplateRenderingTasks(app, view, view.config.render?.call(view) ?? html``, view.element, childViews, routers, options)
-  
-  yield [`Run "${name}" mount handler`, async ({ next }) => {
+  yield * getTemplateRenderingTasks(app, view, view.element, view.config.render?.call(view) ?? html``, childViews, routers, options)
+
+  !options?.isChild && (yield * getViewMountingTasks(app, view, childViews))
+}
+
+export function * getViewMountingTasks (app, view, childViews) {
+  for (const [childView, children] of childViews) {
+    yield * getViewMountingTasks(app, childView, children)
+  }
+
+  yield [`Fire "${view.name}" view "mount" event`, async ({ next }) => {
     await emitInternal(view, 'mount')
     next()
   }]
 }
 
-function * processChildView (app, view, viewConfig, element, childViews, routers) {
+function * getAttributeApplicationTasks (app, view, element, attribute, value) {
+  if (value instanceof DataBindingInterpolation) {
+    return yield * getAttributeBindingRegistrationTasks(app, view, element, attribute, value)
+  }
+
+  const existing = element.getAttribute(attribute)?.trim().split(' ').map(item => item.trim()) ?? []
+
+  if (Array.isArray(value)) {
+    return yield * getAttributeListBindingTasks(app, view, element, attribute, [...(existing ?? []), ...value])
+  }
+
+  const type = typeof value
+
+  if (type !== 'object') {
+    switch (typeof value) {
+      case 'string':
+      case 'number': return yield [`Apply attribute "${attribute}"`, ({ next }) => {
+        element.setAttribute(attribute, `${existing.join(' ')} ${value}`.trim())
+        next()
+      }]
+  
+      case 'boolean': return yield [`Apply boolean attribute "${attribute}"`, ({ next }) => {
+        value && element.setAttribute(attribute, '')
+        next()
+      }]
+  
+      default: throw new TypeError(`"${view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
+    }
+  }
+
+  for (const slug of Object.keys(value)) {
+    yield * getAttributeApplicationTasks(app, view, element, `${attribute}-${slug}`, value[slug])
+  }
+}
+
+function * getAttributeBindingTasks (app, view, element, attributes, hasMultipleNodes) {
+  validateBinding('attribute', element, hasMultipleNodes)
+
+  for (let attribute in attributes ?? {}) {
+    yield * getAttributeApplicationTasks(app, view, element, attribute, attributes[attribute])
+  }
+}
+
+function * getListenerBindingTasks (view, element, listeners, hasMultipleNodes) {
+  validateBinding('listeners', element, hasMultipleNodes)
+
+  for (const evt in listeners) {
+    for (const { handler, cfg } of listeners[evt]) {
+      yield [`Apply "${evt}" listener`, ({ next }) => {
+        addDOMEventHandler(view, element, evt, handler, cfg)
+        next()
+      }]
+    }
+  }
+}
+
+function * getPropertyBindingTasks (app, view, element, properties, hasMultipleNodes) {
+  validateBinding('property', element, hasMultipleNodes)
+
+  for (let property in properties ?? {}) {
+    const value = properties[property]
+
+    if (value instanceof DataBindingInterpolation) {
+      yield * getPropertyBindingRegistrationTasks(app, view, element, property, value)
+      continue
+    }
+
+    yield [`Apply property "${property}"`, ({ next }) => {
+      element[property] = value
+      next()
+    }]
+  }
+}
+
+function * getChildViewRenderingTasks (app, view, element, viewConfig, childViews, routers) {
   if (viewConfig instanceof DataBindingInterpolation) yield [`Initialize "${view.name}" View Binding`, ({ next }) => {
-    registerViewBinding(...arguments).reconcile(next)
+    console.log('TODO: REGISTER VIEW BINDING')
+    next()
   }]
-    
-  else yield * getViewRenderingTasks(app, ...app.tree.addChildView(childViews, {
+  
+  else yield * getViewRenderingTasks(app, ...app.addChildView(childViews, {
     parent: view,
     element,
     config: viewConfig
-  }), childViews, routers)
+  }), routers, { isChild: true })
 }
 
-function bind (app, type, view, collection, root, hasMultipleRoots, cb) {
-  validateBinding(type, root, hasMultipleRoots, () => {
-    for (let item in collection ?? {}) {
-      cb(app, view, root, item, collection[item])
-    }
-  })
-}
-
-function bindListeners (view, listeners, root, hasMultipleRoots) {
-  validateBinding('listeners', root, hasMultipleRoots, () => {
-    for (let evt in listeners ?? {}) {
-      listeners[evt].forEach(({ handler, cfg }) => addDOMEventHandler(view, root, evt, handler, cfg))
-    }
-  })
-}
-
-function getExistingAttributeValue (element, name) {
-  const value = element.getAttribute(name)
-  return value ? value.trim().split(' ').map(item => item.trim()) : []
-}
-
-function setAttribute (app, view, element, name, value) {
-  if (value instanceof DataBindingInterpolation) {
-    return registerAttributeBinding(app, view, element, name, value).reconcile()
-  }
-
-  const existing = getExistingAttributeValue(element, name)
-
-  if (Array.isArray(value)) {
-    return element.setAttribute(name, new AttributeList(app, view, element, name, [...(existing ?? []), ...value]).value)
-  }
-
-  switch (typeof value) {
-    case 'string':
-    case 'number': return element.setAttribute(name, `${existing.join(' ')} ${value}`.trim())
-    case 'boolean': return value && element.setAttribute(name, '')
-    case 'object': return setNamespacedAttribute(app, view, element, name, value)
-
-    default: throw new TypeError(`"${view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
-  }
-}
-
-function setNamespacedAttribute (app, view, element, name, cfg) {
-  if (typeof cfg !== 'object') {
-    return setAttribute(app, view, element, `${name}-${slug}`, cfg)
-  }
-
-  for (const slug of Object.keys(cfg)) {
-    setAttribute(app, view, element, `${name}-${slug}`, cfg[slug])
-  }
-}
-
-function setProperty (app, view, element, name, value) {
-  if (value instanceof DataBindingInterpolation) {
-    return registerPropertyBinding(app, view, element, name, value).reconcile()
-  }
-
-  element[name] = value
-}
-
-function validateBinding (item, element, hasMultipleRoots, cb) {
+function validateBinding (item, element, hasMultipleNodes) {
   if (!element) throw new Error(`Cannot bind ${item} to non-element nodes`)
-  if (hasMultipleRoots) throw new Error(`Cannot bind ${item} to more than one node`)
-  cb()
+  if (hasMultipleNodes) throw new Error(`Cannot bind ${item} to more than one node`)
 }

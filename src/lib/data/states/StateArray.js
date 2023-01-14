@@ -1,6 +1,6 @@
 import State from './State'
 import { load } from '../DataRegistry'
-import { runTasks } from '../../rendering/TaskRunner'
+import { runTasks } from '../../TaskRunner'
 
 export default class StateArray extends State {
   #childConfig
@@ -17,7 +17,7 @@ export default class StateArray extends State {
           case 'fill':
           case 'pop':
           case 'shift': 
-          case 'unshift': return getArrayMethodHandler(this, target, property, target[property], {
+          case 'unshift': return this.#getArrayMethodHandler(target, property, target[property], {
             reconcile: false,
             model,
             index: 0
@@ -25,11 +25,11 @@ export default class StateArray extends State {
         
           case 'copyWithin':
           case 'reverse':
-          case 'sort': return getArrayMethodHandler(this, target, property, target[property], {
+          case 'sort': return this.#getArrayMethodHandler(target, property, target[property], {
             reconcile: true
           })
 
-          case 'splice': return getArrayMethodHandler(this, target, property, target[property], {
+          case 'splice': return this.#getArrayMethodHandler(target, property, target[property], {
             reconcile: true,
             model,
             index: 2
@@ -48,9 +48,9 @@ export default class StateArray extends State {
         isState: true,
         config
       }
-
-      this.load(initial)
     }
+
+    this.load(initial)
   }
 
   get childConfig () {
@@ -99,48 +99,48 @@ export default class StateArray extends State {
 
     return data
   }
-}
 
-function getArrayMethodHandler (state, target, property, method, { reconcile = false, model = null, index = null } = {}) {
-  return (...args) => {
-    const additive = index !== null
-    
-    if (additive) {
-      const { type, config } = state.childConfig
-
-      if (type === State) {
-        args = args.map((arg, i) => {
-          if (i < index) {
-            return arg
-          }
-
-          const proxy = state.getProxy(config)
-          state.addChildProxy(proxy)
-          load(proxy, arg)
-          
-          return proxy
-        })
+  #getArrayMethodHandler (target, property, method, { reconcile = false, model = null, index = null } = {}) {
+    return (...args) => {
+      const additive = index !== null
+      
+      if (additive) {
+        const { type, config } = this.childConfig
+  
+        if (type === State) {
+          args = args.map((arg, i) => {
+            if (i < index) {
+              return arg
+            }
+  
+            const proxy = this.getProxy(config)
+            this.addChildProxy(proxy)
+            load(proxy, arg)
+            
+            return proxy
+          })
+        }
       }
-    }
-
-    const change = {
-      timestamp: Date.now(),
-      action: property,
-
-      value: {
-        previous: [...target],
-        current: null
+  
+      const change = {
+        timestamp: Date.now(),
+        action: property,
+  
+        value: {
+          previous: [...target],
+          current: null
+        }
       }
+  
+      const { bindings, history } = this
+      const output = method.apply(target, args)
+  
+      change.value.current = [...target]
+      history.add(change)
+  
+      runTasks(getBindingUpdateTasks(bindings, reconcile ? undefined : property))
+      return output
     }
-
-    const { bindings, history } = state
-    const output = method.apply(target, args)
-
-    change.value.current = [...target]
-    history.add(change)
-
-    runTasks(getBindingUpdateTasks(bindings, reconcile ? undefined : property))
-    return output
   }
 }
 

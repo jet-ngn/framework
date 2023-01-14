@@ -1,4 +1,4 @@
-import Template from './Template'
+import Template from './templates/Template'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import { sanitizeString } from '../../utilities/StringUtils'
 
