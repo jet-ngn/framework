@@ -108,20 +108,20 @@ export default class Application {
         return
       }
 
-      if (children.size === 0) {
-        for (const childView of childViews) {
-          stagedViews.delete(childView)
-        }
-
-        stagedViews.delete(view)
-        
-        return yield * getViewRenderingTasks(this, router.notFoundView, childViews, {
-          parentRouter: router,
-          childRouters: children
-        }, { replaceChildren: true }, stagedViews)
+      if (children.size > 0) {
+        return yield * this.#getRouterCollectionUpdateTasks(remaining, children, stagedViews) 
       }
 
-      yield * this.#getRouterCollectionUpdateTasks(remaining, children, stagedViews)
+      for (const childView of childViews) {
+        stagedViews.delete(childView)
+      }
+
+      stagedViews.delete(view)
+
+      yield * getViewRenderingTasks(this, router.notFoundView, childViews, {
+        parentRouter: router,
+        childRouters: children
+      }, { replaceChildren: true }, stagedViews)
     }
   }
 }
