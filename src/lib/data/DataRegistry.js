@@ -59,28 +59,24 @@ export function load (proxy, data) {
 }
 
 export function * getAttributeBindingRegistrationTasks (app, view, element, name, interpolation) {
-  yield * registerBinding(new AttributeBinding(...arguments)).getReconciliationTasks(true)
+  yield * getBindingRegistrationTasks(new AttributeBinding(...arguments))
 }
 
-export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, { retainFormatting }) {
-  const args = arguments
+export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, options, stagedViews) {
+  const args = [...arguments.slice(0, -1)]
   const binding = new DataBinding(app, view, interpolation)
 
   yield * binding.getReconciliationTasks(true, function * (init, { current }) {
-    if (Array.isArray(current)) {
-      return yield * registerBinding(new ArrayContentBinding(...args)).getReconciliationTasks({ init })
-    }
-
-    yield * registerBinding(new ContentBinding(...args)).getReconciliationTasks(true)
+    yield * getBindingRegistrationTasks(Array.isArray(current) ? new ArrayContentBinding(...args) : new ContentBinding(...args), stagedViews)
   })
 }
 
 export function * getPropertyBindingRegistrationTasks (app, view, node, name, interpolation) {
-  yield * registerBinding(new PropertyBinding(...arguments)).getReconciliationTasks(true)
+  yield * getBindingRegistrationTasks(new PropertyBinding(...arguments))
 }
 
-export function registerViewBinding (app, view, config, element, childViews, routers) {
-  return registerBinding(new ViewBinding(...arguments))
+export function * getViewBindingRegistrationTasks (app, view, element, config, childViews, routers) {
+  yield * getBindingRegistrationTasks(new ViewBinding(...arguments))
 }
 
 export function registerState (target, config) {
@@ -117,6 +113,10 @@ export function removeBindingsByView (view) {
 export function removeStateByProxy (proxy) {
   const state = getStateByProxy(proxy)
   states.delete(state)
+}
+
+function * getBindingRegistrationTasks (binding, stagedViews = null) {
+  yield * registerBinding(binding).getReconciliationTasks({ init: true }, stagedViews)
 }
 
 function makeState (target, type, config) {

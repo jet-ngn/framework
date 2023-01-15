@@ -10,7 +10,7 @@ export default class PropertyBinding extends DataBinding {
     this.#element = element
   }
 
-  * getReconciliationTasks (init = false) {
+  * getReconciliationTasks ({ init = false } = {}) {
     yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
   }
 

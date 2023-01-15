@@ -26,7 +26,7 @@ export default class Router {
       .reduce((result, path) => {
         const config = routes[path]
 
-        if (path === '404') {
+        if (['404', 404].includes(path)) {
           this.#notFoundConfig = config
           return result
         }
@@ -71,6 +71,14 @@ export default class Router {
 
   get previousView () {
     return this.#previousView
+  }
+
+  get notFoundView () {
+    return new View({
+      parent: this.#parentView,
+      element: this.#element,
+      config: this.#notFoundConfig
+    })
   }
 
   getMatchingView (path) {

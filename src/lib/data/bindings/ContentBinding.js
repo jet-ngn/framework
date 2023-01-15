@@ -8,11 +8,11 @@ import { reconcileNodes } from '../../rendering/Reconciler'
 import { sanitizeString } from '../../../utilities/StringUtils'
 
 export default class ContentBinding extends BaseContentBinding {
-  * getReconciliationTasks (init = false) {
-    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
+  * getReconciliationTasks ({ init = false } = {}, stagedViews) {
+    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this, stagedViews))
   }
 
-  * #getReconciliationTasks (init, { current }) {
+  * #getReconciliationTasks (stagedViews, init, { current }) {
     if (current === null || current?.length === 0) {
       return yield [`Replace nodes`, ({ next }) => {
         this.replace([this.placeholder])
@@ -23,8 +23,8 @@ export default class ContentBinding extends BaseContentBinding {
     // TODO: Support svg
     if (current instanceof HTMLTemplate) {
       const element = document.createElement('template')
-      
-      yield * getTemplateRenderingTasks(this.app, this.view, element, current, this.childViews, this.routers, null)
+
+      yield * getTemplateRenderingTasks(this.app, this.view, element, current, this.childViews, this.routers, stagedViews)
 
       // TODO: Try reconciling instead of always replacing?
       return yield [`Reconcile template`, ({ next }) => {
