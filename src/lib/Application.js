@@ -34,7 +34,9 @@ export default class Application {
     const views = new Set
 
     this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null, views), () => {
-      this.#runTasks(this.#getViewMountingTasks(views))
+      this.#runTasks(this.#getViewMountingTasks(views), () => {
+        console.log(this.#root)
+      })
     })
   }
 
@@ -120,7 +122,14 @@ export default class Application {
       stagedViews.delete(view)
       yield * getViewRemovalTasks(this, views, view, false)
 
-      yield * getViewRenderingTasks(this, router.notFoundView, childViews, {
+      view = router.notFoundView
+
+      yield [`Insert "${view.name}" view into tree`, ({ next }) => {
+        views.set(view, new Map)
+        next()
+      }]
+
+      yield * getViewRenderingTasks(this, view, childViews, {
         parentRouter: router,
         childRouters: children
       }, { replaceChildren: true }, stagedViews)
