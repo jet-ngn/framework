@@ -64,7 +64,7 @@ export function * getTemplateRenderingTasks (app, view, element, template, child
   }]
 }
 
-export function * getViewRemovalTasks (app, collection, view) {
+export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent = true) {
   const kids = app.getTreeNode(collection, view)
 
   if (kids) {
@@ -74,7 +74,7 @@ export function * getViewRemovalTasks (app, collection, view) {
   }
 
   yield [`Unmount "${view.name}" view`, async ({ next }) => {
-    await emitInternal(view, 'unmount')
+    fireUnmountEvent && await emitInternal(view, 'unmount')
     removeDOMEventsByView(view)
     removeEventsByView(view)
     removeBindingsByView(view)

@@ -114,9 +114,11 @@ export default class Application {
 
       for (const childView of childViews) {
         stagedViews.delete(childView)
+        yield * getViewRemovalTasks(this, childViews, childView, false)
       }
 
       stagedViews.delete(view)
+      yield * getViewRemovalTasks(this, views, view, false)
 
       yield * getViewRenderingTasks(this, router.notFoundView, childViews, {
         parentRouter: router,
