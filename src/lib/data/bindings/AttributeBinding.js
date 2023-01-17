@@ -4,6 +4,7 @@ import AttributeList from '../../AttributeList'
 export default class AttributeBinding extends DataBinding {
   #name
   #element
+  #list
 
   constructor (app, view, element, name, interpolation) {
     super(app, view, interpolation)
@@ -15,31 +16,31 @@ export default class AttributeBinding extends DataBinding {
     yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
   }
 
-  * #getReconciliationTasks (init, { previous, current }) {
+  * #getReconciliationTasks (init, { current }) {
     if ([undefined, null].some(value => current === value)) {
-      return yield [`Remove attribute`, ({ next }) => {
+      return yield [`Remove "${this.#name}" attribute`, ({ next }) => {
         this.#element.removeAttribute(this.#name)
         next()
       }]
     }
 
     if (Array.isArray(current)) {
-      const list = new AttributeList(this.app, this.view, this.#element, this.#name, current)
+      if (!this.#list) {
+        this.#list = new AttributeList(this.app, this.view, this.#element, this.#name, current)
+      }
 
-      return yield [`Set list attribute`, ({ next }) => {
-        this.#element.setAttribute(this.#name, list.value)
-        next()
-      }]
+      this.#list.update(current)
+      return yield * this.#list.getReconciliationTasks({ init: true })
     }
 
     if (typeof current !== 'boolean') {
-      return yield [`Set non-boolean attribute`, ({ next }) => {
+      return yield [`Set non-boolean "${this.#name}" attribute`, ({ next }) => {
         this.#element.setAttribute(this.#name, current)
         next()
       }]
     }
 
-    yield [`Set boolean attribute`, ({ next }) => {
+    yield [`Set boolean "${this.#name}" attribute`, ({ next }) => {
       current ? this.#element.setAttribute(this.#name, '')  : this.#element.removeAttribute(this.#name)
       next()
     }]

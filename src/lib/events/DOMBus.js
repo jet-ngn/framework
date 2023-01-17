@@ -56,11 +56,11 @@ function applyListeners (eventName) {
   return document.body.addEventListener(eventName, handler)
 }
 
-export function removeDOMEventsByNode (target) {
+export function removeDOMEventsByNode (target, includeParents = true) {
   const remainingEvents = new Set
 
   ;[...listeners.keys()].filter(({ event, node }) => {
-    const match = node === target || node.contains(target)
+    const match = node === target// || (includeParents && node.contains(target))
 
     if (!match) {
       remainingEvents.add(event)

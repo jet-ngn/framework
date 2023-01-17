@@ -36,14 +36,16 @@ export default class Application {
     const stagedViews = new Set
 
     this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null, stagedViews), () => {
-      this.#runTasks(this.#getViewMountingTasks(stagedViews), () => {
-        console.log(this.#root)
-      })
+      this.#runTasks(this.#getViewMountingTasks(stagedViews))
     })
   }
 
   update () {
-    this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers, false))
+    const stagedViews = new Set
+
+    this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers, stagedViews), () => {
+      this.#runTasks(this.#getViewMountingTasks(stagedViews))
+    })
   }
 
   * #getViewMountingTasks (views) {
@@ -52,6 +54,9 @@ export default class Application {
         await emitInternal(view, 'mount')
         next()
       }]
+      // if (view.config.on?.mount) {
+        
+      // }
     }
   }
 

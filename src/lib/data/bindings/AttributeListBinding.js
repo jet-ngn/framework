@@ -4,28 +4,41 @@ export default class AttributeListBinding extends DataBinding {
   #attribute
   #element
   #name
-  #isClass
   #dummy
+  #list
 
   constructor (list, interpolation) {
     super(list.app, list.view, interpolation)
     this.#element = list.element
     this.#name = list.name
-    this.#isClass = list.name === 'class'
     this.#dummy = list.dummy
+    this.#list = list
   }
 
   * getReconciliationTasks ({ init = false, method = null } = {}) {
     yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this, method))
   }
 
+  #processValue (value) {
+    return value.reduce((result, entry) => {
+      return [...result, ...(typeof entry === 'object' ? this.#list.processObject(entry, true) : [entry])]
+    }, [])
+  }
+
   * #getReconciliationTasks (method, init, { previous, current }) {
+    if (Array.isArray(previous)) {
+      previous = this.#processValue(previous)
+    }
+
+    if (Array.isArray(current)) {
+      current = this.#processValue(current)
+    }
+
     if (init) {
       return yield [`Initialize "${this.#name}" attribute list`, ({ next }) => {
         const existing = this.#element.getAttribute(this.#name).trim()
         this.#dummy.classList.add(...existing.split(' '), ...(Array.isArray(current) ? current : [current]).filter(Boolean))
         this.#element.setAttribute(this.#name, this.#dummy.classList.toString())
-        console.log(this.#dummy)
         next()
       }]
     }

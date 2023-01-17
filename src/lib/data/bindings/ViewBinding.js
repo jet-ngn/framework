@@ -34,9 +34,8 @@ export default class ViewBinding extends DataBinding {
       config: current
     })
 
-    // Handle stagedViews
-    yield * getViewRenderingTasks(this.app, view, children, this.#routers, { isChild: true })
-
+    console.info('Handle stagedViews in ViewBinding')
+    yield * getViewRenderingTasks(this.app, view, children, this.#routers)
     this.#boundView = view
   }
 }

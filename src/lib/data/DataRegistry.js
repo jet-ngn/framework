@@ -63,7 +63,7 @@ export function * getAttributeBindingRegistrationTasks (app, view, element, name
 }
 
 export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, options, stagedViews) {
-  const args = [...arguments.slice(0, -1)]
+  const args = [...arguments].slice(0, -1)
   const binding = new DataBinding(app, view, interpolation)
 
   yield * binding.getReconciliationTasks(true, function * (init, { current }) {
@@ -121,6 +121,12 @@ export function removeBindingsByView (view) {
     // if (state.bindings.length === 0) {
     //   states.delete(key)
     // }
+  }
+}
+
+export function removeBinding (binding) {
+  for (const [key, state] of states) {
+    console.log(state)
   }
 }
 

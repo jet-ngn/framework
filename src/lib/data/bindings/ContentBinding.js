@@ -12,7 +12,9 @@ export default class ContentBinding extends BaseContentBinding {
     yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this, stagedViews))
   }
 
-  * #getReconciliationTasks (stagedViews, init, { current }) {
+  * #getReconciliationTasks (stagedViews, init, change) {
+    const { current } = change
+
     if (current === null || current?.length === 0) {
       return yield [`Replace nodes`, ({ next }) => {
         this.replace([this.placeholder])
@@ -37,7 +39,7 @@ export default class ContentBinding extends BaseContentBinding {
     }
 
     yield [`${init ? `Initialize` : `Reconcile`} Content Binding`, ({ next }) => {
-      this.nodes = reconcileNodes(this.nodes, this.#getUpdate(arguments[1]))
+      this.nodes = reconcileNodes(this.nodes, this.#getUpdate(change))
       next()
     }]
   }

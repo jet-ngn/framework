@@ -12,7 +12,7 @@ export function reconcileNodes (original, update) {
       if (!newNode) {
         break
       }
-
+      
       result.at(-1).after(newNode)
       result.push(newNode)
       continue
@@ -23,7 +23,7 @@ export function reconcileNodes (original, update) {
       existingNode.remove()
       continue
     }
-
+    
     result.push(reconcileNode(existingNode, newNode))
   }
 
@@ -87,7 +87,7 @@ function reconcileNode (original, update) {
 
 function reconcileElementNode (original, update) {
   if (original.constructor.name !== update.constructor.name) {
-    removeDOMEventsByNode(original)
+    removeDOMEventsByNode(original, false)
     original.replaceWith(update)
     return update
   }
