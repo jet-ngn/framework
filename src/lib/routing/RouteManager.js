@@ -1,6 +1,13 @@
 import Route from './Route'
 import View from '../rendering/View'
+import Session from '../session/Session'
+
+import { getPermittedView } from '../../utilities/permissions'
+
 import NotFound from '../views/404.js'
+import Unauthorized from '../views/401.js'
+import Forbidden from '../views/403.js'
+
 import { Path } from '../../env'
 
 export default class Router {
@@ -91,12 +98,12 @@ export default class Router {
 
     if (match?.config !== this.#currentConfig) {
       this.#currentConfig = match?.config ?? this.#notFoundConfig
-    
-      this.#currentView = new View({
+
+      this.#currentView = getPermittedView(new View({
         parent: this.#parentView,
         element: this.#element,
         config: this.#currentConfig
-      })
+      }))
     }
 
     return this.#currentView

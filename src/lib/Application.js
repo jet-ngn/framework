@@ -1,8 +1,10 @@
 import View from './rendering/View'
 import RouteManager from './routing/RouteManager'
+
 import { getViewRemovalTasks, getViewRenderingTasks } from './rendering/Renderer'
 import { emitInternal } from './events/InternalBus'
 import { runTasks } from './TaskRunner'
+import { getPermittedView } from '../utilities/permissions'
 import { Plugins } from '../env'
 
 export default class Application {
@@ -12,11 +14,11 @@ export default class Application {
 
   constructor (element, config) {
     config.plugins?.forEach(({ install }) => install(Plugins))
-    this.#root = this.addChildView(this.#views, new View({ element, config }))
+    this.#root = this.addChildView(this.#views, { element, config })
   }
 
   addChildView (collection, config) {
-    const view = config instanceof View ? config : new View(config)
+    const view = getPermittedView(new View(config))
     const children = new Map
     collection.set(view, children)
     return [view, children]
@@ -31,10 +33,10 @@ export default class Application {
   }
 
   render () {
-    const views = new Set
+    const stagedViews = new Set
 
-    this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null, views), () => {
-      this.#runTasks(this.#getViewMountingTasks(views), () => {
+    this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null, stagedViews), () => {
+      this.#runTasks(this.#getViewMountingTasks(stagedViews), () => {
         console.log(this.#root)
       })
     })
@@ -85,6 +87,7 @@ export default class Application {
     }
   }
 
+  // TODO: Refactor!
   * #getRouterUpdateTasks (path, router, { views, children }, stagedViews) {
     let view = router.getMatchingView(path),
           { previousView } = router

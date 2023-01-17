@@ -79,6 +79,20 @@ export function * getViewBindingRegistrationTasks (app, view, element, config, c
   yield * getBindingRegistrationTasks(new ViewBinding(...arguments))
 }
 
+export function registerBinding (binding) {
+  for (const [proxy, properties] of binding.proxies) {
+    const state = getStateByProxy(proxy)
+
+    if (!state) {
+      throw new ReferenceError(`Cannot bind to unregistered Data State`)
+    }
+
+    state.addBinding(binding)
+  }
+
+  return binding
+}
+
 export function registerState (target, config) {
   let state = states.get(target)
 
@@ -129,20 +143,6 @@ function makeState (target, type, config) {
   }
 
   throw new TypeError(`Data States do not currently support "${target.constructor.name}" primitives.`)
-}
-
-function registerBinding (binding) {
-  for (const [proxy, properties] of binding.proxies) {
-    const state = getStateByProxy(proxy)
-
-    if (!state) {
-      throw new ReferenceError(`Cannot bind to unregistered Data State`)
-    }
-
-    state.addBinding(binding)
-  }
-
-  return binding
 }
 
 export function logBindings () {

@@ -1,7 +1,7 @@
-import DataBinding from './DataBinding'
+import DataBindingTaskGenerator from './DataBindingTaskGenerator'
 import AttributeList from '../../AttributeList'
 
-export default class AttributeBinding extends DataBinding {
+export default class AttributeBinding extends DataBindingTaskGenerator {
   #name
   #element
 
@@ -24,7 +24,7 @@ export default class AttributeBinding extends DataBinding {
     }
 
     if (Array.isArray(current)) {
-      const list = new AttributeList(current)
+      const list = new AttributeList(this.app, this.view, this.#element, this.#name, current)
 
       return yield [`Set list attribute`, ({ next }) => {
         this.#element.setAttribute(this.#name, list.value)

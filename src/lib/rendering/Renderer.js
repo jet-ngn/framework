@@ -1,8 +1,5 @@
-import Session from '../session/Session'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
-
-// import Unauthorized from './views/401.js'
-// import Forbidden from './views/403.js'
+import AttributeList from '../AttributeList'
 
 import { parseHTML } from '../parsing/HTMLParser'
 import { html } from '../parsing/tags'
@@ -73,44 +70,54 @@ export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent =
     }
   }
 
-  yield [`Unmount "${view.name}" view`, async ({ next }) => {
-    fireUnmountEvent && await emitInternal(view, 'unmount')
+  const { name } = view
+
+  fireUnmountEvent && [`Run "${name}" unmount handler`, async ({ next }) => {
+    await emitInternal(view, 'unmount')
+    next()
+  }]
+
+  yield [`Remove "${name}" view event handlers`, ({ next }) => {
     removeDOMEventsByView(view)
     removeEventsByView(view)
+    next()
+  }]
+
+  yield [`Remove "${name}" view bindings`, ({ next }) => {
     removeBindingsByView(view)
+    next()
+  }]
+
+  yield [`Remove "${name}" view from tree`, async ({ next }) => {
     app.removeTreeNode(collection, view)
     next()
   }]
 }
 
 export function * getViewRenderingTasks (app, view, childViews, routers, options, stagedViews) {
-  const { name, config } = view
-
-  // TODO: Handle permissions
+  const { config, name } = view
 
   if (config.on?.hasOwnProperty('beforeMount')) {
-    let stop = false
-
-    yield [`Run "${name}" beforeMount handler`, async ({ next, restart }) => {
+    yield [`Run "${name}" view beforeMount tasks (if applicable)`, async ({ next, restart }) => {
+      let stop = false
+  
       await emitInternal(view, 'beforeMount', {
         abort: () => stop = true
       })
-
+  
       if (!stop) {
         return next()
       }
-
+  
       await emitInternal(view, 'abortMount', {
         resume: () => next(),
         retry: () => restart()
       })
-    }]
+    }] 
   }
   
   yield * getTemplateRenderingTasks(app, view, view.element, view.config.render?.call(view) ?? html``, childViews, routers, options, stagedViews)
-
   stagedViews.add(view)
-  
 }
 
 function * getAttributeApplicationTasks (app, view, element, attribute, value) {
@@ -121,7 +128,8 @@ function * getAttributeApplicationTasks (app, view, element, attribute, value) {
   const existing = element.getAttribute(attribute)?.trim().split(' ').map(item => item.trim()) ?? []
 
   if (Array.isArray(value)) {
-    return yield * getAttributeListBindingTasks(app, view, element, attribute, [...(existing ?? []), ...value])
+    const list = new AttributeList(app, view, element, attribute, [...(existing ?? []), ...value])
+    return yield * list.getReconciliationTasks({ init: true })
   }
 
   const type = typeof value
