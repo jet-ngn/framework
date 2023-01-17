@@ -10,6 +10,7 @@ export default class AttributeList {
   #element
   #name
   #list
+  #dummy = document.createElement('template')
 
   constructor (app, view, element, name, list) {
     this.#app = app
@@ -34,6 +35,10 @@ export default class AttributeList {
 
   get app () {
     return this.#app
+  }
+
+  get dummy () {
+    return this.#dummy
   }
 
   get element () {

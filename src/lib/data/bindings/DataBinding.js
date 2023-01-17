@@ -52,6 +52,7 @@ export default class DataBinding extends DataBindingInterpolation {
     }
 
     let result = this.transform(...args)
+    result = Array.isArray(result) ? [...result] : result
 
     if (result !== previous) {
       this.#value = result ?? null

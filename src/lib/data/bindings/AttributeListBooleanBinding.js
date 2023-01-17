@@ -4,13 +4,14 @@ export default class AttributeListBooleanBinding extends DataBinding {
   #element
   #entry
   #name
-  #isClass
+  #dummy
 
   constructor (list, entry, interpolation) {
     super(list.app, list.view, interpolation)
     this.#element = list.element
     this.#name = list.name
     this.#entry = entry
+    this.#dummy = list.dummy
   }
 
   * getReconciliationTasks ({ init = false } = {}) {
@@ -20,13 +21,15 @@ export default class AttributeListBooleanBinding extends DataBinding {
   * #getReconciliationTasks (init, { current }) {
     if (!current) {
       return yield [`Remove conditional attribute "${this.#entry}" from "${this.#name}" list`, ({ next }) => {
-        this.#element.setAttribute(this.#name, this.#element.getAttribute(this.#name).replace(this.#entry, '').replace(/\s+/g,' ').trim())
+        this.#dummy.classList.remove(this.#entry)
+        this.#element.setAttribute(this.#name, this.#dummy.classList.toString())
         next()
       }]
     }
 
     yield [`Add conditional attribute "${this.#entry}" to "${this.#name}" list`, ({ next }) => {
-      this.#element.setAttribute(this.#name, `${this.#element.getAttribute(this.#name)} ${this.#entry}`.trim())
+      this.#dummy.classList.add(this.#entry)
+      this.#element.setAttribute(this.#name, this.#dummy.classList.toString())
       next()
     }]
   }
