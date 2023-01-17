@@ -1,7 +1,7 @@
-import DataBindingTaskGenerator from './DataBindingTaskGenerator'
+import DataBinding from './DataBinding'
 import AttributeList from '../../AttributeList'
 
-export default class AttributeBinding extends DataBindingTaskGenerator {
+export default class AttributeBinding extends DataBinding {
   #name
   #element
 
