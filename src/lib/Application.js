@@ -3,7 +3,7 @@ import RouteManager from './routing/RouteManager'
 
 import { runTasks } from './TaskRunner'
 import { Plugins } from '../env'
-import { getViewMountingTasks, getViewRemovalTasks, getViewRenderingTasks } from './rendering/Renderer'
+import { getViewRemovalTasks, getViewRenderingTasks } from './rendering/Renderer'
 import { getPermittedView } from '../utilities/permissions'
 
 export default class Application {
@@ -14,6 +14,18 @@ export default class Application {
   constructor (element, config) {
     config.plugins?.forEach(({ install }) => install(Plugins))
     this.#root = this.addChildView(this.#views, { element, config })
+  }
+
+  addChildRouter (collection, target, config) {
+    const router = new RouteManager(config)
+
+    config = {
+      views: target,
+      children: new Map
+    }
+
+    collection = collection ?? this.#routers
+    collection.set(router, config)
   }
 
   addChildView (collection, config) {
@@ -31,20 +43,16 @@ export default class Application {
     collection.delete(view)
   }
 
-  render () {
-    const stagedViews = new Set
+  // removeRoutersByView (view) {
+  //   this.#removeRoutersFromCollectionByView()
+  // }
 
-    this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null, stagedViews), () => {
-      this.#runTasks(getViewMountingTasks(stagedViews))
-    })
+  render () {
+    this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null), () => this.update())
   }
 
   update () {
-    const stagedViews = new Set
-
-    this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers, stagedViews), () => {
-      this.#runTasks(getViewMountingTasks(stagedViews))
-    })
+    this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers))
   }
 
   #runTasks (tasks, callback) {
@@ -59,46 +67,51 @@ export default class Application {
     runTasks(tasks, handlers)
   }
 
-  * getChildRouterInitializationTasks (collection, target, config, stagedViews) {
-    const router = new RouteManager(config)
-
-    config = {
-      views: target,
-      children: new Map
-    }
-
-    collection = collection ?? this.#routers
-    collection.set(router, config)
-    
-    yield * this.#getRouterUpdateTasks(location.pathname, router, config, stagedViews)
-  }
-
-  * #getRouterCollectionUpdateTasks (path, routers, stagedViews) {
+  * #getRouterCollectionUpdateTasks (path, routers) {
+    // console.log('---', path)
     for (const [router, { views, children }] of routers) {
-      yield * this.#getRouterUpdateTasks(path, router, { views, children }, stagedViews)
+      yield * this.#getRouterUpdateTasks(path, routers, router, { views, children })
     }
   }
 
-  * #getRouterUpdateTasks (path, router, { views, children }, stagedViews) {
+  #removeRoutersByView (collection, view) {
+    for (const [router] of collection) {
+      if (router.parentView === view) {
+        collection.delete(router)
+      }
+    }
+  }
+
+  * #getRouterUpdateTasks (path, routers, router, { views, children }) {
     let view = router.getMatchingView(path),
         { previousView } = router,
         isMounted = previousView === view
 
-    if (!isMounted) {
-      previousView && (yield * getViewRemovalTasks(this, views, previousView, stagedViews))
-      yield this.#getTreeInsertTask(views, view) 
+    if (!isMounted && previousView) {
+      yield * getViewRemovalTasks(this, views, previousView)
+
+      yield [`Remove routers associated with "${previousView.name}"`, ({ next }) => {
+        this.#removeRoutersByView(children, previousView)
+        next()
+      }]
     }
 
+    !!view && (yield this.#getTreeInsertTask(views, view))
+
+    if (!view) {
+      return
+    }
+    
     const childViews = views.get(view)
 
     if (!isMounted) {
-      yield * this.#getMatchedViewRenderingTasks(view, childViews, router, children, stagedViews)
+      yield * this.#getMatchedViewRenderingTasks(view, childViews, router, children)
     }
 
     const { remaining } = router.path
-    
+
     if (children.size > 0) {
-      return yield * this.#getRouterCollectionUpdateTasks(remaining, children, stagedViews)
+      return yield * this.#getRouterCollectionUpdateTasks(remaining, children)
     }
 
     if (!remaining) {
@@ -107,22 +120,21 @@ export default class Application {
 
     if (childViews) {
       for (const childView of childViews) {
-        yield * getViewRemovalTasks(this, childViews, childView, stagedViews, false)
+        yield * getViewRemovalTasks(this, childViews, childView, false)
       }
     }
 
-    stagedViews.delete(view)
-    yield * getViewRemovalTasks(this, views, view, stagedViews, false)
+    yield * getViewRemovalTasks(this, views, view, false)
     view = router.notFoundView
     yield this.#getTreeInsertTask(views, view)
-    yield * this.#getMatchedViewRenderingTasks(view, childViews, router, children, stagedViews)
+    yield * this.#getMatchedViewRenderingTasks(view, childViews, router, children)
   }
 
-  * #getMatchedViewRenderingTasks (view, childViews, router, children, stagedViews) {
+  * #getMatchedViewRenderingTasks (view, childViews, router, children) {
     yield * getViewRenderingTasks(this, view, childViews, {
       parentRouter: router,
       childRouters: children
-    }, { replaceChildren: true }, stagedViews)
+    }, { replaceChildren: true })
   }
 
   #getTreeInsertTask (views, view) {

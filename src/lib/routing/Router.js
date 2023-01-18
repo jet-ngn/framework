@@ -1,4 +1,5 @@
 import { Path } from '../../env'
+import { getRouteSlugs } from './RouteManager'
 
 export default class Router {
   static get base () {
@@ -13,5 +14,11 @@ export default class Router {
 
   static get vars () {
     return { ...(Path.vars ?? {}) }
+  }
+
+  static pathMatches (path) {
+    const slugs = getRouteSlugs(path)
+    const locationSlugs = getRouteSlugs(location.pathname)
+    return locationSlugs.every((slug, i) => slug === slugs[i])
   }
 }

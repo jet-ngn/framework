@@ -62,12 +62,12 @@ export function * getAttributeBindingRegistrationTasks (app, view, element, name
   yield * getBindingRegistrationTasks(new AttributeBinding(...arguments))
 }
 
-export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, options, stagedViews) {
-  const args = [...arguments].slice(0, -1)
+export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, options) {
+  const args = arguments
   const binding = new DataBinding(app, view, interpolation)
 
   yield * binding.getReconciliationTasks(true, function * (init, { current }) {
-    yield * getBindingRegistrationTasks(Array.isArray(current) ? new ArrayContentBinding(...args) : new ContentBinding(...args), stagedViews)
+    yield * getBindingRegistrationTasks(Array.isArray(current) ? new ArrayContentBinding(...args) : new ContentBinding(...args))
   })
 }
 
@@ -135,8 +135,8 @@ export function removeStateByProxy (proxy) {
   states.delete(state)
 }
 
-function * getBindingRegistrationTasks (binding, stagedViews = null) {
-  yield * registerBinding(binding).getReconciliationTasks({ init: true }, stagedViews)
+function * getBindingRegistrationTasks (binding) {
+  yield * registerBinding(binding).getReconciliationTasks({ init: true })
 }
 
 function makeState (target, type, config) {

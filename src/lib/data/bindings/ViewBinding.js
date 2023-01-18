@@ -1,5 +1,5 @@
 import DataBinding from './DataBinding'
-import { getViewMountingTasks, getViewRemovalTasks, getViewRenderingTasks } from '../../rendering/Renderer'
+import { getViewRemovalTasks, getViewRenderingTasks } from '../../rendering/Renderer'
 
 export default class ViewBinding extends DataBinding {
   #boundView = null
@@ -34,12 +34,7 @@ export default class ViewBinding extends DataBinding {
       config: current
     })
 
-    const stagedViews = new Set
-
-    yield * getViewRenderingTasks(this.app, view, children, this.#routers, null, stagedViews)
-    
+    yield * getViewRenderingTasks(this.app, view, children, this.#routers, null)
     this.#boundView = view
-
-    yield * getViewMountingTasks(stagedViews)
   }
 }

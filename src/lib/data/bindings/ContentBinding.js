@@ -8,11 +8,11 @@ import { reconcileNodes } from '../../rendering/Reconciler'
 import { sanitizeString } from '../../../utilities/StringUtils'
 
 export default class ContentBinding extends BaseContentBinding {
-  * getReconciliationTasks ({ init = false } = {}, stagedViews) {
-    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this, stagedViews))
+  * getReconciliationTasks ({ init = false } = {}) {
+    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
   }
 
-  * #getReconciliationTasks (stagedViews, init, change) {
+  * #getReconciliationTasks (init, change) {
     const { current } = change
 
     if (current === null || current?.length === 0) {
@@ -26,7 +26,7 @@ export default class ContentBinding extends BaseContentBinding {
     if (current instanceof HTMLTemplate) {
       const element = document.createElement('template')
 
-      yield * getTemplateRenderingTasks(this.app, this.view, element, current, this.childViews, this.routers, stagedViews)
+      yield * getTemplateRenderingTasks(this.app, this.view, element, current, this.childViews, this.routers)
 
       // TODO: Try reconciling instead of always replacing?
       return yield [`Reconcile template`, ({ next }) => {

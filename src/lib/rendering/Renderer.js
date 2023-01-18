@@ -3,7 +3,7 @@ import AttributeList from '../AttributeList'
 
 import { parseHTML } from '../parsing/HTMLParser'
 import { html } from '../parsing/tags'
-import { removeEventsByView } from '../events/Bus'
+import { logEvents, removeEventsByView } from '../events/Bus'
 import { emitInternal } from '../events/InternalBus'
 import { addDOMEventHandler, removeDOMEventsByNode, removeDOMEventsByView } from '../events/DOMBus'
 
@@ -15,7 +15,7 @@ import {
   removeBindingsByView,
 } from '../data/DataRegistry'
 
-export function * getTemplateRenderingTasks (app, view, element, template, childViews, routers, options, stagedViews) {
+export function * getTemplateRenderingTasks (app, view, element, template, childViews, routers, options) {
   const retainFormatting = element.tagName === 'PRE',
         { replace = false, append = false } = options ?? {},
         { name } = view,
@@ -28,22 +28,22 @@ export function * getTemplateRenderingTasks (app, view, element, template, child
   if (attributes) yield * getAttributeBindingTasks(app, view, firstElementChild, attributes, hasMultipleNodes)
   if (listeners) yield * getListenerBindingTasks(view, firstElementChild, listeners, hasMultipleNodes)
 
-  for (const id in templates) yield * getTemplateRenderingTasks(app, view, fragment.getElementById(id), templates[id], childViews, routers, { replace: true }, stagedViews)
-  for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, fragment.getElementById(id), bindings[id], childViews, routers, { retainFormatting }, stagedViews)
+  for (const id in templates) yield * getTemplateRenderingTasks(app, view, fragment.getElementById(id), templates[id], childViews, routers, { replace: true })
+  for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, fragment.getElementById(id), bindings[id], childViews, routers, { retainFormatting })
   
-  if (viewConfig) yield * getChildViewRenderingTasks(app, view, firstElementChild, viewConfig, childViews, routers, stagedViews)  
+  if (viewConfig) yield * getChildViewRenderingTasks(app, view, firstElementChild, viewConfig, childViews, routers)  
   
   else if (routeConfig) {
     const { childRouters, parentRouter } = routers ?? {}
     
-    yield * app.getChildRouterInitializationTasks(childRouters, childViews, {
+    app.addChildRouter(childRouters, childViews, {
       parentView: view,
       parentRouter,
       element: firstElementChild,
       routes: routeConfig
-    }, stagedViews)
+    })
   }
-
+  
   yield [`${replace ? `Insert child template into "${name}" view root element` : `Insert "${name}" view template into parent element`}`, async ({ next }) => {
     if (replace) {
       removeDOMEventsByNode(element)
@@ -61,53 +61,45 @@ export function * getTemplateRenderingTasks (app, view, element, template, child
   }]
 }
 
-export function * getViewMountingTasks (views) {
-  for (const view of views) {
-    if (view.config.on?.mount) {
-      yield [`Fire "${view.name}" view "mount" event`, async ({ next }) => {
-        await emitInternal(view, 'mount')
-        next()
-      }] 
-    }
-  }
-}
-
-export function * getViewRemovalTasks (app, collection, view, stagedViews, fireUnmountEvent = true) {
+export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent = true) {
   const kids = app.getTreeNode(collection, view)
 
   if (kids) {
     for (const [child] of kids) {
-      yield * getViewRemovalTasks(app, kids, child, stagedViews, fireUnmountEvent)
+      yield * getViewRemovalTasks(app, kids, child, fireUnmountEvent)
     }
   }
 
   const { name } = view
 
   fireUnmountEvent && (yield [`Run "${name}" unmount handler`, async ({ next }) => {
+    // console.log(`Run "${name}" unmount handler`)
     await emitInternal(view, 'unmount')
     next()
   }])
 
   yield [`Remove "${name}" view event handlers`, ({ next }) => {
+    // console.log(`Remove "${name}" events`)
     removeDOMEventsByView(view)
     removeEventsByView(view)
+    // logEvents()
     next()
   }]
 
   yield [`Remove "${name}" view bindings`, ({ next }) => {
+    // console.log(`Remove "${name}" bindings`)
     removeBindingsByView(view)
     next()
   }]
 
   yield [`Remove "${name}" view from tree`, async ({ next }) => {
+    // console.log(`Remove "${name}" from tree`)
     app.removeTreeNode(collection, view)
     next()
   }]
-
-  stagedViews && stagedViews.delete(view)
 }
 
-export function * getViewRenderingTasks (app, view, childViews, routers, options, stagedViews) {
+export function * getViewRenderingTasks (app, view, childViews, routers, options) {
   const { config, name } = view
 
   if (config.on?.hasOwnProperty('beforeMount')) {
@@ -129,8 +121,12 @@ export function * getViewRenderingTasks (app, view, childViews, routers, options
     }] 
   }
   
-  yield * getTemplateRenderingTasks(app, view, view.element, view.config.render?.call(view) ?? html``, childViews, routers, options, stagedViews)
-  stagedViews.add(view)
+  yield * getTemplateRenderingTasks(app, view, view.element, view.config.render?.call(view) ?? html``, childViews, routers, options)
+
+  yield [`Fire "${name}" view "mount" event`, async ({ next }) => {
+    await emitInternal(view, 'mount')
+    next()
+  }]
 }
 
 function * getAttributeApplicationTasks (app, view, element, attribute, value) {
@@ -208,14 +204,14 @@ function * getPropertyBindingTasks (app, view, element, properties, hasMultipleN
   }
 }
 
-function * getChildViewRenderingTasks (app, view, element, viewConfig, childViews, routers, stagedViews) {
+function * getChildViewRenderingTasks (app, view, element, viewConfig, childViews, routers) {
   if (viewConfig instanceof DataBindingInterpolation) yield * getViewBindingRegistrationTasks(...arguments)
   
   else yield * getViewRenderingTasks(app, ...app.addChildView(childViews, {
     parent: view,
     element,
     config: viewConfig
-  }), routers, null, stagedViews)
+  }), routers)
 }
 
 function validateBinding (item, element, hasMultipleNodes) {

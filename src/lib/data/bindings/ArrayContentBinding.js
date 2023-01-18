@@ -6,14 +6,14 @@ import { removeDOMEventsByNode } from '../../events/DOMBus'
 // TODO: Support attached views/routers?
 
 export default class ArrayContentBinding extends BaseContentBinding {
-  * getReconciliationTasks ({ init = false, method = null } = {}, stagedViews) {
-    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this, method, stagedViews))
+  * getReconciliationTasks ({ init = false, method = null } = {}) {
+    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this, method))
   }
 
-  * #getReconciliationTasks (method, stagedViews, init, { previous, current }) {
+  * #getReconciliationTasks (method, init, { previous, current }) {
     if (!!method) {
       switch (method) {
-        case 'push': return yield * this.#push(previous, current, stagedViews)
+        case 'push': return yield * this.#push(previous, current)
         case 'pop': return yield * this.#pop()
         case 'shift': return yield * this.#shift()
         case 'unshift': return yield * this.#unshift(previous)
@@ -31,7 +31,7 @@ export default class ArrayContentBinding extends BaseContentBinding {
     const templateElement = document.createElement('template')
 
     for (const template of current) {
-      yield * getTemplateRenderingTasks(this.app, this.view, templateElement, template, this.childViews, this.routers, { append: true }, stagedViews)
+      yield * getTemplateRenderingTasks(this.app, this.view, templateElement, template, this.childViews, this.routers, { append: true })
     }
 
     if (init) {
@@ -61,12 +61,12 @@ export default class ArrayContentBinding extends BaseContentBinding {
     }]
   }
 
-  * #push (previous, current, stagedViews) {
+  * #push (previous, current) {
     const templates = current.slice((current.length - previous.length) * -1)
     const element = document.createElement('template')
     
     for (const template of templates) {
-      yield * getTemplateRenderingTasks(this.app, this.view, element, template, this.childViews, this.routers, { append: true }, stagedViews)
+      yield * getTemplateRenderingTasks(this.app, this.view, element, template, this.childViews, this.routers, { append: true })
     }
 
     yield [`Append template`, ({ next }) => {
@@ -100,12 +100,11 @@ export default class ArrayContentBinding extends BaseContentBinding {
   }
 
   * #unshift (...args) {
-    const stagedViews = args.pop()
     const templates = this.value.slice(0, args.length)
     const element = document.createElement('template')
     
     for (const template of templates) {
-      yield * getTemplateRenderingTasks(this.app, this.view, template, element, this.childViews, this.routers, { append: true }, stagedViews)
+      yield * getTemplateRenderingTasks(this.app, this.view, template, element, this.childViews, this.routers, { append: true })
     }
 
     yield [`Prepend template`, ({ next }) => {
