@@ -1,12 +1,12 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 import AttributeBinding from './bindings/AttributeBinding'
-import AttributeListBinding from './bindings/AttributeListBinding'
-import AttributeListBooleanBinding from './bindings/AttributeListBooleanBinding'
+import ArrayContentBinding from './bindings/ArrayContentBinding'
 import ContentBinding from './bindings/ContentBinding'
 import PropertyBinding from './bindings/PropertyBinding'
 import ViewBinding from './bindings/ViewBinding'
 import StateArray from './states/StateArray'
 import StateObject from './states/StateObject'
+import DataBinding from './bindings/DataBinding'
 
 export const states = new Map
 
@@ -58,28 +58,39 @@ export function load (proxy, data) {
   state.load(data)
 }
 
-export function registerAttributeBinding (app, view, node, name, interpolation) {
-  return registerBinding(new AttributeBinding(...arguments))
+export function * getAttributeBindingRegistrationTasks (app, view, element, name, interpolation) {
+  yield * getBindingRegistrationTasks(new AttributeBinding(...arguments))
 }
 
-export function registerAttributeListBinding (app, view, list, interpolation) {
-  return registerBinding(new AttributeListBinding(...arguments))
+export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, options) {
+  const args = arguments
+  const binding = new DataBinding(app, view, interpolation)
+
+  yield * binding.getReconciliationTasks(true, function * (init, { current }) {
+    yield * getBindingRegistrationTasks(Array.isArray(current) ? new ArrayContentBinding(...args) : new ContentBinding(...args))
+  })
 }
 
-export function registerAttributeListBooleanBinding (app, view, list, name, interpolation) {
-  return registerBinding(new AttributeListBooleanBinding(...arguments))
+export function * getPropertyBindingRegistrationTasks (app, view, node, name, interpolation) {
+  yield * getBindingRegistrationTasks(new PropertyBinding(...arguments))
 }
 
-export function registerContentBinding (app, view, interpolation, element, childViews, routers, { retainFormatting }) {
-  return registerBinding(new ContentBinding(...arguments))
+export function * getViewBindingRegistrationTasks (app, view, element, config, childViews, routers) {
+  yield * getBindingRegistrationTasks(new ViewBinding(...arguments))
 }
 
-export function registerPropertyBinding (app, view, node, name, interpolation) {
-  return registerBinding(new PropertyBinding(...arguments))
-}
+export function registerBinding (binding) {
+  for (const [proxy, properties] of binding.proxies) {
+    const state = getStateByProxy(proxy)
 
-export function registerViewBinding (app, view, config, element, childViews, routers) {
-  return registerBinding(new ViewBinding(...arguments))
+    if (!state) {
+      throw new ReferenceError(`Cannot bind to unregistered Data State`)
+    }
+
+    state.addBinding(binding)
+  }
+
+  return binding
 }
 
 export function registerState (target, config) {
@@ -113,9 +124,19 @@ export function removeBindingsByView (view) {
   }
 }
 
+export function removeBinding (binding) {
+  for (const [key, state] of states) {
+    console.log(state)
+  }
+}
+
 export function removeStateByProxy (proxy) {
   const state = getStateByProxy(proxy)
   states.delete(state)
+}
+
+function * getBindingRegistrationTasks (binding) {
+  yield * registerBinding(binding).getReconciliationTasks({ init: true })
 }
 
 function makeState (target, type, config) {
@@ -130,24 +151,10 @@ function makeState (target, type, config) {
   throw new TypeError(`Data States do not currently support "${target.constructor.name}" primitives.`)
 }
 
-function registerBinding (binding) {
-  for (const [proxy, properties] of binding.proxies) {
-    const state = getStateByProxy(proxy)
-
-    if (!state) {
-      throw new ReferenceError(`Cannot bind to unregistered Data State`)
-    }
-
-    state.addBinding(binding)
-  }
-
-  return binding
+export function logBindings () {
+  console.log(states);
+  console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
 }
-
-// export function logBindings () {
-//   console.log(states);
-//   console.log([...states].reduce((result, [key, { bindings }]) => [...result, ...bindings], []))
-// }
 
 // export function removeBindings () {
 //   for (let [key, state] of states) {

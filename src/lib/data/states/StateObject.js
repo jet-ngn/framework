@@ -1,5 +1,6 @@
-import { load } from '../DataRegistry'
 import State from './State'
+import { load } from '../DataRegistry'
+import { runTasks } from '../../TaskRunner'
 
 export default class StateObject extends State {
   #model
@@ -32,16 +33,8 @@ export default class StateObject extends State {
             }
           }
         })
-  
-        for (let binding of bindings) {
-          const properties = binding.proxies.get(proxy)
 
-          if (properties.length === 0 || properties.includes(property)) {
-            binding.reconcile()
-          }
-          // (properties.length === 0 || properties.includes(property)) && binding.reconcile()
-        }
-  
+        runTasks(this.#getBindingUpdateTasks(proxy, bindings, property))
         return true
       }
     }), config)
@@ -51,20 +44,6 @@ export default class StateObject extends State {
     this.#states = states
 
     this.#initialize()
-  }
-
-  #initialize () {
-    for (let property in this.#properties) {
-      this.#addProperty(property)
-    }
-    
-    for (let state in this.#states) {
-      this.proxy[state] = this.getProxy(this.#states[state])
-    }
-  }
-
-  #addProperty (property) {
-    this.proxy[property] = this.#properties[property]
   }
 
   clear () {
@@ -112,6 +91,30 @@ export default class StateObject extends State {
       }
 
       delete this.proxy[key]
+    }
+  }
+
+  #initialize () {
+    for (let property in this.#properties) {
+      this.#addProperty(property)
+    }
+    
+    for (let state in this.#states) {
+      this.proxy[state] = this.getProxy(this.#states[state])
+    }
+  }
+
+  #addProperty (property) {
+    this.proxy[property] = this.#properties[property]
+  }
+
+  * #getBindingUpdateTasks (proxy, bindings, property) {
+    for (let binding of bindings) {
+      const properties = binding.proxies.get(proxy)
+
+      if (properties.length === 0 || properties.includes(property)) {
+        yield * binding.getReconciliationTasks()
+      }
     }
   }
 }

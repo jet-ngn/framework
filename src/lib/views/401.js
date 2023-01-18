@@ -1,9 +1,9 @@
-import { html } from '../tags'
+import { html } from '../parsing/tags'
 
 export default {
   name: '401 Unauthorized',
 
-  get template () {
+  render () {
     return html`
       <div class="unauthorized">
         401 Unauthorized

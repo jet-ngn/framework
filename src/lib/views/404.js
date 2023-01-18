@@ -1,9 +1,9 @@
-import { html } from '../tags'
+import { html } from '../parsing/tags'
 
 export default {
   name: '404 Not Found',
 
-  get template () {
+  render () {
     return html`
       <div class="not_found">
         404 Not Found

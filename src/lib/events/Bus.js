@@ -1,5 +1,4 @@
 import EventHandler from './EventHandler'
-import { INTERNAL_ACCESS_KEY } from '../../env'
 
 export let listeners = new Map
 export let views = new Map
@@ -40,10 +39,6 @@ export function addHandler (view, evt, cb, cfg) {
   }
 
   return registerHandler(...arguments)
-}
-
-export async function emitInternal (view, evt, ...args) {
-  await view.emit(INTERNAL_ACCESS_KEY, evt, ...args)
 }
 
 function pool (view, namespace, cfg) {
@@ -109,4 +104,9 @@ export function removeEventsByView (view) {
 
   Object.keys(stored).forEach(evt => Bus.off(`${view.scope}.${evt}`, stored[evt]))
   views.delete(view)
+}
+
+export function logEvents () {
+  console.log(listeners)
+  console.log(views)
 }

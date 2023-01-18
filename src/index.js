@@ -1,6 +1,6 @@
-import Application from './Application'
-import { Path, Plugins } from './env'
+import Application from './lib/Application'
 import StateFactory from './lib/data/StateFactory'
+import { Path, Plugins } from './env'
 
 let App
 let appConfig
@@ -59,7 +59,7 @@ function run () {
   App.render()
 }
 
-export { css, html, svg } from './lib/rendering/tags'
+export { css, html, svg } from './lib/parsing/tags'
 export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
 export { default as Router } from './lib/routing/Router'

@@ -1,202 +1,220 @@
-import Session from '../session/Session'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
-import AttributeList from './AttributeList'
+import AttributeList from '../AttributeList'
 
-import Unauthorized from './views/401.js'
-import Forbidden from './views/403.js'
-
-import { parseHTML } from './HTMLParser'
-import { emitInternal, removeEventsByView } from '../events/Bus'
-import { addDOMEventHandler, removeDOMEventsByView } from '../events/DOMBus'
-import { html } from './tags'
+import { parseHTML } from '../parsing/HTMLParser'
+import { html } from '../parsing/tags'
+import { logEvents, removeEventsByView } from '../events/Bus'
+import { emitInternal } from '../events/InternalBus'
+import { addDOMEventHandler, removeDOMEventsByNode, removeDOMEventsByView } from '../events/DOMBus'
 
 import {
-  registerContentBinding,
-  registerAttributeBinding,
-  registerPropertyBinding,
-  registerViewBinding,
-  removeBindingsByView
+  getContentBindingRegistrationTasks,
+  getAttributeBindingRegistrationTasks,
+  getPropertyBindingRegistrationTasks,
+  getViewBindingRegistrationTasks,
+  removeBindingsByView,
 } from '../data/DataRegistry'
 
-export function renderView (app, view, childViews, routers, options, callback) {
-  const config = { app, view, childViews, routers, options }
-  // TODO: Check permissions
-  runTasks(getViewRenderingTasks(...Object.values(config)), config, callback)
-}
-
-export async function unmountView (view) {
-  await emitInternal(view, 'unmount')
-  removeDOMEventsByView(view)
-  removeEventsByView(view)
-  removeBindingsByView(view)
-}
-
-export function runTasks (tasks, config, callback) {
-  const { value, done } = tasks.next()
-
-  if (done) {
-    return callback && callback()
-  }
-
-  const [name, handler] = value
-  // console.log(name);
-  handler({
-    next: () => runTasks(...arguments),
-    restart: () => renderView(...[...arguments].slice(1))
-  })
-}
-
-export function * getTemplateRenderingTasks (app, view, template, targetElement, childViews, routers, options) {
-  const retainFormatting = targetElement.tagName === 'PRE',
-        { replace = false, replaceChildren = false } = options ?? {},
+export function * getTemplateRenderingTasks (app, view, element, template, childViews, routers, options) {
+  const retainFormatting = element.tagName === 'PRE',
+        { replace = false, append = false } = options ?? {},
         { name } = view,
         { attributes, properties, listeners, viewConfig, routeConfig } = template,
         { bindings, fragment, templates } = parseHTML(template, { retainFormatting }),
-        element = fragment.firstElementChild,
-        hasMultipleNodes = fragment.children.length > 1,
-        args = [element, hasMultipleNodes]
-
-  if (properties) yield [`Apply properties`, ({ next }) => {
-    bind('properties', app, view, properties, ...args, setProperty)
-    next()
-  }]
+        { firstElementChild } = fragment,
+        hasMultipleNodes = fragment.children.length > 1
   
-  if (attributes) yield [`Apply attributes`, ({ next }) => {
-    bind('attributes', app, view, attributes, ...args, setAttribute)
-    next()
-  }]
+  if (properties) yield * getPropertyBindingTasks(app, view, firstElementChild, properties, hasMultipleNodes)
+  if (attributes) yield * getAttributeBindingTasks(app, view, firstElementChild, attributes, hasMultipleNodes)
+  if (listeners) yield * getListenerBindingTasks(view, firstElementChild, listeners, hasMultipleNodes)
 
-  if (listeners) yield [`Apply listeners`, ({ next }) => {
-    bindListeners(view, listeners, ...args)
-    next()
-  }]
+  for (const id in templates) yield * getTemplateRenderingTasks(app, view, fragment.getElementById(id), templates[id], childViews, routers, { replace: true })
+  for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, fragment.getElementById(id), bindings[id], childViews, routers, { retainFormatting })
 
-  for (const id in templates) yield * getTemplateRenderingTasks(app, view, templates[id], fragment.getElementById(id), childViews, routers, { replace: true })
-
-  for (const id in bindings) yield [`Initialize Content Binding "${id}"`, ({ next }) => {
-    registerContentBinding(app, view, bindings[id], fragment.getElementById(id), childViews, routers, { retainFormatting }).reconcile()
-    next()
-  }]
-
-  if (viewConfig) yield * processChildView(app, view, viewConfig, element, childViews, routers)
-    
-  else if (routeConfig) yield [`Initialize "${name}" child router`, ({ next }) => {
+  if (viewConfig) yield * getChildViewRenderingTasks(app, view, firstElementChild, viewConfig, childViews, routers)  
+  
+  else if (routeConfig) {
     const { childRouters, parentRouter } = routers ?? {}
-    app.tree.addChildRouter(childRouters, childViews, { parentView: view, parentRouter, element, routes: routeConfig })
+    
+    app.addChildRouter(childRouters, childViews, {
+      parentView: view,
+      parentRouter,
+      element: firstElementChild,
+      routes: routeConfig
+    })
+  }
+
+  yield [`${replace ? `Insert child template into "${name}" view root element` : `Insert "${name}" view template into parent element`}`, async ({ next }) => {
+    if (replace) {
+      removeDOMEventsByNode(element)
+    } else {
+      const observer = new MutationObserver(mutations => {
+        observer.disconnect()
+        next()
+      })
+  
+      observer.observe(element, { childList: true })
+    }
+
+    element[replace ? 'replaceWith' : append ? 'append' : 'replaceChildren'](fragment)
+    replace && next()
+  }]
+}
+
+export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent = true) {
+  const kids = app.getTreeNode(collection, view)
+
+  if (kids) {
+    for (const [child] of kids) {
+      yield * getViewRemovalTasks(app, kids, child, fireUnmountEvent)
+    }
+  }
+
+  const { name } = view
+
+  fireUnmountEvent && (yield [`Run "${name}" unmount handler`, async ({ next }) => {
+    // console.log(`Run "${name}" unmount handler`)
+    await emitInternal(view, 'unmount')
+    next()
+  }])
+
+  yield [`Remove "${name}" view event handlers`, ({ next }) => {
+    // console.log(`Remove "${name}" events`)
+    removeDOMEventsByView(view)
+    removeEventsByView(view)
+    // logEvents()
     next()
   }]
 
-  yield [`Render ${replace ? `child template to "${name}"` : replaceChildren ? `bound view "${name}" template` : `"${name}" template`}`, ({ next }) => {
-    targetElement[replace ? 'replaceWith' : replaceChildren ? 'replaceChildren' : 'append'](fragment)
+  yield [`Remove "${name}" view bindings`, ({ next }) => {
+    // console.log(`Remove "${name}" bindings`)
+    removeBindingsByView(view)
+    next()
+  }]
+
+  yield [`Remove "${name}" view from tree`, async ({ next }) => {
+    // console.log(`Remove "${name}" from tree`)
+    app.removeTreeNode(collection, view)
     next()
   }]
 }
 
-function * getViewRenderingTasks (app, view, childViews, routers, options) {
-  const { replaceChildren = false } = options ?? {}
-  const { name, config } = view
+export function * getViewRenderingTasks (app, view, childViews, routers, options) {
+  const { config, name } = view
 
   if (config.on?.hasOwnProperty('beforeMount')) {
-    let stop = false
-
-    yield [`Run "${name}" beforeMount handler`, async ({ next, restart }) => {
+    yield [`Run "${name}" view beforeMount tasks (if applicable)`, async ({ next, restart }) => {
+      let stop = false
+  
       await emitInternal(view, 'beforeMount', {
         abort: () => stop = true
       })
-
+  
       if (!stop) {
         return next()
       }
-
+  
       await emitInternal(view, 'abortMount', {
         resume: () => next(),
         retry: () => restart()
       })
-    }]
+    }] 
   }
   
-  yield * getTemplateRenderingTasks(app, view, view.config.render?.call(view) ?? html``, view.element, childViews, routers, { replaceChildren })
-  
-  yield [`Run "${name}" mount handler`, async ({ next }) => {
+  yield * getTemplateRenderingTasks(app, view, view.element, view.config.render?.call(view) ?? html``, childViews, routers, options)
+
+  yield [`Fire "${name}" view "mount" event`, async ({ next }) => {
     await emitInternal(view, 'mount')
     next()
   }]
 }
 
-function * processChildView (app, view, viewConfig, element, childViews, routers) {
-  if (viewConfig instanceof DataBindingInterpolation) yield [`Initialize "${view.name}" View Binding`, ({ next }) => {
-    registerViewBinding(...arguments).reconcile(next)
-  }]
-    
-  else yield * getViewRenderingTasks(app, ...app.tree.addChildView(childViews, {
+function * getAttributeApplicationTasks (app, view, element, attribute, value) {
+  if (value instanceof DataBindingInterpolation) {
+    return yield * getAttributeBindingRegistrationTasks(app, view, element, attribute, value)
+  }
+
+  const existing = element.getAttribute(attribute)?.trim().split(' ').map(item => item.trim()) ?? []
+
+  if (Array.isArray(value)) {
+    const list = new AttributeList(app, view, element, attribute, [...(existing ?? []), ...value])
+    return yield * list.getReconciliationTasks({ init: true })
+  }
+
+  const type = typeof value
+
+  if (type !== 'object') {
+    switch (typeof value) {
+      case 'string':
+      case 'number': return yield [`Apply attribute "${attribute}"`, ({ next }) => {
+        element.setAttribute(attribute, `${existing.join(' ')} ${value}`.trim())
+        next()
+      }]
+  
+      case 'boolean': return yield [`Apply boolean attribute "${attribute}"`, ({ next }) => {
+        value && element.setAttribute(attribute, '')
+        next()
+      }]
+  
+      default: throw new TypeError(`"${view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
+    }
+  }
+
+  for (const slug of Object.keys(value)) {
+    yield * getAttributeApplicationTasks(app, view, element, `${attribute}-${slug}`, value[slug])
+  }
+}
+
+function * getAttributeBindingTasks (app, view, element, attributes, hasMultipleNodes) {
+  validateBinding('attribute', element, hasMultipleNodes)
+
+  for (let attribute in attributes ?? {}) {
+    yield * getAttributeApplicationTasks(app, view, element, attribute, attributes[attribute])
+  }
+}
+
+function * getListenerBindingTasks (view, element, listeners, hasMultipleNodes) {
+  validateBinding('listeners', element, hasMultipleNodes)
+
+  for (const evt in listeners) {
+    for (const { handler, cfg } of listeners[evt]) {
+      yield [`Apply "${evt}" listener`, ({ next }) => {
+        addDOMEventHandler(view, element, evt, handler, cfg)
+        next()
+      }]
+    }
+  }
+}
+
+function * getPropertyBindingTasks (app, view, element, properties, hasMultipleNodes) {
+  validateBinding('property', element, hasMultipleNodes)
+
+  for (let property in properties ?? {}) {
+    const value = properties[property]
+
+    if (value instanceof DataBindingInterpolation) {
+      yield * getPropertyBindingRegistrationTasks(app, view, element, property, value)
+      continue
+    }
+
+    yield [`Apply property "${property}"`, ({ next }) => {
+      element[property] = value
+      next()
+    }]
+  }
+}
+
+function * getChildViewRenderingTasks (app, view, element, viewConfig, childViews, routers) {
+  if (viewConfig instanceof DataBindingInterpolation) yield * getViewBindingRegistrationTasks(...arguments)
+  
+  else yield * getViewRenderingTasks(app, ...app.addChildView(childViews, {
     parent: view,
     element,
     config: viewConfig
-  }), childViews, routers)
+  }), routers)
 }
 
-function bind (app, type, view, collection, root, hasMultipleRoots, cb) {
-  validateBinding(type, root, hasMultipleRoots, () => {
-    for (let item in collection ?? {}) {
-      cb(app, view, root, item, collection[item])
-    }
-  })
-}
-
-function bindListeners (view, listeners, root, hasMultipleRoots) {
-  validateBinding('listeners', root, hasMultipleRoots, () => {
-    for (let evt in listeners ?? {}) {
-      listeners[evt].forEach(({ handler, cfg }) => addDOMEventHandler(view, root, evt, handler, cfg))
-    }
-  })
-}
-
-function getExistingAttributeValue (element, name) {
-  const value = element.getAttribute(name)
-  return value ? value.trim().split(' ').map(item => item.trim()) : []
-}
-
-function setAttribute (app, view, element, name, value) {
-  if (value instanceof DataBindingInterpolation) {
-    return registerAttributeBinding(app, view, element, name, value).reconcile()
-  }
-
-  const existing = getExistingAttributeValue(element, name)
-
-  if (Array.isArray(value)) {
-    return element.setAttribute(name, new AttributeList(app, view, element, name, [...(existing ?? []), ...value]).value)
-  }
-
-  switch (typeof value) {
-    case 'string':
-    case 'number': return element.setAttribute(name, `${existing.join(' ')} ${value}`.trim())
-    case 'boolean': return value && element.setAttribute(name, '')
-    case 'object': return setNamespacedAttribute(app, view, element, name, value)
-
-    default: throw new TypeError(`"${view.name}" rendering error: Invalid attribute value type "${typeof value}"`)
-  }
-}
-
-function setNamespacedAttribute (app, view, element, name, cfg) {
-  if (typeof cfg !== 'object') {
-    return setAttribute(app, view, element, `${name}-${slug}`, cfg)
-  }
-
-  for (const slug of Object.keys(cfg)) {
-    setAttribute(app, view, element, `${name}-${slug}`, cfg[slug])
-  }
-}
-
-function setProperty (app, view, element, name, value) {
-  if (value instanceof DataBindingInterpolation) {
-    return registerPropertyBinding(app, view, element, name, value).reconcile()
-  }
-
-  element[name] = value
-}
-
-function validateBinding (item, element, hasMultipleRoots, cb) {
+function validateBinding (item, element, hasMultipleNodes) {
   if (!element) throw new Error(`Cannot bind ${item} to non-element nodes`)
-  if (hasMultipleRoots) throw new Error(`Cannot bind ${item} to more than one node`)
-  cb()
+  if (hasMultipleNodes) throw new Error(`Cannot bind ${item} to more than one node`)
 }

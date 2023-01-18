@@ -1,21 +1,40 @@
 import DataBinding from './DataBinding'
 
 export default class AttributeListBooleanBinding extends DataBinding {
-  #list
+  #element
+  #entry
   #name
+  #dummy
 
-  constructor (app, view, list, name, interpolation) {
-    super(app, view, interpolation)
-    this.#list = list
-    this.#name = name
+  constructor (list, entry, interpolation) {
+    super(list.app, list.view, interpolation)
+    this.#element = list.element
+    this.#name = list.name
+    this.#entry = entry
+    this.#dummy = list.dummy
   }
 
-  get initialValue () {
-    super.reconcile()
-    return this.value
+  * getReconciliationTasks ({ init = false } = {}) {
+    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
   }
 
-  reconcile () {
-    super.reconcile(({ current }) => this.#list[current === true ? 'add' : 'remove'](this.#name))
+  * #getReconciliationTasks (init, { current }) {
+    if (init) {
+      this.#dummy.classList.add(...((this.#element.getAttribute(this.#name) ?? '').split(' ').filter(Boolean)))
+    }
+
+    if (!current) {
+      return yield [`Remove conditional attribute "${this.#entry}" from "${this.#name}" list`, ({ next }) => {
+        this.#dummy.classList.remove(this.#entry)
+        this.#element.setAttribute(this.#name, this.#dummy.classList.toString())
+        next()
+      }]
+    }
+
+    yield [`Add conditional attribute "${this.#entry}" to "${this.#name}" list`, ({ next }) => {
+      this.#dummy.classList.add(this.#entry)
+      this.#element.setAttribute(this.#name, this.#dummy.classList.toString())
+      next()
+    }]
   }
 }

@@ -1,6 +1,6 @@
-import HTMLTemplate from './HTMLTemplate'
-import SVGTemplate from './SVGTemplate'
-import CSSTemplate from './CSSTemplate'
+import HTMLTemplate from './templates/HTMLTemplate'
+import SVGTemplate from './templates/SVGTemplate'
+import CSSTemplate from './templates/CSSTemplate'
 
 export function html () {
   return new HTMLTemplate(...arguments)

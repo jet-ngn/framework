@@ -1,4 +1,4 @@
-import Template from './Template'
+import Template from './templates/Template'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import { sanitizeString } from '../../utilities/StringUtils'
 
@@ -59,6 +59,10 @@ function parseInterpolation (interpolation, result, retainFormatting) {
 
   if (interpolation instanceof DataBindingInterpolation) {
     return createTemplate(result, 'bindings', interpolation, 'data_binding')
+  }
+
+  if (interpolation === null) {
+    return ''
   }
 
   switch (typeof interpolation) {

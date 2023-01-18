@@ -1,31 +1,48 @@
 import DataBinding from './DataBinding'
+import AttributeList from '../../AttributeList'
 
 export default class AttributeBinding extends DataBinding {
   #name
-  #node
+  #element
+  #list
 
-  constructor (app, view, node, name, interpolation) {
+  constructor (app, view, element, name, interpolation) {
     super(app, view, interpolation)
     this.#name = name
-    this.#node = node
+    this.#element = element
   }
 
-  reconcile () {
-    super.reconcile(({ current }) => {
-      if (Array.isArray(current)) {
-        const list = new AttributeList(this.view, this.#node, this.#name, current)
-        current = list.value
+  * getReconciliationTasks ({ init = false } = {}) {
+    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
+  }
+
+  * #getReconciliationTasks (init, { current }) {
+    if ([undefined, null].some(value => current === value)) {
+      return yield [`Remove "${this.#name}" attribute`, ({ next }) => {
+        this.#element.removeAttribute(this.#name)
+        next()
+      }]
+    }
+
+    if (Array.isArray(current)) {
+      if (!this.#list) {
+        this.#list = new AttributeList(this.app, this.view, this.#element, this.#name, current)
       }
-      
-      if (typeof current !== 'boolean') {
-        return this.#node.setAttribute(this.#name, current)
-      }
-  
-      if (!current) {
-        return this.#node.removeAttribute(this.#name)
-      }
-  
-      this.#node.setAttribute(this.#name, '')
-    })
+
+      this.#list.update(current)
+      return yield * this.#list.getReconciliationTasks({ init: true })
+    }
+
+    if (typeof current !== 'boolean') {
+      return yield [`Set non-boolean "${this.#name}" attribute`, ({ next }) => {
+        this.#element.setAttribute(this.#name, current)
+        next()
+      }]
+    }
+
+    yield [`Set boolean "${this.#name}" attribute`, ({ next }) => {
+      current ? this.#element.setAttribute(this.#name, '')  : this.#element.removeAttribute(this.#name)
+      next()
+    }]
   }
 }

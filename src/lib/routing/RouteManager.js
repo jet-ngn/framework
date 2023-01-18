@@ -1,6 +1,13 @@
 import Route from './Route'
 import View from '../rendering/View'
-import NotFound from '../rendering/views/404.js'
+import Session from '../session/Session'
+
+import { getPermittedView } from '../../utilities/permissions'
+
+import NotFound from '../views/404.js'
+import Unauthorized from '../views/401.js'
+import Forbidden from '../views/403.js'
+
 import { Path } from '../../env'
 
 export default class Router {
@@ -26,7 +33,7 @@ export default class Router {
       .reduce((result, path) => {
         const config = routes[path]
 
-        if (path === '404') {
+        if (['404', 404].includes(path)) {
           this.#notFoundConfig = config
           return result
         }
@@ -73,6 +80,14 @@ export default class Router {
     return this.#previousView
   }
 
+  get notFoundView () {
+    return new View({
+      parent: this.#parentView,
+      element: this.#element,
+      config: this.#notFoundConfig
+    })
+  }
+
   getMatchingView (path) {
     this.#matchedPath = null
     this.#remainingPath = path
@@ -83,12 +98,12 @@ export default class Router {
 
     if (match?.config !== this.#currentConfig) {
       this.#currentConfig = match?.config ?? this.#notFoundConfig
-    
-      this.#currentView = new View({
+
+      this.#currentView = getPermittedView(new View({
         parent: this.#parentView,
         element: this.#element,
         config: this.#currentConfig
-      })
+      }))
     }
 
     return this.#currentView

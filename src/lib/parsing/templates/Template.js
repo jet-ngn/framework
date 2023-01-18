@@ -1,4 +1,4 @@
-import IdentifiedClass from '../IdentifiedClass.js'
+import IdentifiedClass from '../../IdentifiedClass'
 
 export default class Template extends IdentifiedClass {
   #strings
