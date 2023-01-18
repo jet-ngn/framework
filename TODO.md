@@ -1,3 +1,10 @@
+REFACTOR ContentBinding to support arrays. Having them separate forces bindings to always return the same type, which creates bad DX.
+
+Remove dummy elements from Attribute bindings and use Sets instead. Don't worry about
+class order.
+
+
+
 WORKER thread, generates tasks and fires messages when they are ready
 
 MAIN thread, maintains a queue and adds task into it when messages fire.

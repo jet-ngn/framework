@@ -43,10 +43,6 @@ export default class Application {
     collection.delete(view)
   }
 
-  // removeRoutersByView (view) {
-  //   this.#removeRoutersFromCollectionByView()
-  // }
-
   render () {
     this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null), () => this.update())
   }
@@ -68,7 +64,6 @@ export default class Application {
   }
 
   * #getRouterCollectionUpdateTasks (path, routers) {
-    // console.log('---', path)
     for (const [router, { views, children }] of routers) {
       yield * this.#getRouterUpdateTasks(path, routers, router, { views, children })
     }

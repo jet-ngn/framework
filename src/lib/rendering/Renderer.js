@@ -23,14 +23,14 @@ export function * getTemplateRenderingTasks (app, view, element, template, child
         { bindings, fragment, templates } = parseHTML(template, { retainFormatting }),
         { firstElementChild } = fragment,
         hasMultipleNodes = fragment.children.length > 1
-
+  
   if (properties) yield * getPropertyBindingTasks(app, view, firstElementChild, properties, hasMultipleNodes)
   if (attributes) yield * getAttributeBindingTasks(app, view, firstElementChild, attributes, hasMultipleNodes)
   if (listeners) yield * getListenerBindingTasks(view, firstElementChild, listeners, hasMultipleNodes)
 
   for (const id in templates) yield * getTemplateRenderingTasks(app, view, fragment.getElementById(id), templates[id], childViews, routers, { replace: true })
   for (const id in bindings) yield * getContentBindingRegistrationTasks(app, view, fragment.getElementById(id), bindings[id], childViews, routers, { retainFormatting })
-  
+
   if (viewConfig) yield * getChildViewRenderingTasks(app, view, firstElementChild, viewConfig, childViews, routers)  
   
   else if (routeConfig) {
@@ -43,7 +43,7 @@ export function * getTemplateRenderingTasks (app, view, element, template, child
       routes: routeConfig
     })
   }
-  
+
   yield [`${replace ? `Insert child template into "${name}" view root element` : `Insert "${name}" view template into parent element`}`, async ({ next }) => {
     if (replace) {
       removeDOMEventsByNode(element)

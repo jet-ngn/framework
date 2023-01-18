@@ -34,7 +34,7 @@ export default class ViewBinding extends DataBinding {
       config: current
     })
 
-    yield * getViewRenderingTasks(this.app, view, children, this.#routers, null)
     this.#boundView = view
+    yield * getViewRenderingTasks(this.app, view, children, this.#routers)
   }
 }
