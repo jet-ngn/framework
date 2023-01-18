@@ -72,21 +72,21 @@ export function * getViewMountingTasks (views) {
   }
 }
 
-export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent = true) {
+export function * getViewRemovalTasks (app, collection, view, stagedViews, fireUnmountEvent = true) {
   const kids = app.getTreeNode(collection, view)
 
   if (kids) {
     for (const [child] of kids) {
-      yield * getViewRemovalTasks(app, kids, child)
+      yield * getViewRemovalTasks(app, kids, child, stagedViews, fireUnmountEvent)
     }
   }
 
   const { name } = view
 
-  fireUnmountEvent && [`Run "${name}" unmount handler`, async ({ next }) => {
+  fireUnmountEvent && (yield [`Run "${name}" unmount handler`, async ({ next }) => {
     await emitInternal(view, 'unmount')
     next()
-  }]
+  }])
 
   yield [`Remove "${name}" view event handlers`, ({ next }) => {
     removeDOMEventsByView(view)
@@ -103,6 +103,8 @@ export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent =
     app.removeTreeNode(collection, view)
     next()
   }]
+
+  stagedViews && stagedViews.delete(view)
 }
 
 export function * getViewRenderingTasks (app, view, childViews, routers, options, stagedViews) {
