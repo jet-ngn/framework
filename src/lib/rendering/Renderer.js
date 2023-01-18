@@ -61,6 +61,17 @@ export function * getTemplateRenderingTasks (app, view, element, template, child
   }]
 }
 
+export function * getViewMountingTasks (views) {
+  for (const view of views) {
+    if (view.config.on?.mount) {
+      yield [`Fire "${view.name}" view "mount" event`, async ({ next }) => {
+        await emitInternal(view, 'mount')
+        next()
+      }] 
+    }
+  }
+}
+
 export function * getViewRemovalTasks (app, collection, view, fireUnmountEvent = true) {
   const kids = app.getTreeNode(collection, view)
 

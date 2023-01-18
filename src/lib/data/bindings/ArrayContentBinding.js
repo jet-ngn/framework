@@ -23,7 +23,7 @@ export default class ArrayContentBinding extends BaseContentBinding {
 
     if (current?.length === 0) {
       return yield [`Replace nodes`, ({ next }) => {
-        console.log('TODO: Replace nodes with placeholder')
+        this.replace([this.placeholder])
         next()
       }]
     }

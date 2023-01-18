@@ -1,11 +1,10 @@
 import View from './rendering/View'
 import RouteManager from './routing/RouteManager'
 
-import { getViewRemovalTasks, getViewRenderingTasks } from './rendering/Renderer'
-import { emitInternal } from './events/InternalBus'
 import { runTasks } from './TaskRunner'
-import { getPermittedView } from '../utilities/permissions'
 import { Plugins } from '../env'
+import { getViewMountingTasks, getViewRemovalTasks, getViewRenderingTasks } from './rendering/Renderer'
+import { getPermittedView } from '../utilities/permissions'
 
 export default class Application {
   #views = new Map
@@ -36,7 +35,7 @@ export default class Application {
     const stagedViews = new Set
 
     this.#runTasks(getViewRenderingTasks(this, ...this.#root, this.#routers, null, stagedViews), () => {
-      this.#runTasks(this.#getViewMountingTasks(stagedViews))
+      this.#runTasks(getViewMountingTasks(stagedViews))
     })
   }
 
@@ -44,20 +43,8 @@ export default class Application {
     const stagedViews = new Set
 
     this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers, stagedViews), () => {
-      this.#runTasks(this.#getViewMountingTasks(stagedViews))
+      this.#runTasks(getViewMountingTasks(stagedViews))
     })
-  }
-
-  * #getViewMountingTasks (views) {
-    for (const view of views) {
-      yield [`Fire "${view.name}" view "mount" event`, async ({ next }) => {
-        await emitInternal(view, 'mount')
-        next()
-      }]
-      // if (view.config.on?.mount) {
-        
-      // }
-    }
   }
 
   #runTasks (tasks, callback) {

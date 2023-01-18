@@ -54,7 +54,7 @@ export default class DataBinding extends DataBindingInterpolation {
     let result = this.transform(...args)
     result = Array.isArray(result) ? [...result] : result
 
-    if (result !== previous) {
+    if (init || result !== previous) {
       this.#value = result ?? null
 
       yield * generator(init, {

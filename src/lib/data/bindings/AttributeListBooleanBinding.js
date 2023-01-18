@@ -19,6 +19,10 @@ export default class AttributeListBooleanBinding extends DataBinding {
   }
 
   * #getReconciliationTasks (init, { current }) {
+    if (init) {
+      this.#dummy.classList.add(...((this.#element.getAttribute(this.#name) ?? '').split(' ').filter(Boolean)))
+    }
+
     if (!current) {
       return yield [`Remove conditional attribute "${this.#entry}" from "${this.#name}" list`, ({ next }) => {
         this.#dummy.classList.remove(this.#entry)
