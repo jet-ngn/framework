@@ -1,17 +1,19 @@
 export default class PluginManager {
-  #plugins = {}
-
-  get (name) {
-    return this.#plugins[name] ?? null
-  }
+  #reserved = new Set(['load'])
 
   load (plugins = {}) {
     Object.keys(plugins).forEach(name => {
-      if (this.#plugins.hasOwnProperty(name)) {
+      name = name.trim()
+
+      if (this.hasOwnProperty(name)) {
         throw new Error(`Plugin "${name}" has already been defined`)
       }
 
-      this.#plugins[name] = plugins[name]
+      if (this.#reserved.has(name)) {
+        throw new Error(`Plugins: "${name}" is a reserved word`)
+      }
+
+      this[name] = plugins[name]
     })
   }
 }

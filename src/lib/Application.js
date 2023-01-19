@@ -59,7 +59,7 @@ export default class Application {
 
     this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers, stagedViews), () => {
       callback && callback()
-      this.#runTasks(getViewMountingTasks(stagedViews)\)
+      this.#runTasks(getViewMountingTasks(stagedViews))
     })
   }
 

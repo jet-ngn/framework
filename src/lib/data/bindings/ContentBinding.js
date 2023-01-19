@@ -131,7 +131,7 @@ export default class ContentBinding extends DataBinding {
   #reconcileTemplates (templates) {
     const element = document.createElement('template')
 
-    runTasks(this.#getTemplateRenderingTasks([current], element), {
+    runTasks(this.#getTemplateRenderingTasks(templates, element), {
       callback: () => {
         // TODO: Look into reconciling instead of replacing
         this.#replace([...element.childNodes])
