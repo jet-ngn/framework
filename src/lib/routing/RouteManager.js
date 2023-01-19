@@ -1,13 +1,8 @@
 import Route from './Route'
 import View from '../rendering/View'
-import Session from '../session/Session'
-
-import { getPermittedView } from '../../utilities/permissions'
-
 import NotFound from '../views/404.js'
-import Unauthorized from '../views/401.js'
-import Forbidden from '../views/403.js'
 
+import { getPermittedView } from '../utilities/permissions'
 import { Path } from '../../env'
 
 export default class Router {

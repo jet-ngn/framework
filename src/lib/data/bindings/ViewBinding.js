@@ -1,5 +1,6 @@
 import DataBinding from './DataBinding'
-import { getViewRemovalTasks, getViewRenderingTasks } from '../../rendering/Renderer'
+import { getViewMountingTasks, getViewRemovalTasks, getViewRenderingTasks } from '../../rendering/Renderer'
+import { runTasks } from '../../TaskRunner'
 
 export default class ViewBinding extends DataBinding {
   #boundView = null
@@ -7,20 +8,25 @@ export default class ViewBinding extends DataBinding {
   #element
   #routers
 
-  constructor (app, view, element, config, childViews, routers) {
+  constructor ({ app, view, element, config, childViews, routers }) {
     super(app, view, config)
     this.#element = element
     this.#childViews = childViews
     this.#routers = routers ?? null
   }
 
-  * getReconciliationTasks ({ init = false } = {}) {
-    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
+  async reconcile (init = false, stagedViews) {
+    runTasks(this.#getReconciliationTasks(init, super.reconcile(init), stagedViews))
   }
 
-  * #getReconciliationTasks (init, { previous, current }) {
+  * #getReconciliationTasks (init, { current }, stagedViews) {
     if (this.#boundView) {
-      yield * getViewRemovalTasks(this.app, this.#childViews, this.#boundView)
+      yield * getViewRemovalTasks({
+        app: this.app,
+        collection: this.#childViews,
+        view: this.#boundView,
+        stagedViews
+      })
     }
     
     if (!current) {
@@ -35,6 +41,17 @@ export default class ViewBinding extends DataBinding {
     })
 
     this.#boundView = view
-    yield * getViewRenderingTasks(this.app, view, children, this.#routers)
+
+    yield * getViewRenderingTasks({
+      app: this.app,
+      view,
+      childViews: children,
+      routers: this.#routers,
+      stagedViews
+    })
+
+    if (!init) {
+      yield * getViewMountingTasks(new Set([view]))
+    }
   }
 }

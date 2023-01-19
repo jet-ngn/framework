@@ -25,7 +25,7 @@ export default class DataBinding extends DataBindingInterpolation {
     return this.#view
   }
 
-  * getReconciliationTasks (init, generator) {
+  reconcile (init = false) {
     const previous = this.#value
     let args = []
 
@@ -56,11 +56,11 @@ export default class DataBinding extends DataBindingInterpolation {
 
     if (init || result !== previous) {
       this.#value = result ?? null
+    }
 
-      yield * generator(init, {
-        previous,
-        current: this.#value
-      }) 
+    return {
+      previous,
+      current: this.#value
     }
   }
 }

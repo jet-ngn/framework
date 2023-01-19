@@ -31,7 +31,7 @@ export default class ArrayContentBinding extends BaseContentBinding {
     const templateElement = document.createElement('template')
 
     for (const template of current) {
-      yield * getTemplateRenderingTasks(this.app, this.view, templateElement, template, this.childViews, this.routers, { append: true })
+      yield getTemplateRenderingTask(this.app, this.view, templateElement, template, this.childViews, this.routers, { append: true })
     }
 
     if (init) {
@@ -66,7 +66,7 @@ export default class ArrayContentBinding extends BaseContentBinding {
     const element = document.createElement('template')
     
     for (const template of templates) {
-      yield * getTemplateRenderingTasks(this.app, this.view, element, template, this.childViews, this.routers, { append: true })
+      yield getTemplateRenderingTask(this.app, this.view, element, template, this.childViews, this.routers, { append: true })
     }
 
     yield [`Append template`, ({ next }) => {
@@ -104,7 +104,7 @@ export default class ArrayContentBinding extends BaseContentBinding {
     const element = document.createElement('template')
     
     for (const template of templates) {
-      yield * getTemplateRenderingTasks(this.app, this.view, template, element, this.childViews, this.routers, { append: true })
+      yield getTemplateRenderingTask(this.app, this.view, template, element, this.childViews, this.routers, { append: true })
     }
 
     yield [`Prepend template`, ({ next }) => {

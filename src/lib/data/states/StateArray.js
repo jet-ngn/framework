@@ -138,14 +138,16 @@ export default class StateArray extends State {
       change.value.current = [...target]
       history.add(change)
   
-      runTasks(getBindingUpdateTasks(bindings, reconcile ? undefined : property))
+      runTasks(getBindingUpdateTask(bindings, reconcile ? undefined : property))
       return output
     }
   }
 }
 
-function * getBindingUpdateTasks (bindings, method) {
-  for (let binding of bindings) {
-    yield * binding.getReconciliationTasks({ method })
-  }
+function * getBindingUpdateTask (bindings, method) {
+  yield [`Reconcile State Array Bindings`, async ({ next }) => {
+    await Promise.allSettled(bindings.map(async binding => {
+      await binding.reconcile(false, method)
+    }))
+  }]
 }

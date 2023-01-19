@@ -34,7 +34,7 @@ export default class StateObject extends State {
           }
         })
 
-        runTasks(this.#getBindingUpdateTasks(proxy, bindings, property))
+        runTasks(this.#getBindingUpdateTask(proxy, bindings, property))
         return true
       }
     }), config)
@@ -108,13 +108,17 @@ export default class StateObject extends State {
     this.proxy[property] = this.#properties[property]
   }
 
-  * #getBindingUpdateTasks (proxy, bindings, property) {
-    for (let binding of bindings) {
-      const properties = binding.proxies.get(proxy)
+  * #getBindingUpdateTask (proxy, bindings, property) {
+    yield [`Reconcile State Object Bindings`, async ({ next }) => {
+      await Promise.allSettled(bindings.map(async binding => {
+        const properties = binding.proxies.get(proxy)
 
-      if (properties.length === 0 || properties.includes(property)) {
-        yield * binding.getReconciliationTasks()
-      }
-    }
+        if (properties.length === 0 || properties.includes(property)) {
+          await binding.reconcile()
+        }
+      }))
+
+      next()
+    }]
   }
 }

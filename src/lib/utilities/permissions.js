@@ -1,7 +1,7 @@
-import View from '../lib/rendering/View'
-import Session from '../lib/session/Session'
-import Unauthorized from '../lib/views/401'
-import Forbidden from '../lib/views/403'
+import View from '../rendering/View'
+import Session from '../session/Session'
+import Unauthorized from '../views/401'
+import Forbidden from '../views/403'
 
 export function getPermittedView (view) {
   const { permissions } = view
@@ -16,10 +16,6 @@ export function getPermittedView (view) {
     if (!view.isAccessibleTo(...Session.user.roles)) {
       return new View({ ...args, config: Forbidden })
     }
-    
-    // if (!Session.user.hasRole(Object.keys(permissions))) {
-    //   return new View({ ...args, config: Forbidden })
-    // }
   }
 
   return view
