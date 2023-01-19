@@ -2,6 +2,7 @@ import AttributeListBinding from './data/bindings/AttributeListBinding'
 import AttributeListBooleanBinding from "./data/bindings/AttributeListBooleanBinding"
 import DataBindingInterpolation from './data/DataBindingInterpolation'
 import { registerBinding, removeBinding } from './data/DataRegistry'
+import { runTasks } from './TaskRunner'
 
 export default class AttributeList {
   #app
@@ -41,19 +42,24 @@ export default class AttributeList {
   }
 
   async reconcile (init = false) {
-    if (init) {
-      this.#element.setAttribute(this.#name, [...this.#list].join(' '))
-    }
-
-    for (const binding of this.#bindings) {
-      binding.reconcile(init)
-    }
+    this.#element.setAttribute(this.#name, [...this.#list].join(' '))
+    this.#bindings.size > 0 && runTasks(this.#getBindingUpdateTask(init))
   }
 
   update (list) {
     this.#bindings.forEach(removeBinding)
     this.#bindings = []
     this.#list = this.#processList(list)
+  }
+
+  * #getBindingUpdateTask (init) {
+    yield [`Reconcile Attribute List Bindings`, async ({ next }) => {
+      await Promise.allSettled([...this.#bindings].map(async binding => {
+        await binding.reconcile(init)
+      }))
+
+      next()
+    }]
   }
 
   #processList (list) {
