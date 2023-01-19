@@ -1,6 +1,6 @@
 import Template from './templates/Template'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
-import { sanitizeString } from '../../utilities/StringUtils'
+import { sanitizeString } from '../utilities/StringUtils'
 
 const htmlTemplate = document.createElement('template')
 const svgTemplate = document.createElementNS('http://www.w3.org/2000/svg', 'svg')

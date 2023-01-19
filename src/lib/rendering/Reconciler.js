@@ -1,5 +1,5 @@
 import { removeDOMEventsByNode } from '../events/DOMBus'
-import { escapeString } from '../../utilities/StringUtils'
+import { escapeString } from '../utilities/StringUtils'
 
 export function reconcileNodes (original, update) {
   const result = []

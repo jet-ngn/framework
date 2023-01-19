@@ -6,43 +6,33 @@ export default class AttributeBinding extends DataBinding {
   #element
   #list
 
-  constructor (app, view, element, name, interpolation) {
-    super(app, view, interpolation)
+  constructor ({ app, view, element, name, value }) {
+    super(app, view, value)
     this.#name = name
     this.#element = element
   }
 
-  * getReconciliationTasks ({ init = false } = {}) {
-    yield * super.getReconciliationTasks(init, this.#getReconciliationTasks.bind(this))
-  }
+  async reconcile (init = false) {
+    const { current } = super.reconcile(init)
 
-  * #getReconciliationTasks (init, { current }) {
     if ([undefined, null].some(value => current === value)) {
-      return yield [`Remove "${this.#name}" attribute`, ({ next }) => {
-        this.#element.removeAttribute(this.#name)
-        next()
-      }]
+      return this.#element.removeAttribute(this.#name)
     }
 
     if (Array.isArray(current)) {
-      if (!this.#list) {
+      if (this.#list) {
+        this.#list.update(current)
+      } else {
         this.#list = new AttributeList(this.app, this.view, this.#element, this.#name, current)
       }
 
-      this.#list.update(current)
-      return yield * this.#list.getReconciliationTasks({ init: true })
+      return this.#list.reconcile(init)
     }
 
     if (typeof current !== 'boolean') {
-      return yield [`Set non-boolean "${this.#name}" attribute`, ({ next }) => {
-        this.#element.setAttribute(this.#name, current)
-        next()
-      }]
+      return this.#element.setAttribute(this.#name, current)
     }
 
-    yield [`Set boolean "${this.#name}" attribute`, ({ next }) => {
-      current ? this.#element.setAttribute(this.#name, '')  : this.#element.removeAttribute(this.#name)
-      next()
-    }]
+    current ? this.#element.setAttribute(this.#name, '') : this.#element.removeAttribute(this.#name)
   }
 }

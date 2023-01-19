@@ -1,12 +1,10 @@
 import DataBindingInterpolation from './DataBindingInterpolation'
 import AttributeBinding from './bindings/AttributeBinding'
-import ArrayContentBinding from './bindings/ArrayContentBinding'
 import ContentBinding from './bindings/ContentBinding'
 import PropertyBinding from './bindings/PropertyBinding'
 import ViewBinding from './bindings/ViewBinding'
 import StateArray from './states/StateArray'
 import StateObject from './states/StateObject'
-import DataBinding from './bindings/DataBinding'
 
 export const states = new Map
 
@@ -58,29 +56,24 @@ export function load (proxy, data) {
   state.load(data)
 }
 
-export function * getAttributeBindingRegistrationTasks (app, view, element, name, interpolation) {
-  yield * getBindingRegistrationTasks(new AttributeBinding(...arguments))
+export function registerAttributeBinding ({ app, view, element, name, interpolation }) {
+  return registerBinding(new AttributeBinding(...arguments))
 }
 
-export function * getContentBindingRegistrationTasks (app, view, element, interpolation, childViews, routers, options) {
-  const args = arguments
-  const binding = new DataBinding(app, view, interpolation)
-
-  yield * binding.getReconciliationTasks(true, function * (init, { current }) {
-    yield * getBindingRegistrationTasks(Array.isArray(current) ? new ArrayContentBinding(...args) : new ContentBinding(...args))
-  })
+export function registerContentBinding ({ app, view, element, interpolation, childViews, routers, options }) {
+  return registerBinding(new ContentBinding(...arguments))
 }
 
-export function * getPropertyBindingRegistrationTasks (app, view, node, name, interpolation) {
-  yield * getBindingRegistrationTasks(new PropertyBinding(...arguments))
+export function registerPropertyBinding ({ app, view, node, name, interpolation }) {
+  return registerBinding(new PropertyBinding(...arguments))
 }
 
-export function * getViewBindingRegistrationTasks (app, view, element, config, childViews, routers) {
-  yield * getBindingRegistrationTasks(new ViewBinding(...arguments))
+export function registerViewBinding ({ app, view, element, config, childViews, routers }) {
+  return registerBinding(new ViewBinding(...arguments))
 }
 
 export function registerBinding (binding) {
-  for (const [proxy, properties] of binding.proxies) {
+  for (const [proxy] of binding.proxies) {
     const state = getStateByProxy(proxy)
 
     if (!state) {
@@ -133,10 +126,6 @@ export function removeBinding (binding) {
 export function removeStateByProxy (proxy) {
   const state = getStateByProxy(proxy)
   states.delete(state)
-}
-
-function * getBindingRegistrationTasks (binding) {
-  yield * registerBinding(binding).getReconciliationTasks({ init: true })
 }
 
 function makeState (target, type, config) {
