@@ -11,7 +11,7 @@ export default class AttributeListBinding extends DataBinding {
 
   reconcile (init = false) {
     if (init) {
-      this.existing = this.element.getAttribute(this.name).trim().split(' ')
+      this.existing = this.element.getAttribute(this.name).trim().split(' ').filter(Boolean)
       this.existing.length > 0 && this.dummy.classList.add(...this.existing)
     }
 
