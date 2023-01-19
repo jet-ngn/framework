@@ -6,7 +6,7 @@ export async function runTasks (tasks, { callback, restart = null } = {}) {
   }
 
   const [name, handler] = value
-  console.log(name)
+
   await handler({
     next: () => runTasks(...arguments),
     restart
