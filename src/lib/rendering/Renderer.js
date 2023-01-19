@@ -271,7 +271,7 @@ function setProperties ({ app, view, element, properties, hasMultipleNodes }) {
       continue
     }
 
-    element[property] = value
+    element[name] = value
   }
 }
 
