@@ -15,8 +15,15 @@ export default class AttributeBinding extends DataBinding {
   async reconcile (init = false) {
     const { current } = super.reconcile(init)
 
+    const payload = {
+      element: this.#element,
+      name: this.#name,
+      value: current
+    }
+
     if ([undefined, null].some(value => current === value)) {
-      return this.#element.removeAttribute(this.#name)
+      this.#element.removeAttribute(this.#name)
+      return this.callback && this.callback(payload)
     }
 
     if (Array.isArray(current)) {
@@ -26,13 +33,15 @@ export default class AttributeBinding extends DataBinding {
         this.#list = new AttributeList(this.app, this.view, this.#element, this.#name, current)
       }
 
-      return this.#list.reconcile(init)
+      return this.#list.reconcile(init, this.callback)
     }
 
     if (typeof current !== 'boolean') {
-      return this.#element.setAttribute(this.#name, current)
+      this.#element.setAttribute(this.#name, current)
+      return this.callback && this.callback(payload)
     }
 
     current ? this.#element.setAttribute(this.#name, '') : this.#element.removeAttribute(this.#name)
+    return this.callback && this.callback(payload)
   }
 }

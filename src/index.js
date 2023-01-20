@@ -5,10 +5,10 @@ import { Path, Plugins } from './env'
 let App
 let appConfig
 let appCreated = false
-let DOMReady = false
+let ready = false
 
 document.addEventListener('DOMContentLoaded', evt => {
-  DOMReady = true
+  ready = true
   appCreated && run()
 })
 
@@ -29,7 +29,7 @@ export function createApp ({ baseURL, selector }) {
   Path.base = new URL(baseURL ?? '', location.origin)
   appCreated = true
 
-  DOMReady && run()
+  ready && run()
 }
 
 export function navigate (to, { append = false } = {}) {
@@ -63,6 +63,6 @@ export { css, html, svg } from './lib/parsing/tags'
 export { default as Bus } from './lib/events/Bus'
 export { default as Session } from './lib/session/Session'
 export { default as Router } from './lib/routing/Router'
-export { append, bind, bindAll, clear, load } from './lib/data/DataRegistry'
-export { createId } from './lib/utilities/IDUtils'
+export { append, bind, bindAll, clear, load, onChange } from './lib/data/DataRegistry'
+export { default as Utilities } from './lib/Utilities'
 export { Plugins, StateFactory as State }

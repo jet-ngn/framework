@@ -9,9 +9,8 @@ import StateObject from './states/StateObject'
 export const states = new Map
 
 export function append (proxy, data) {
-  console.log('TODO: Add append feature')
-  // const state = getStateByProxy(proxy)
-  // state.append(data)
+  const state = getStateByProxy(proxy)
+  state.append(data)
 }
 
 export function bind (...args) {
@@ -54,6 +53,11 @@ export function getStateByProxy (proxy) {
 export function load (proxy, data) {
   const state = getStateByProxy(proxy)
   state.load(data)
+}
+
+export function onChange (proxy, ...args) {
+  const state = getStateByProxy(proxy)
+  state.registerChangeHandler(...args)
 }
 
 export function registerAttributeBinding ({ app, view, element, name, interpolation }) {

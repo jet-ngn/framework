@@ -56,7 +56,7 @@ function applyListeners (eventName) {
   return document.body.addEventListener(eventName, handler)
 }
 
-export function removeDOMEventsByNode (target, includeParents = true) {
+export function removeDOMEventsByNode (target) {
   const remainingEvents = new Set
 
   ;[...listeners.keys()].filter(({ event, node }) => {

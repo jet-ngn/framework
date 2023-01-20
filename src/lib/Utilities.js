@@ -1,0 +1,18 @@
+import { nanoid } from 'nanoid'
+
+export default class Utilities {
+  static elementIsInViewport (element) {
+    const rect = element.getBoundingClientRect()
+    
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    )
+  }
+
+  static createId ({ prefix, postfix } = {}) {
+    return `${prefix ? `${prefix}_` : ''}${nanoid()}${postfix ? `_${postfix}` : ''}`
+  }
+}

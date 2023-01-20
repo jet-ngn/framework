@@ -13,5 +13,11 @@ export default class PropertyBinding extends DataBinding {
   async reconcile (init = false) {
     const { previous, current } = super.reconcile(init)
     this.#element[this.#name] = current
+    
+    this.callback && this.callback({
+      name: this.#name,
+      element: this.#element,
+      value: this.value
+    })
   }
 }

@@ -6,15 +6,21 @@ export default class DataBinding extends DataBindingInterpolation {
   #app
   #view
   #value = null
+  #callback
 
   constructor (app, view, interpolation) {
     super(interpolation)
     this.#app = app
     this.#view = view
+    this.#callback = interpolation.callback ?? null
   }
 
   get app () {
     return this.#app
+  }
+
+  get callback () {
+    return this.#callback
   }
 
   get value () {

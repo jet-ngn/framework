@@ -4,6 +4,7 @@ import { runTasks } from '../../TaskRunner'
 
 export default class StateArray extends State {
   #childConfig
+  #changeHandlers = new Set
 
   constructor (arr, config = {}) {
     const { model = {}, states = {}, properties = {} } = config
@@ -69,6 +70,10 @@ export default class StateArray extends State {
     const { proxy } = this
     this.removeChildProxies()
     return proxy.splice(0, proxy.length, ...this.#processData(data))
+  }
+
+  registerChangeHandler (callback) {
+    this.#changeHandlers.add(callback)
   }
 
   #processData (data) {
@@ -138,7 +143,15 @@ export default class StateArray extends State {
       change.value.current = [...target]
       history.add(change)
   
-      runTasks(getBindingUpdateTask(bindings, reconcile ? undefined : property))
+      runTasks(getBindingUpdateTask(bindings, reconcile ? undefined : property), {
+        callback: () => {
+          if (this.#changeHandlers.size > 0) {
+            const [previous, current] = history.getAfter(-2)
+            this.#changeHandlers.forEach(handler => handler({ previous, current }))
+          }
+        }
+      })
+
       return output
     }
   }
@@ -146,8 +159,12 @@ export default class StateArray extends State {
 
 function * getBindingUpdateTask (bindings, method) {
   yield [`Reconcile State Array Bindings`, async ({ next }) => {
-    await Promise.allSettled(bindings.map(async binding => {
-      await binding.reconcile(false, method)
-    }))
+    // requestAnimationFrame(async () => {
+      await Promise.allSettled(bindings.map(async binding => {
+        await binding.reconcile(false, method)
+      }))
+
+      next()
+    // })
   }]
 }

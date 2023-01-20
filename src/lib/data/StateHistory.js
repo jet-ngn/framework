@@ -19,6 +19,18 @@ export default class StateHistory {
     })
   }
 
+  get (index) {
+    return [...this.#history].at(index)
+  }
+
+  getBefore (index) {
+    return [...this.#history].slice(0, index)
+  }
+
+  getAfter (index) {
+    return [...this.#history].slice(index)
+  }
+
   undo (levels = 1) {
     console.log('UNDO', levels)
   }

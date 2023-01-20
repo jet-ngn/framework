@@ -54,12 +54,12 @@ export default class State {
     this.#childProxies.add(proxy)
   }
 
-  getProxy ([initial, config]) {
-    return registerState(getTarget(initial), config)
-  }
-
   clearBindings () {
     this.#bindings = []
+  }
+
+  getProxy ([initial, config]) {
+    return registerState(getTarget(initial), config)
   }
 
   removeBindingsByView (view) {

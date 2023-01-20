@@ -8,6 +8,9 @@ import { html } from '../../parsing/tags'
 import { sanitizeString } from '../../utilities/StringUtils'
 import { runTasks } from '../../TaskRunner'
 
+// TODO: Refactor with handleReconciliation function that runs whatever tasks are
+// necessary, then fires callback. That will remove all the dupicate callback calls.
+
 export default class ContentBinding extends DataBinding {
   #childViews
   #placeholder
@@ -27,6 +30,10 @@ export default class ContentBinding extends DataBinding {
   async reconcile (init = false, method) {
     const { previous, current } = super.reconcile(init)
 
+    if (!current || current?.length === 0) {
+      return !init && this.#replace([this.#placeholder])
+    }
+
     if (!!method) {
       switch (method) {
         case 'push': return this.#push(previous, current)
@@ -36,30 +43,27 @@ export default class ContentBinding extends DataBinding {
         default: break
       }
     }
-
-    if (current === null || current?.length === 0) {
-      return !init && this.#replace([this.#placeholder])
-    }
-
+    
     if (current instanceof Template) {
       return this.#reconcileTemplates([current])
     }
-
+    
     if (Array.isArray(current)) {
       return this.#reconcileTemplates(current)
     }
-
+    
     let update = this.#getUpdate(current)
-
+    
     if (update.length === 0) {
       return this.#replace([this.#placeholder])
     }
-
+    
     if (init) {
       return this.#replace(update)
     }
 
     this.#nodes = reconcileNodes(this.#nodes, update)
+    this.callback && this.callback({ nodes: this.#nodes })
   }
 
   * #getTemplateRenderingTasks (templates, element) {
@@ -98,43 +102,14 @@ export default class ContentBinding extends DataBinding {
     }
   }
 
-  #pop () {
-    const last = this.#nodes.pop()
-
-    if (last) {
-      removeDOMEventsByNode(last)
-      // removeViewByNode(this.childViews, last)
-      last.remove()
-    }
-  }
-
-  #push (previous, current) {
-    const templates = current.slice((current.length - previous.length) * -1)
-    const element = document.createElement('template')
-    
-    runTasks(this.#getTemplateRenderingTasks(templates, element), {
-      callback: () => {
-        const last = this.#nodes.at(-1)
-        const nodes = [...element.childNodes]
-  
-        if (!last || last === this.#placeholder) {
-          this.#placeholder.replaceWith(...nodes)
-          this.#nodes = nodes
-        } else {
-          last.after(...nodes)
-          this.#nodes.push(...nodes)
-        }
-      }
-    })
-  }
-
   #reconcileTemplates (templates) {
     const element = document.createElement('template')
 
     runTasks(this.#getTemplateRenderingTasks(templates, element), {
       callback: () => {
+        const { childNodes } = element
         // TODO: Look into reconciling instead of replacing
-        this.#replace([...element.childNodes])
+        this.#replace([...(childNodes.length > 0 ? childNodes : [this.#placeholder])])
       }
     })
   }
@@ -151,16 +126,69 @@ export default class ContentBinding extends DataBinding {
 
     existingNode.replaceWith(...nodes)
     this.#nodes = nodes
+    this.callback && this.callback({ nodes: this.#nodes })
+  }
+
+  #pop () {
+    if (this.#shouldRunArrayMethod()) {
+      const last = this.#nodes.pop()
+
+      if (last) {
+        removeDOMEventsByNode(last)
+        // removeViewByNode(this.childViews, last)
+        last.remove()
+      }
+    }
+
+    this.callback && this.callback({ nodes: this.#nodes })
+  }
+
+  #push (previous, current) {
+    const templates = current.slice((current.length - previous.length) * -1)
+    const element = document.createElement('template')
+
+    runTasks(this.#getTemplateRenderingTasks(templates, element), {
+      callback: () => {
+        const last = this.#nodes.at(-1)
+        const nodes = [...element.childNodes]
+  
+        if (!last || last === this.#placeholder) {
+          this.#placeholder.replaceWith(...nodes)
+          this.#nodes = nodes
+        } else {
+          last.after(...nodes)
+          this.#nodes.push(...nodes)
+        }
+
+        this.callback && this.callback({ nodes: this.#nodes })
+      }
+    })
   }
 
   #shift () {
-    const first = this.#nodes.shift()
+    if (this.#shouldRunArrayMethod()) {
+      const first = this.#nodes.shift()
 
-    if (first) {
-      removeDOMEventsByNode(first)
-      // removeViewByNode(this.childViews, first)
-      first.remove()
+      if (first) {
+        removeDOMEventsByNode(first)
+        // removeViewByNode(this.childViews, first)
+        first.remove()
+      } 
     }
+
+    this.callback && this.callback({ nodes: this.#nodes })
+  }
+
+  #shouldRunArrayMethod () {
+    if (this.#nodes.length > 1) {
+      return true      
+    }
+    
+    if (this.#nodes.at(0) !== this.#placeholder) {
+      this.#replace([this.#placeholder])
+    }
+    console.log(this.#nodes)
+    return false
   }
 
   #unshift (...args) {
@@ -179,6 +207,8 @@ export default class ContentBinding extends DataBinding {
           first.before(...nodes)
           this.#nodes.unshift(...nodes)
         }
+
+        this.callback && this.callback({ nodes: this.#nodes })
       }
     })
   }

@@ -7,10 +7,12 @@ import { getPermittedView } from './utilities/permissions'
 
 export default class Application {
   #views = new Map
+  #element
   #root
   #routers = new Map
 
   constructor (element, config) {
+    this.#element = element
     this.#root = this.addChildView(this.#views, { element, config })
   }
 

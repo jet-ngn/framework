@@ -6,6 +6,7 @@ export default class StateObject extends State {
   #model
   #properties
   #states
+  #changeHandlers = new Map
 
   constructor (obj, config = {}) {
     const { model = {}, states = {}, properties = {} } = config
@@ -34,7 +35,23 @@ export default class StateObject extends State {
           }
         })
 
-        runTasks(this.#getBindingUpdateTask(proxy, bindings, property))
+        runTasks(this.#getBindingUpdateTask(proxy, bindings, property), {
+          callback: () => {
+            const changeHandlers = this.#changeHandlers.get(property) ?? []
+            
+            if (changeHandlers.length) {
+              const [previous, current] = this.history.getAfter(-2)
+              
+              const payload = {
+                previous: previous.value[property],
+                current: current.value[property]
+              }
+      
+              changeHandlers.forEach(changeHandler => changeHandler(payload))
+            }
+          }
+        })
+
         return true
       }
     }), config)
@@ -44,6 +61,10 @@ export default class StateObject extends State {
     this.#states = states
 
     this.#initialize()
+  }
+
+  append (data) {
+    console.log('TODO: Merge data')
   }
 
   clear () {
@@ -94,6 +115,16 @@ export default class StateObject extends State {
     }
   }
 
+  registerChangeHandler (property, callback) {
+    const entry = this.#changeHandlers.get(property)
+
+    if (!entry) {
+      return this.#changeHandlers.set(property, [callback])
+    }
+
+    entry.push(callback)
+  }
+
   #initialize () {
     for (let property in this.#properties) {
       this.#addProperty(property)
@@ -110,15 +141,17 @@ export default class StateObject extends State {
 
   * #getBindingUpdateTask (proxy, bindings, property) {
     yield [`Reconcile State Object Bindings`, async ({ next }) => {
-      await Promise.allSettled(bindings.map(async binding => {
-        const properties = binding.proxies.get(proxy)
+      // requestAnimationFrame(async () => {
+        await Promise.allSettled(bindings.map(async binding => {
+          const properties = binding.proxies.get(proxy)
+  
+          if (properties.length === 0 || properties.includes(property)) {
+            await binding.reconcile()
+          }
+        }))
 
-        if (properties.length === 0 || properties.includes(property)) {
-          await binding.reconcile()
-        }
-      }))
-
-      next()
+        next()
+      // })
     }]
   }
 }

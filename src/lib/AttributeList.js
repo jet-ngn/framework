@@ -41,9 +41,15 @@ export default class AttributeList {
     return this.#view
   }
 
-  async reconcile (init = false) {
+  async reconcile (init = false, callback) {
     this.#element.setAttribute(this.#name, [...this.#list].join(' '))
     this.#bindings.size > 0 && runTasks(this.#getBindingUpdateTask(init))
+    
+    callback && callback({
+      element: this.#element,
+      name: this.#name,
+      value: this.#dummy.classList.toString()
+    })
   }
 
   update (list) {

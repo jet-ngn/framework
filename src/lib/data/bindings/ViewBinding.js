@@ -16,7 +16,13 @@ export default class ViewBinding extends DataBinding {
   }
 
   async reconcile (init = false, stagedViews) {
-    runTasks(this.#getReconciliationTasks(init, super.reconcile(init), stagedViews))
+    runTasks(this.#getReconciliationTasks(init, super.reconcile(init), stagedViews), {
+      callback: () => {
+        this.callback && this.callback({
+          view: this.#boundView
+        })
+      }
+    })
   }
 
   * #getReconciliationTasks (init, { current }, stagedViews) {
