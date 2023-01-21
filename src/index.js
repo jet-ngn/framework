@@ -32,15 +32,16 @@ export function createApp ({ baseURL, selector }) {
   ready && run()
 }
 
-export function navigate (to, { append = false } = {}) {
+export function navigate (to, options, callback) {
   const { pathname } = location
+  const { append = false } = options ?? {}
 
   if (to === pathname) {
     throw new Error(`Cannot navigate: "${to}" is already the current location`)
   }
 
   history.pushState(null, null, `${append ? pathname : ''}${to}`)
-  App.update()
+  App.update(callback)
 }
 
 function run () {

@@ -61,7 +61,7 @@ export default class ContentBinding extends DataBinding {
     if (init) {
       return this.#replace(update)
     }
-
+    
     this.#nodes = reconcileNodes(this.#nodes, update)
     this.callback && this.callback({ nodes: this.#nodes })
   }
