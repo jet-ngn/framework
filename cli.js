@@ -16,9 +16,6 @@ export default [
         entry: [path.join(source, `index.js`)],
 
         aliases: [{
-          filter: /^history$/,
-          path: path.join(source, 'node_modules', 'history', 'browser.js')
-        }, {
           filter: /^nanoid$/,
           path: path.join(source, 'node_modules', 'nanoid', 'index.js')
         }]
