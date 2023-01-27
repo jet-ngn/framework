@@ -4,6 +4,7 @@ import RouteManager from './router/RouteManager'
 import { runTasks } from './lib/TaskRunner'
 import { getViewMountingTasks, getViewRemovalTasks, getViewRenderingTasks } from './renderer/Renderer'
 import { getPermittedView } from './utilities/permissions'
+import { logBindings } from './data/DataRegistry'
 
 export default class Application {
   #views = new Map
@@ -62,6 +63,7 @@ export default class Application {
     this.#runTasks(this.#getRouterCollectionUpdateTasks(location.pathname, this.#routers, stagedViews), () => {
       callback && callback()
       this.#runTasks(getViewMountingTasks(stagedViews))
+      // logBindings()
     })
   }
 

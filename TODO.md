@@ -1,3 +1,5 @@
+Try using svg context in parser instead of template for svg elements.
+
 Remove dummy elements from Attribute bindings and use Sets instead. Don't worry about
 class order.
 

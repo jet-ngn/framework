@@ -6,7 +6,7 @@
   "description": "Test suite for Jet UI",
   "main": "index.js",
   "scripts": {
-    "setup": "rm -rf ./node_modules && npm install",
+    "setup": "rm -rf ./node_modules && npm install && npm link @jet-ngn/framework",
     "test": "echo \"Please run 'jet test' from the root directory\" && exit 1"
   },
   "author": "Graham Butler",

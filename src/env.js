@@ -1,11 +1,3 @@
-import PluginManager from './plugins/PluginManager'
-
-export const INTERNAL_ACCESS_KEY = Symbol('INTERNAL_ACCESS_KEY')
-export const RESERVED_EVENT_NAMES = ['abortMount', 'beforeMount', 'mount', 'unmount', 'remount', 'render']
-
-export const Path = {
-  base: '/',
-  vars: null
-}
-
-export const Plugins = new PluginManager
+export const DATA = new Worker(new URL('./workers/DATA.js', import.meta.url))
+export const ROUTER = new Worker(new URL('./workers/ROUTER.js', import.meta.url))
+export const VIEWS = new Map

@@ -86,10 +86,6 @@ function reconcileNode (original, update, binding) {
 }
 
 function reconcileElementNode (original, update, binding) {
-  console.log(binding)
-  console.log({ original, update })
-  console.log([...(binding?.children ?? [])].find(child => child.nodes.includes(original)))
-
   if (original.constructor.name !== update.constructor.name) {
     removeDOMEventsByNode(original, false)
     original.replaceWith(update)
@@ -107,7 +103,6 @@ function reconcileElementNode (original, update, binding) {
   const { childNodes } = original
 
   if (childNodes.length > 0) {
-    console.log('1')
     reconcileNodes(childNodes, update.childNodes)
   }
 

@@ -5,15 +5,13 @@ import StateArray from '../StateArray'
 
 import { getTemplateRenderingTasks } from '../../renderer/Renderer'
 import { reconcileNodes } from '../../renderer/Reconciler'
-import { removeDOMEventsByNode } from '../../events/DOMBus'
+import { removeDOMEventsByNode, logDOMEvents } from '../../events/DOMBus'
 import { html } from '../../parser/tags'
 import { sanitizeString } from '../../utilities/strings'
 import { runTasks } from '../../lib/TaskRunner'
 
 import { logBindings, removeBinding, removeState, removeStateByProxy } from '../DataRegistry'
-
-// TODO: Refactor with handleReconciliation function that runs whatever tasks are
-// necessary, then fires this.callback. That will remove all the dupicate this.callback calls.
+import { logEvents } from '../../events/Bus'
 
 export default class ContentBinding extends DataBinding {
   #children = []
@@ -74,7 +72,10 @@ export default class ContentBinding extends DataBinding {
       }
 
       this.#removeChildBindings()
-      return requestAnimationFrame(() => this.#replaceNodes())
+      return requestAnimationFrame(() => {
+        this.#replaceNodes()
+        this.callback && this.callback({ nodes: this.#nodes })
+      })
     }
 
     if (!(current instanceof Template)) {
@@ -83,7 +84,10 @@ export default class ContentBinding extends DataBinding {
 
     if (!previous) {
       return this.#renderTemplates([current], element => {
-        requestAnimationFrame(() => this.#replaceNodes([...element.childNodes]))
+        requestAnimationFrame(() => {
+          this.#replaceNodes([...element.childNodes])
+          this.callback && this.callback({ nodes: this.#nodes })
+        })
       })
     }
 
@@ -98,12 +102,14 @@ export default class ContentBinding extends DataBinding {
       if (this.hasChildren) {
         return requestAnimationFrame(() => {
           this.#replaceNodes(nodes)
+          this.callback && this.callback({ nodes: this.#nodes })
           console.log('*****');
           logBindings()
         })
       }
 
       this.#nodes = reconcileNodes(this.#nodes, nodes)
+      this.callback && this.callback({ nodes: this.#nodes })
     })
   }
 
@@ -129,6 +135,7 @@ export default class ContentBinding extends DataBinding {
           const nodes = [...element.childNodes]
     
           if (!last || last === this.#placeholder) {
+            console.log('HELLO')
             return this.#replaceNodes(nodes)
           }
     
@@ -211,45 +218,16 @@ export default class ContentBinding extends DataBinding {
       return this.#handleUpdate(this.#getArrayMethodHandler(...arguments))
     }
 
-    console.log('RENDER ME TIMBERS', method);
-    // this.#removeChildBindings()
+    // this.#removeChildBindings(true)
 
     this.#renderTemplates([current], element => {
       this.#replaceNodes([...element.childNodes])
       this.callback && this.callback({ nodes: this.#nodes })
-      logBindings()
     })
   }
 
   #reconcileStateObjectArray ({ previous, current }, method) {
-    // <ul>
-    //   ${bind(state, 'arr', items => items.map(({ name, properties }) => html`
-    //     <li>${name}, <span>${bind(properties, 'age')}</span></li>
-    //   `))}
-    // </ul>
-
-    // Produces:
-    // <ul>
-    //   <li>Person 1 Name, ${bind(state.arr[0].properties, 'age')}</li>
-    //   <li>Person 2 Name, ${bind(state.arr[1].properties, 'age')}</li>
-    //   <li>Person 3 Name, ${bind(state.arr[2].properties, 'age')}</li>
-    // </ul>
-
-    // Each li is stored in this.#nodes, to which array methods are applied. Then, 
-    // DOM is updated using code similar to this:
-    
-    // const frag = document.createDocumentFragment();
-    // const list = document.querySelector("ul");
-    // const items = list.querySelectorAll("li");
-    // const sortedList = Array.from(items).sort(function(a, b) {
-    //   const c = a.textContent,
-    //     d = b.textContent;
-    //   return c < d ? -1 : c > d ? 1 : 0;
-    // });
-    // for (let item of sortedList) {
-    //   frag.appendChild(item);
-    // }
-    // list.appendChild(frag);
+    // WIP  
   }
 
   #removeChildBindings (removeStates = false) {
@@ -266,18 +244,12 @@ export default class ContentBinding extends DataBinding {
     this.state.removeBinding(child)
   }
 
-  // #removeChildren () {
-  //   for (const child of this.#children) {
-  //     this.#removeChild(child)  
-  //   }
-  // }
-
   #renderTemplates (templates = [], callback, options = null) {
     const element = document.createElement('template')
     
-    runTasks(this.#getTemplateRenderingTasks(templates, element, options), { callback: () => {
-      callback(element)
-    } })
+    runTasks(this.#getTemplateRenderingTasks(templates, element, options), {
+      callback: () => callback(element)
+    })
   }
 
   #replaceNodes (nodes = []) {
@@ -296,7 +268,5 @@ export default class ContentBinding extends DataBinding {
 
     firstNode.replaceWith(...nodes)
     this.#nodes = nodes
-
-    // this.callback && this.callback({ nodes: this.#nodes })
   }
 }

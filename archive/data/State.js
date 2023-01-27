@@ -86,14 +86,12 @@ export default class State {
     this.#bindings = []
   }
 
-  getDefaultPropertyValue (property, model) {
-    const value = model[property]
-
-    if (Array.isArray(value)) {
-      return this.addChildProxy(this.getProxy(...value))
+  getDefaultPropertyValue (model) {
+    if (Array.isArray(model)) {
+      return this.addChildProxy(this.getProxy(...model))
     }
 
-    switch (value) {
+    switch (model) {
       case String:
       case Number:
       case Object:
@@ -101,11 +99,11 @@ export default class State {
       case Set: return null
     }
 
-    return value?.default ?? null
+    return model?.default ?? null
   }
 
-  getProxy (initial, config = {}) {
-    return registerState(initial, config)
+  getProxy (initial, config = {}, meta) {
+    return registerState(Array.isArray(initial) ? [...initial] : { ...initial }, config, meta)
   }
 
   getRawData (target) {

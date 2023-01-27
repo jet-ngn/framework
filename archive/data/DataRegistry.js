@@ -41,13 +41,13 @@ export function registerBinding (binding, options) {
   return binding
 }
 
-export function registerState (target, model) {
+export function registerState (target, model, meta) {
   const state = makeState(...arguments)
   states.add(state)
   return state.proxy
 }
 
-function makeState (target, config) {
+function makeState (target, model, meta) {
   if (Array.isArray(target)) {
     return new StateArray(...arguments)
   }
@@ -86,7 +86,10 @@ export function removeStateByProxy (proxy) {
 
 export function logBindings () {
   console.log('------------')
-  console.log(states);
+  console.log([...states].reduce((result, state) => ({
+    ...result,
+    [state.name]: state
+  }), {}));
   console.log([...states].reduce((result, { bindings }) => [...result, ...bindings], []))
 }
 

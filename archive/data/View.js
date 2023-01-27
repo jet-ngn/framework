@@ -32,7 +32,7 @@ export default class View extends PermissionsManager {
     this.#element = element
     this.#name = this.#name = name ?? this.id
     this.#parent = parent
-    this.#permissions = permissions ? registerState(new ViewPermissions(permissions), false) : null
+    this.#permissions = permissions ? registerState(new ViewPermissions(permissions), null, { name: `${this.#name} Permissions` }) : null
     this.#scope = `${parent ? `${parent.scope}.` : ''}${scope ?? this.id}`
     this.#version = version
 

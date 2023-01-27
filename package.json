@@ -14,7 +14,7 @@
   "scripts": {
     "setup": "rm -rf ./.dist && rm -rf ./node_modules && npm install && npm link && cd ./test && npm run setup && cd ../src && npm run setup",
     "update": "npm update && npm link && cd ./test && npm update && cd ../src && npm update",
-    "test": "cd test && node index.js"
+    "tests": "cd test && node index.js"
   },
   "repository": {
     "type": "git",

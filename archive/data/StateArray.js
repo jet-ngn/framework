@@ -68,7 +68,7 @@ export default class StateArray extends State {
       const additive = index !== null
       
       if (additive && this.#initialized) {
-        args = args.map((arg, i) => i < index ? arg : this.#processDataEntry(arg))
+        args = args.map((arg, i) => i < index ? arg : this.model ? this.#processDataEntry(arg) : arg)
       }
   
       const { bindings, history } = this

@@ -68,42 +68,39 @@ export default class StateObject extends State {
   }
 
   load (data = {}) {
-    console.log('LOAD STATE OBJECT')
-    // if (typeof data !== 'object') {
-    //   throw new TypeError(`Cannot load data of type "${data.constructor.name.toLowerCase()}" into Data State Object${!!this.name ? ` "${this.name}."` : ''}`)
-    // }
+    if (typeof data !== 'object') {
+      throw new TypeError(`Cannot load data of type "${data.constructor.name.toLowerCase()}" into Data State Object${!!this.name ? ` "${this.name}."` : ''}`)
+    }
 
-    // this.removeChildProxies()
+    this.removeChildProxies()
 
-    // const keys = [...(new Set([...Object.keys(this.proxy), ...Object.keys(data ?? {}), ...Object.keys(this.#states), ...Object.keys(this.#properties)]))]
+    const keys = [...(new Set([
+      ...Object.keys(this.proxy),
+      ...Object.keys(data ?? {}),
+      ...Object.keys(this.model ?? {})
+    ]))]
 
-    // for (let [index, key] of keys.entries()) {
-    //   if (data.hasOwnProperty(key)) {
-    //     if (this.#states.hasOwnProperty(key)) {
-    //       const proxy = this.getProxy(this.#states[key])
-    //       const content = data[key] ?? null
+    for (const [index, key] of keys.entries()) {
+      if (!data.hasOwnProperty(key)) {
+        if (!this.model.hasOwnProperty(key)) {
+          delete this.proxy[key]
+          continue
+        }
 
-    //       this.proxy[key] = proxy
-    //       load(proxy, content)
-    //       continue
-    //     }
-        
-    //     this.proxy[key] = data[key]
-    //     continue
-    //   }
+        this.proxy[key] = this.getDefaultPropertyValue(this.model[key])
+        continue
+      }
 
-    //   if (this.#states.hasOwnProperty(key)) {
-    //     this.addChildProxy(this.getProxy(this.#states[key]))
-    //     continue
-    //   }
+      const model = this.model?.[key]
 
-    //   if (this.#properties.hasOwnProperty(key)) {
-    //     this.#addProperty(key)
-    //     continue
-    //   }
+      if (model && Array.isArray(model)) {
+        this.proxy[key] = this.addChildProxy(this.getProxy(...model))
+        data.hasOwnProperty(key) && load(this.proxy[key], data[key])
+        continue
+      }
 
-    //   delete this.proxy[key]
-    // }
+      this.proxy[key] = data[key]
+    }
   }
 
   registerChangeHandler (property, callback) {
@@ -135,7 +132,7 @@ export default class StateObject extends State {
     this.#batchedTasks.clear()
   }
 
-  #initialize (data) {
+  #initialize (data = {}) {
     const { model } = this
 
     if (!model) {
@@ -151,15 +148,19 @@ export default class StateObject extends State {
         data[property] = proxy
 
         if (initial) {
-          console.log('LOAD INITIAL DATA')
-          // load(proxy, initial)
+          load(proxy, initial)
         }
 
         continue
       }
 
       if (!initial) {
-        data[property] = this.getDefaultPropertyValue(property, model)
+        if (Array.isArray(model[property])) {
+          data[property] = this.addChildProxy(this.getProxy(...value))
+          continue
+        }
+
+        data[property] = this.getDefaultPropertyValue(model[property])
       }
     }
   }

@@ -1,4 +1,5 @@
 import Template from './templates/Template'
+import SVGTemplate from './templates/SVGTemplate'
 import DataBindingInterpolation from '../data/DataBindingInterpolation'
 import { sanitizeString } from '../utilities/strings'
 
@@ -11,9 +12,11 @@ export function parseHTML (template, { retainFormatting }) {
   let output = interpolations.length === 0
     ? strings[0] // unescapeHTML(sanitizeString(strings[0]))
     : strings.reduce((final, string, i) => final + string + parseInterpolation(interpolations[i], result, retainFormatting), '')
-  
+
+  output = retainFormatting ? output : output.trim()
+
   return {
-    fragment: document.createRange().createContextualFragment(retainFormatting ? output : output.trim()),
+    fragment: template instanceof SVGTemplate ? getSVGFragment(output) : document.createRange().createContextualFragment(output),
     ...result
   }
 }
@@ -21,6 +24,14 @@ export function parseHTML (template, { retainFormatting }) {
 function createTemplate (collection, property, { id }) {
   collection[property][id] = arguments[2]
   return `<template id="${id}"></template>`
+}
+
+function getSVGFragment (contents) {
+  const template = document.createElement('template')
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.innerHTML = contents.trim()
+  template.content.append(svg)
+  return template.content
 }
 
 function parseInterpolation (interpolation, result, retainFormatting) {
