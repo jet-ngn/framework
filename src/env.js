@@ -1,3 +1,5 @@
-export const DATA = new Worker(new URL('./workers/DATA.js', import.meta.url))
-export const ROUTER = new Worker(new URL('./workers/ROUTER.js', import.meta.url))
-export const VIEWS = new Map
+import WorkerObserver from './WorkerObserver'
+
+export const DATA_WORKER = new WorkerObserver(new Worker(new URL('./jet/DataWorker.js', import.meta.url), { name: 'Jet Data Worker' }))
+export const ROUTE_WORKER = new WorkerObserver(new Worker(new URL('./jet/RouteWorker.js', import.meta.url), { name: 'Jet Route Worker' }))
+export const APPS = new Map

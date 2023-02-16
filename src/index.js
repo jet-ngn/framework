@@ -1,77 +1,40 @@
-import { DATA, ROUTER, VIEWS } from './env'
-import { getPathSlugs } from './utility/routing'
+import { APPS } from './env'
+import App from './App'
 
-let CONFIG
-const requisiteEvents = new Set(['APP_START', 'DATA_INIT', 'DOCUMENT_READY', 'ROUTER_INIT'])
+let ready = false, started = false, queue = new Set
 
-DATA.addEventListener('message', ({ data }) => {
-  switch (data.action) {
-    case 'init': return init('DATA_INIT')
-    default: console.log('HANDLE DATA DEFAULT MESSAGE')
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  ready = true
+  started && init()
 })
-
-ROUTER.addEventListener('message', ({ data }) => {
-  switch (data.action) {
-    case 'init': return init('ROUTER_INIT')
-    default: console.log('HANDLE ROUTER DEFAULT MESSAGE')
-  }
-})
-
-document.addEventListener('DOMContentLoaded', () => init('DOCUMENT_READY'))
-
-addEventListener('popstate', console.log)
 
 export function start (cfg) {
-  CONFIG = cfg
+  const app = new App({ baseURL: location.pathname, ...cfg })
+  started = true
 
-  DATA.postMessage({
-    action: 'init',
-    payload: cfg.data ?? {}
-  })
-
-  ROUTER.postMessage({
-    action: 'init',
-    payload: [...processRoutes([crypto.randomUUID()], cfg.routes, [], new Map)]
-  })
-
-  init('APP_START')
-}
-
-function init (event) {
-  requisiteEvents.delete(event)
-
-  if (requisiteEvents.size > 0) {
-    return
+  if (!ready) {
+    return queue.add(app)
   }
 
-  console.log('INIT APP', CONFIG)
+  init(app)
 }
 
-function processRoutes (lineage, routes, slugs, mappings) {
-  for (const slug of Object.keys(routes)) {
-    processRoute(lineage, [...slugs, ...getPathSlugs(slug)], routes[slug], mappings)
+function init (app) {
+  if (app) {
+    if (queue.size > 0) {
+      return initApp(app)
+    }
+
+    queue.add(app)
   }
 
-  return mappings
+  for (const app of queue) {
+    initApp(app)
+    queue.delete(app)
+  }
 }
 
-function processRoute (lineage, slugs, cfg, mappings) {
-  const hasKids = Array.isArray(cfg),
-        id = crypto.randomUUID(),
-        properties = { cfg }
-
-  if (hasKids) {
-    properties.cfg = cfg[0]
-    properties.children = cfg[1]
-  }
-
-  VIEWS.set(id, {
-    cfg: properties.cfg,
-    route: slugs
-  })
-
-  slugs.length > 0 && (lineage = [...lineage, id])
-  mappings.set(slugs, lineage)
-  hasKids && processRoutes(lineage, properties.children, slugs, mappings)
+function initApp (app) {
+  APPS.set(app.id, app)
+  app.render()
 }

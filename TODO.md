@@ -1,3 +1,13 @@
+Instead of maintaining a set of bindings and looping through them when data changes, try using the Observer pattern to broadcast changes instead. 
+
+Bindings can subscribe to particular states, and even their properties, so that when the state is changed, there is already a list of the bindings which should be updated sitting in memory. This will negate the need to iterate bindings.
+
+Observer pattern could potentially be used for inter-view communication as well.
+
+Don't use private properties/methods on internal classes if they require getters. That just adds bulk. Just use public properties/methods.
+
+
+
 Try using svg context in parser instead of template for svg elements.
 
 Remove dummy elements from Attribute bindings and use Sets instead. Don't worry about

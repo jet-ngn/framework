@@ -70,11 +70,28 @@ createApp({
         to manage.
       -->
 
+      <!-- ${bind(arr, ({ length }) => length === 0 && html`<p>No items.</p>`)} -->
+
+      <!--
+        States must be defined, but their children don't have to be defined explicitly, because there
+        won't be any consts. So for:
+
+        const state = new State({
+          name: 'My State',
+
+          child: {
+            name: 'Child Object of My State'
+          }
+        })
+
+        if you call bind(state.child, 'name'), the binding can be initialized in realtime. It should
+        not be necessary to specify state.child as a State, as it can be replaced with a proxy the first
+        time it is bound to.
+      -->
+
       ${bind(arr, ({ length }) => length > 0 ? html`
-        ${bindEach(arr, item => html`<li>${bind(item, 'name')}</li>`)}
-      ` : html`
-        <p>No items.</p>
-      `)}
+        ${map(arr, item => html`<li>${bind(item, 'name')}</li>`)}
+      ` : html`<p>No items.</p>`)}
     `
   }
 })

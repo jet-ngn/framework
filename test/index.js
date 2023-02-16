@@ -1,7 +1,8 @@
 import test from 'tappedout'
 
+
 test('Sanity', t => {
-  t.ok(true, 'Tests work.')
+  t.ok(true, 'Test Harness is available.')
 
   
 

@@ -14,7 +14,8 @@
   "scripts": {
     "setup": "rm -rf ./.dist && rm -rf ./node_modules && npm install && npm link && cd ./test && npm run setup && cd ../src && npm run setup",
     "update": "npm update && npm link && cd ./test && npm update && cd ../src && npm update",
-    "tests": "cd test && node index.js"
+    "test": "cd test && node index.js",
+    "test:sanity": "cd test && node ./tests/00-sanity.js"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     "url": "https://github.com/jet-ngn/framework/issues"
   },
   "homepage": "https://github.com/jet-ngn/framework#readme",
-  "devDependencies": {
+  "dependencies": {
     "@author.io/shell": "^1.9.2"
   }
 }

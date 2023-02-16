@@ -1,0 +1,162 @@
+import { DATA, ROUTER, ROUTES } from './env'
+import { reconcile } from './renderer/Renderer'
+import { getPathSlugs } from './utility/routing'
+
+let CONFIG
+
+const requisiteEvents = new Set(['APP_START', 'DATA_INIT', 'DOCUMENT_READY', 'ROUTER_INIT'])
+document.addEventListener('DOMContentLoaded', () => init('DOCUMENT_READY'))
+
+DATA.addEventListener('message', ({ data }) => {
+  switch (data.action) {
+    case 'init': return init('DATA_INIT')
+    default: console.log('HANDLE DATA DEFAULT MESSAGE')
+  }
+})
+
+ROUTER.addEventListener('message', ({ data }) => {
+  switch (data.action) {
+    case 'init': 
+      reconcile(data)
+      return init('ROUTER_INIT')
+
+    default: console.log('HANDLE ROUTER DEFAULT MESSAGE')
+  }
+})
+
+addEventListener('popstate', console.log)
+
+export function start (cfg) {
+  CONFIG = cfg
+
+  DATA.postMessage({
+    action: 'init',
+    payload: cfg.data ?? {}
+  })
+
+  ROUTER.postMessage({
+    action: 'init',
+    payload: {
+      initialRoute: getPathSlugs(location.pathname),
+      routes: [...processRoutes(cfg.routes)]
+      // routes: [...processRoutes([], cfg.routes, [], new Map)]
+    }
+  })
+
+  init('APP_START')
+}
+
+function init (event) {
+  requisiteEvents.delete(event)
+
+  if (requisiteEvents.size > 0) {
+    return
+  }
+
+  console.log('RENDER APP')
+  // MATCHED.lineage.forEach(id => console.log(`RENDER ${id}`, VIEWS.get(id)))
+}
+
+function processRoutes (routes) {
+  // Return map structure
+  // When rendering, check if view has an "outlet" interpolation.
+  // If it does, the view's 404 can be displayed there if no
+  // match is found. Otherwise, go up a level and do the same check.
+  // Repeat until a view is found that has an outlet. 
+
+  new Map([
+    [401, { cfg: Default401 }],
+    [403, { cfg: Default403 }],
+    [404, { cfg: { name: 'Root-Level 404' } }],
+
+    ['/hello/specific', {
+      cfg: { name: 'Non-Child Hello' },
+      children: new Map // Maybe just omit the children if there are none.
+      // This will prevent the empty map from being serialized and should
+      // save time when posting to the worker.
+    }]
+
+    ['/hello', {
+      cfg: { name: 'Hello' },
+
+      children: new Map([
+        [401, { cfg: Default401 }],
+        [403, { cfg: Default403 }],
+        [404, { cfg: { name: 'Hello 404' } }],
+
+        ['/hi', {
+          cfg: { name: 'Hello Hi' },
+
+          children: new Map([
+            [401, { cfg: Default401 }],
+            [403, { cfg: Default403 }],
+            [404, { cfg: { name: 'Hello 404' } }],
+            
+            ['/bye', {
+              cfg: { name: 'Hello Hi Bye' },
+              children: new Map
+            }]
+          ])
+        }]
+      ])
+    }],
+
+    ['/test', {
+      cfg: { name: 'test' },
+      
+      children: new Map([
+        [401, { cfg: Default401 }],
+        [403, { cfg: Default403 }],
+        [404, { cfg: Default404 }]
+      ])
+    }]
+  ])
+
+  // const map = new Map
+
+  // for (const path of Object.keys(routes)) {
+  //   const int = parseInt(path)
+
+  //   if (typeof int !== 'number') {
+      
+  //   }
+
+  //   const slugs = getPathSlugs(path)
+
+  //   if (slugs.length === 0) {
+  //     map.set('/', )
+  //   }
+
+  //   map.set(slugs[0],  slugs.length > 1 ? processRoutes(slugs.slice(1).reduce((result, slug) => {
+  //     result[slug]
+  //   }, {})))
+    
+
+  //   // for (const slug of getPathSlugs(path)) {
+  //   //   map.set(slug, processRoutes)
+  //   // }
+  // }
+
+  // for (const slug of Object.keys(routes)) {
+  //   const int = parseInt(slug)
+  //   processRoute(lineage, [401, 403, 404].includes(int) ? int : [...slugs, ...getPathSlugs(slug)], routes[slug], mappings)
+  // }
+
+  // return mappings
+}
+
+function processRoute (lineage, slugs, cfg, mappings) {
+  const hasKids = Array.isArray(cfg),
+        id = typeof slugs === 'number' ? `${lineage.at(-1) ?? 'ROOT'}:${slugs}` : crypto.randomUUID()
+
+  ROUTES.set(id, {
+    cfg: hasKids ? cfg[0] : cfg,
+    route: slugs,
+    template: null,
+    instance: null
+  })
+
+  lineage = [...lineage, id]
+  mappings.set(slugs, lineage)
+  hasKids && processRoutes(lineage, cfg[1], slugs, mappings)
+}
