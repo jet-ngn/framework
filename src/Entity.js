@@ -12,6 +12,7 @@ function getWorkerManager (manager) {
 export default class Entity extends EventEmitter {
   #ready = false
   #rendered = false
+  #mounted = false
 
   #config
   #id = crypto.randomUUID()
@@ -26,21 +27,17 @@ export default class Entity extends EventEmitter {
     this.#config = arguments[0]
     this.#element = element
     this.#range.selectNode(this.#element)
-    this.#template = render ? render.call(this) : null
     this.#router = routes ? getWorkerManager(new RouteManager(this, routes, baseURL)) : null
     this.#state = state ? getWorkerManager(new StateManager(this, state)) : null
+    this.#template = render ? render.call(this) : null
 
     Promise.all([this.#router, this.#state]).then(([router, state]) => {
       this.#router = router
       this.#state = state
       this.#ready = true
-      this.#rendered && this.#update()
+      this.#rendered && this.#refresh()
     })
   }
-
-  // get config () {
-  //   return this.#config
-  // }
 
   get description () {
     return this.#config.description ?? null
@@ -67,19 +64,29 @@ export default class Entity extends EventEmitter {
   }
 
   render () {
+    this.emit('connect') // TODO: Add AbortController and ACCESS_KEY
+
     if (!this.#rendered) {
-      this.#element.replaceChildren(this.#range.createContextualFragment(this.#template.raw))
+      this.#template && this.#element.replaceChildren(this.#range.createContextualFragment(this.#template.raw))
       this.#rendered = true
     }
 
-    this.#ready && this.#update()
+    this.#ready && this.#refresh()
   }
 
-  #update () {
+  #refresh () {
+    this.#mounted && this.emit('refresh') // TODO: Add AbortController and ACCESS_KEY
     console.log(this);
     // for (const { type, id } of this.#template.interpolations) {
     //   const template = document.getElementById(id)
     //   console.log(template)
     // }
+
+    if (this.#mounted) {
+      return this.emit('refreshed') // TODO: Add ACCESS_KEY
+    }
+
+    this.emit('connected')
+    this.#mounted = true
   }
 }
