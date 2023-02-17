@@ -1,7 +1,7 @@
-import WorkerSubscriber from './WorkerSubscriber'
+import WorkerObserver from './WorkerObserver'
 import { DATA_WORKER } from './env'
 
-export default class StateManager extends WorkerSubscriber {
+export default class StateManager extends WorkerObserver {
   #proxy
 
   constructor (context, model) {
@@ -16,7 +16,8 @@ export default class StateManager extends WorkerSubscriber {
     })
 
     this.#proxy = new Proxy(model, {
-      
+      get: (...args) => Reflect.get(...args),
+      set: (...args) => Reflect.set(...args) 
     })
   }
 

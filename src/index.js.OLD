@@ -76,6 +76,9 @@ function processRoutes (routes) {
       // save time when posting to the worker.
     }]
 
+    '/goodbye'
+    ['/hello/hi']
+
     ['/hello', {
       cfg: { name: 'Hello' },
 

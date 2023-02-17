@@ -1,3 +1,5 @@
+Add compiler comments to remove unnecessary pieces for production build.
+
 Instead of maintaining a set of bindings and looping through them when data changes, try using the Observer pattern to broadcast changes instead. 
 
 Bindings can subscribe to particular states, and even their properties, so that when the state is changed, there is already a list of the bindings which should be updated sitting in memory. This will negate the need to iterate bindings.

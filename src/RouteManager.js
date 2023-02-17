@@ -1,4 +1,4 @@
-import WorkerSubscriber from './WorkerSubscriber'
+import WorkerObserver from './WorkerObserver'
 import { ROUTE_WORKER } from './env'
 
 function processRoutes (cfg) {
@@ -30,7 +30,7 @@ function processRoutes (cfg) {
   return mappings
 }
 
-export default class RouteManager extends WorkerSubscriber {
+export default class RouteManager extends WorkerObserver {
   #baseURL
   #routes
 

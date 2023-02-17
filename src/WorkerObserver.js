@@ -1,19 +1,16 @@
-export default class WorkerObserver {
-  subscribers = new Map
+import EventEmitter from './EventEmitter'
 
-  constructor (worker) {
-    this.worker = worker
+export default class WorkerObserver extends EventEmitter {
+  constructor (worker, payload, notify) {
+    super()
 
-    worker.addEventListener('message', ({ data }) => {
-      this.subscribers.forEach(handler => handler(data.action, data.payload))
+    worker.subscribe(this, (action, payload) => {
+      switch (action) {
+        case 'registered': return this.emit('ready')
+        default: return notify(action, payload)
+      }
     })
-  }
 
-  post (action, payload) {
-    this.worker.postMessage({ action, payload })
-  }
-
-  subscribe (subscriber, handler) {
-    this.subscribers.set(subscriber, handler)
+    worker.post('register', payload)
   }
 }

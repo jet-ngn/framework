@@ -1,39 +1,46 @@
+import EventEmitter from './EventEmitter'
 import RouteManager from './RouteManager'
 import StateManager from './StateManager'
 
 function getWorkerManager (manager) {
-  return new Promise((resolve, reject) => {
+  return manager ? new Promise((resolve, reject) => {
     manager.on('error', () => reject(manager))
     manager.on('ready', () => resolve(manager))
-  })
+  }) : null
 }
 
-export default class Entity {
+export default class Entity extends EventEmitter {
   #ready = false
-  #initialized = false
+  #rendered = false
 
   #config
   #id = crypto.randomUUID()
+  #element
   #router
   #state
+  #range = document.createRange()
+  #template
 
-  constructor ({ baseURL, state = null, routes = null } = {}) {
+  constructor ({ baseURL, element, render, routes = null, state = null } = {}) {
+    super()
     this.#config = arguments[0]
+    this.#element = element
+    this.#range.selectNode(this.#element)
+    this.#template = render ? render.call(this) : null
+    this.#router = routes ? getWorkerManager(new RouteManager(this, routes, baseURL)) : null
+    this.#state = state ? getWorkerManager(new StateManager(this, state)) : null
 
-    Promise.all([
-      getWorkerManager(new RouteManager(this, routes, baseURL)),
-      getWorkerManager(new StateManager(this, {}, state ?? null))
-    ]).then(([router, state]) => {
+    Promise.all([this.#router, this.#state]).then(([router, state]) => {
       this.#router = router
       this.#state = state
       this.#ready = true
-      this.#initialized && this.#render()
+      this.#rendered && this.#update()
     })
   }
 
-  get state () {
-    return this.#state?.proxy ?? null
-  }
+  // get config () {
+  //   return this.#config
+  // }
 
   get description () {
     return this.#config.description ?? null
@@ -48,19 +55,31 @@ export default class Entity {
   }
 
   get routes () {
-    return this.#router.routes
+    return this.#router?.routes ?? null
+  }
+
+  get state () {
+    return this.#state?.proxy ?? null
   }
 
   get version () {
     return this.#config.version ?? null
   }
-  
+
   render () {
-    this.#initialized = true
-    this.#ready && this.#render()
+    if (!this.#rendered) {
+      this.#element.replaceChildren(this.#range.createContextualFragment(this.#template.raw))
+      this.#rendered = true
+    }
+
+    this.#ready && this.#update()
   }
 
-  #render () {
-    console.log('RENDER', this)
+  #update () {
+    console.log(this);
+    // for (const { type, id } of this.#template.interpolations) {
+    //   const template = document.getElementById(id)
+    //   console.log(template)
+    // }
   }
 }

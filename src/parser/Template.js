@@ -1,11 +1,8 @@
-import IdentifiedClass from '../IdentifiedClass'
-
-export default class Template extends IdentifiedClass {
+export default class Template {
   #strings
   #interpolations
 
-  constructor (strings, interpolations, idPrefix) {
-    super(idPrefix)
+  constructor (strings, interpolations) {
     this.#strings = [...strings]
     this.#interpolations = [...interpolations]
   }

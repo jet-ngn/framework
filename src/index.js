@@ -8,8 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
   started && init()
 })
 
-export function start (cfg) {
-  const app = new App({ baseURL: location.pathname, ...cfg })
+export function start ({ selector } = {}) {
+  const app = new App({
+    baseURL: location.pathname,
+    element: selector ? document.querySelector(selector) : document.body,
+    ...arguments[0]
+  })
+
   started = true
 
   if (!ready) {
@@ -21,7 +26,7 @@ export function start (cfg) {
 
 function init (app) {
   if (app) {
-    if (queue.size > 0) {
+    if (!queue.size) {
       return initApp(app)
     }
 
@@ -38,3 +43,5 @@ function initApp (app) {
   APPS.set(app.id, app)
   app.render()
 }
+
+export { html } from './parser/tags'
