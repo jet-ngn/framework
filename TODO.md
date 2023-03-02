@@ -1,3 +1,6 @@
+Keep track of objects which have been used as view configs- It may be possible to create a new instance of an exisiting class rather than re-parsing the whole object again.
+
+
 Add compiler comments to remove unnecessary pieces for production build.
 
 Instead of maintaining a set of bindings and looping through them when data changes, try using the Observer pattern to broadcast changes instead. 

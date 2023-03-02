@@ -1,6 +1,13 @@
+// TODO: Add AbortController to EventHandler class
+// Usage within handler function: this.abort()
+
 export default class EventEmitter {
   #listeners = new Map
 
+  // If aborted, return false from this function. Otherwise, return true
+  // Or, maybe the event handler should just be able to return true or false. If false,
+  // abort. This would negate the need for this.abort(), although the method call might
+  // be clearer.
   async emit (name, ...args) {
     const handlers = this.#listeners.get(name)
 

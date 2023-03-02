@@ -1,3 +1,30 @@
+const subscribers = {}
+
+function match ({ path, routes }) {
+  // const slugs = 
+  postMessage({
+    action: 'matched',
+    lineage: []
+  })
+}
+
+function registerSubscriber ({ id, routes, baseURL }) {
+  subscribers[id] = { routes, baseURL }
+
+  postMessage({
+    action: 'registered'
+  })
+}
+
+onmessage = ({ data }) => {
+  const { action, payload } = data
+
+  switch (action) {
+    case 'register': return registerSubscriber(payload)
+    case 'match': return match(payload)
+  }
+}
+
 // let ROUTES
 // let LINEAGE = []
 
@@ -101,30 +128,3 @@
 //     patch: getPatch(matched?.lineage ?? []) // TODO: 404
 //   })
 // }
-
-const subscribers = {}
-
-function match ({ path, routes }) {
-  // const slugs = 
-  postMessage({
-    action: 'matched',
-    lineage: []
-  })
-}
-
-function registerSubscriber ({ id, routes, baseURL }) {
-  subscribers[id] = { routes, baseURL }
-
-  postMessage({
-    action: 'registered'
-  })
-}
-
-onmessage = ({ data }) => {
-  const { action, payload } = data
-
-  switch (action) {
-    case 'register': return registerSubscriber(payload)
-    case 'match': return match(payload)
-  }
-}

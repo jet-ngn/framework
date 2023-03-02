@@ -27,21 +27,22 @@ export function start ({ selector } = {}) {
 function init (app) {
   if (app) {
     if (!queue.size) {
-      return initApp(app)
+      return renderApp(app)
     }
 
     queue.add(app)
   }
 
   for (const app of queue) {
-    initApp(app)
+    renderApp(app)
     queue.delete(app)
   }
 }
 
-function initApp (app) {
+function renderApp (app) {
   APPS.set(app.id, app)
   app.render()
 }
 
-export { html } from './parser/tags'
+export { html } from './Template'
+export { bind } from './Binding'

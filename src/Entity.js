@@ -1,3 +1,4 @@
+import { BINDINGS, TEMPLATES } from './env'
 import EventEmitter from './EventEmitter'
 import RouteManager from './RouteManager'
 import StateManager from './StateManager'
@@ -11,8 +12,8 @@ function getWorkerManager (manager) {
 
 export default class Entity extends EventEmitter {
   #ready = false
-  #rendered = false
-  #mounted = false
+  #initialized = false
+  #connected = false
 
   #config
   #id = crypto.randomUUID()
@@ -27,15 +28,17 @@ export default class Entity extends EventEmitter {
     this.#config = arguments[0]
     this.#element = element
     this.#range.selectNode(this.#element)
-    this.#router = routes ? getWorkerManager(new RouteManager(this, routes, baseURL)) : null
-    this.#state = state ? getWorkerManager(new StateManager(this, state)) : null
-    this.#template = render ? render.call(this) : null
+    this.#template = TEMPLATES.get(this.#config) ?? (render ? render.call(this) : null)
+    this.#template && TEMPLATES.set(this.#config, this.#template)
 
-    Promise.all([this.#router, this.#state]).then(([router, state]) => {
+    Promise.all([
+      routes ? getWorkerManager(new RouteManager(this, routes, baseURL)) : null,
+      state ? getWorkerManager(new StateManager(this, state)) : null
+    ]).then(async ([router, state]) => {
       this.#router = router
       this.#state = state
       this.#ready = true
-      this.#rendered && this.#refresh()
+      this.#initialized && await this.#render()
     })
   }
 
@@ -63,30 +66,48 @@ export default class Entity extends EventEmitter {
     return this.#config.version ?? null
   }
 
-  render () {
-    this.emit('connect') // TODO: Add AbortController and ACCESS_KEY
+  async render () {
+    if (!this.#connected) {
+      let cont = await this.emit('connect') // TODO: Add  ACCESS_KEY
+      
+      if (!cont) {
+        return await this.emit('aborted') // TODO: Add ACCESS_KEY
+      }
 
-    if (!this.#rendered) {
+      // TODO: Add Event Listeners, handle attributes/properties
       this.#template && this.#element.replaceChildren(this.#range.createContextualFragment(this.#template.raw))
-      this.#rendered = true
+      this.#initialized = true
     }
-
-    this.#ready && this.#refresh()
+    
+    this.#ready && await this.#render()
   }
 
-  #refresh () {
-    this.#mounted && this.emit('refresh') // TODO: Add AbortController and ACCESS_KEY
-    console.log(this);
-    // for (const { type, id } of this.#template.interpolations) {
-    //   const template = document.getElementById(id)
-    //   console.log(template)
-    // }
-
-    if (this.#mounted) {
-      return this.emit('refreshed') // TODO: Add ACCESS_KEY
+  async #render () {
+    let cont = true
+    
+    if (this.#connected) {
+      cont = await this.emit('render') // TODO: Add ACCESS_KEY
     }
 
-    this.emit('connected')
-    this.#mounted = true
+    if (aborted) {
+      return await this.emit('aborted') // TODO: Add ACCESS_KEY
+    }
+
+    for (const id of this.#template.bindings) {
+      const binding = BINDINGS.get(id)
+
+      if (!binding.template) {
+        binding.template = document.getElementById(id)
+      }
+      
+      console.log(binding)
+    }
+
+    if (this.#connected) {
+      return await this.emit('rendered') // TODO: Add ACCESS_KEY
+    }
+
+    this.#connected = true
+    await this.emit('connected')
   }
 }
